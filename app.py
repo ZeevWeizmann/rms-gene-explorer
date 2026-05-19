@@ -94,10 +94,10 @@ if query_gene:
         sorted_idx = [i for i in sorted_idx if genes[i] != query_gene][:20]
 
         top_genes = [
-            (genes[i], round(sims[i], 4), int(clusters[i]), annotations.get(int(clusters[i]), ""))
+            (genes[i], round(sims[i], 4), annotations.get(int(clusters[i]), ""))
             for i in sorted_idx
         ]
-        df = pd.DataFrame(top_genes, columns=["Gene", "Similarity", "Cluster", "Program"])
+        df = pd.DataFrame(top_genes, columns=["Gene", "Similarity", "Cluster annotation"])
 
         query_cluster = int(clusters[idx])
         query_annotation = annotations.get(query_cluster, "")
