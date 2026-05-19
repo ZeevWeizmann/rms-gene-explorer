@@ -6,9 +6,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
 
 REPO_ID = "weizmannzeev/rms-gene-programs"
+LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
 
 @st.cache_resource
 def load_data():
+    import os
     files = [
         "gcn_gene_embeddings_clusters.csv",
         "cluster_annotations.csv",
@@ -18,7 +20,12 @@ def load_data():
     ]
     paths = {}
     for f in files:
-        paths[f] = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset")
+        local_path = os.path.join(LOCAL_DIR, f)
+        if os.path.exists(local_path):
+            paths[f] = local_path
+        else:
+            token = st.secrets.get("HF_TOKEN", None)
+            paths[f] = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
 
     emb_df = pd.read_csv(paths["gcn_gene_embeddings_clusters.csv"], index_col=0)
     genes = list(emb_df.index)
