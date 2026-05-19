@@ -43,6 +43,7 @@ def load_data():
     return genes, embeddings, clusters, annotations, umap_df, expr, gene_names
 
 st.title("Gene Program Explorer")
+st.badge("Beta", color="orange")
 
 with st.spinner("Loading data..."):
     genes, embeddings, clusters, annotations, umap_df, expr, gene_names = load_data()
