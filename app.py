@@ -47,8 +47,17 @@ st.title("Gene Program Explorer")
 with st.spinner("Loading data..."):
     genes, embeddings, clusters, annotations, umap_df, expr, gene_names = load_data()
 
+selected_gene = st.selectbox(
+    "Quick gene search",
+    options=[""] + sorted(genes),
+    index=0
+)
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "last_selected" not in st.session_state:
+    st.session_state.last_selected = ""
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
@@ -58,7 +67,15 @@ for msg in st.session_state.messages:
         if "fig" in msg and msg["fig"] is not None:
             st.plotly_chart(msg["fig"], use_container_width=True)
 
-if query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)"):
+if selected_gene and selected_gene != st.session_state.last_selected:
+    st.session_state.last_selected = selected_gene
+    query_gene = selected_gene
+elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)"):
+    pass
+else:
+    query_gene = None
+
+if query_gene:
 
     st.session_state.messages.append({"role": "user", "content": query_gene})
     query_gene = query_gene.strip().upper()
