@@ -150,8 +150,11 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
         if "df" in msg:
             st.dataframe(msg["df"], use_container_width=True)
-        if "fig" in msg and msg["fig"] is not None:
-            st.plotly_chart(msg["fig"], use_container_width=True)
+        figs = [f for f in [msg.get("fig"), msg.get("fig_time"), msg.get("fig_celltype")] if f is not None]
+        if figs:
+            cols = st.columns(len(figs))
+            for col, f in zip(cols, figs):
+                col.plotly_chart(f, use_container_width=True)
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             st.plotly_chart(msg["grn_fig"], use_container_width=True)
 
@@ -193,23 +196,45 @@ if query_gene:
         query_annotation = annotations.get(query_cluster, "")
 
         fig = None
+        fig_time = None
+        fig_celltype = None
         if query_gene in gene_names:
             gene_idx = gene_names.index(query_gene)
             expr_vals = expr[:, gene_idx].astype(float)
             plot_df = umap_df.copy()
             plot_df["expression"] = expr_vals
+
             fig = px.scatter(
-                plot_df,
-                x="x", y="y",
+                plot_df, x="x", y="y",
                 color="expression",
                 color_continuous_scale="Viridis",
-                title=f"{query_gene} expression",
+                title=f"{query_gene} — Expression",
                 labels={"x": "UMAP 1", "y": "UMAP 2"},
-                opacity=0.6,
-                height=500
+                opacity=0.6, height=450
             )
             fig.update_traces(marker=dict(size=3))
             fig.update_layout(coloraxis_colorbar=dict(title="Expression"))
+
+        if "time" in umap_df.columns:
+            fig_time = px.scatter(
+                umap_df, x="x", y="y",
+                color=umap_df["time"].astype(str),
+                title="Time",
+                labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                opacity=0.6, height=450,
+                category_orders={"color": [str(t) for t in sorted(umap_df["time"].unique())]}
+            )
+            fig_time.update_traces(marker=dict(size=3))
+
+        if "cell_type" in umap_df.columns:
+            fig_celltype = px.scatter(
+                umap_df, x="x", y="y",
+                color="cell_type",
+                title="Cell Type",
+                labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Cell Type"},
+                opacity=0.6, height=450
+            )
+            fig_celltype.update_traces(marker=dict(size=3))
 
         grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene)
 
@@ -218,6 +243,8 @@ if query_gene:
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
             "df": df,
             "fig": fig,
+            "fig_time": fig_time,
+            "fig_celltype": fig_celltype,
             "grn_fig": grn_fig
         })
         st.rerun()
