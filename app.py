@@ -137,10 +137,32 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     fig.add_trace(go.Scatter(x=node_x, y=node_y, mode="markers+text",
                              text=node_labels, textposition="top center",
                              marker=dict(size=12, color=node_colors),
-                             hoverinfo="text"))
+                             hoverinfo="text", showlegend=False))
+
+    # Legend — one dummy trace per hop
+    hop_legend = [
+        (0, "red",       "Query gene (hop 0)"),
+        (1, "lightblue", "Direct neighbors (hop 1)"),
+        (2, "#90EE90",   "2nd neighbors (hop 2)"),
+        (3, "#FFD700",   "3rd neighbors (hop 3)"),
+    ]
+    for h, color, label in hop_legend:
+        if h <= hops:
+            fig.add_trace(go.Scatter(
+                x=[None], y=[None], mode="markers",
+                marker=dict(size=12, color=color),
+                name=label, showlegend=True
+            ))
+
     fig.update_layout(
         title=f"GRN for {query_gene} — {hops}-hop ego network (green = activation, red = repression)",
-        showlegend=False, height=500,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom", y=1.02,
+            xanchor="left", x=0
+        ),
+        height=550,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
     )
