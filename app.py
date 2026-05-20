@@ -118,6 +118,72 @@ def load_perturbation():
     return pd.read_csv(path)
 
 
+@st.cache_resource
+def load_umap_expr():
+    """Load per-cell WT vs KO expression on UMAP."""
+    import os
+    f = "birc5_ko_umap_expr.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+def build_umap_perturbation(umap_df, umap_expr_df, query_gene):
+    """Show WT vs KO expression of query_gene on UMAP side by side."""
+    gene_df = umap_expr_df[umap_expr_df["gene"] == query_gene].copy()
+    if gene_df.empty:
+        return None
+    gene_df = gene_df.set_index("cell")
+    # Align with umap
+    shared = umap_df.index.intersection(gene_df.index)
+    umap_sub = umap_df.loc[shared]
+    gene_sub = gene_df.loc[shared]
+
+    vmax = float(max(gene_sub["expr_wt"].max(), gene_sub["expr_ko"].max()))
+    vmin = 0.0
+
+    from plotly.subplots import make_subplots
+    fig = make_subplots(rows=1, cols=3,
+                        subplot_titles=[f"{query_gene} — WT",
+                                        f"{query_gene} — BIRC5 KO",
+                                        f"{query_gene} — Difference (KO−WT)"])
+
+    marker_size = 2
+    for col, (vals, cscale, czero, title) in enumerate([
+        (gene_sub["expr_wt"],  "Reds",  None,  "WT"),
+        (gene_sub["expr_ko"],  "Reds",  None,  "KO"),
+        (gene_sub["diff"],     "RdBu_r", 0.0,  "Diff"),
+    ], start=1):
+        dmax = float(vals.abs().max()) if col == 3 else vmax
+        fig.add_trace(go.Scatter(
+            x=umap_sub["x"], y=umap_sub["y"],
+            mode="markers",
+            marker=dict(
+                size=marker_size,
+                color=vals,
+                colorscale=cscale,
+                cmin=-dmax if col == 3 else vmin,
+                cmax=dmax,
+                colorbar=dict(thickness=10, x=0.33*col - 0.05),
+                showscale=True
+            ),
+            hovertemplate=f"{title}: %{{marker.color:.2f}}<extra></extra>",
+            showlegend=False
+        ), row=1, col=col)
+
+    fig.update_layout(
+        height=380, margin=dict(l=0, r=0, t=40, b=0),
+        plot_bgcolor="white", paper_bgcolor="white",
+    )
+    for i in range(1, 4):
+        fig.update_xaxes(showticklabels=False, showgrid=False, row=1, col=i)
+        fig.update_yaxes(showticklabels=False, showgrid=False, row=1, col=i)
+    return fig
+
+
 def build_perturbation_figures(pert_df, query_gene):
     """Build two figures: top-20 barplot + gene dynamics WT vs KO."""
     times = sorted(pert_df["time"].unique())
@@ -474,11 +540,17 @@ for msg in messages:
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
             with tab_pert:
                 try:
-                    pert_df = load_perturbation()
-                    q_gene = msg.get("query_gene", "MKI67")
+                    pert_df     = load_perturbation()
+                    umap_expr   = load_umap_expr()
+                    q_gene      = msg.get("query_gene", "MKI67")
+                    # UMAP: WT vs KO vs Diff
+                    umap_pert_fig = build_umap_perturbation(umap_df, umap_expr, q_gene)
+                    if umap_pert_fig:
+                        st.plotly_chart(umap_pert_fig, use_container_width=True, key=f"{msg_id}_pert_umap")
+                    # Dynamics + barplot
                     bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
                     st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                    st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                    st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
                     st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
