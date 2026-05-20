@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import networkx as nx
 from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
 
@@ -17,6 +19,8 @@ def load_data():
         "umap_coords.csv",
         "gene_names.csv",
         "expr_matrix_f16.npy",
+        "grn_matrix.npy",
+        "grn_genes.csv",
     ]
     paths = {}
     for f in files:
@@ -39,14 +43,65 @@ def load_data():
     umap_df = pd.read_csv(paths["umap_coords.csv"], index_col=0)
     gene_names = pd.read_csv(paths["gene_names.csv"])["0"].tolist()
     expr = np.load(paths["expr_matrix_f16.npy"])
+    grn_mat = np.load(paths["grn_matrix.npy"])
+    grn_genes = pd.read_csv(paths["grn_genes.csv"])["0"].tolist()
 
-    return genes, embeddings, clusters, annotations, umap_df, expr, gene_names
+    return genes, embeddings, clusters, annotations, umap_df, expr, gene_names, grn_mat, grn_genes
 
 st.title("Gene Program Explorer")
 st.badge("Beta", color="orange")
 
 with st.spinner("Loading data..."):
-    genes, embeddings, clusters, annotations, umap_df, expr, gene_names = load_data()
+    genes, embeddings, clusters, annotations, umap_df, expr, gene_names, grn_mat, grn_genes = load_data()
+
+def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
+    if query_gene not in grn_genes:
+        return None
+    idx = grn_genes.index(query_gene)
+    row = grn_mat[idx]
+    col = grn_mat[:, idx]
+
+    top_targets = np.argsort(np.abs(row))[::-1][:top_n]
+    top_regulators = np.argsort(np.abs(col))[::-1][:top_n]
+
+    G = nx.DiGraph()
+    G.add_node(query_gene)
+    for i in top_targets:
+        if grn_genes[i] != query_gene:
+            G.add_edge(query_gene, grn_genes[i], weight=float(row[i]))
+    for i in top_regulators:
+        if grn_genes[i] != query_gene:
+            G.add_edge(grn_genes[i], query_gene, weight=float(col[i]))
+
+    pos = nx.spring_layout(G, seed=42)
+
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        edge_x += [x0, x1, None]
+        edge_y += [y0, y1, None]
+
+    node_x = [pos[n][0] for n in G.nodes()]
+    node_y = [pos[n][1] for n in G.nodes()]
+    node_labels = list(G.nodes())
+    node_colors = ["red" if n == query_gene else "lightblue" for n in G.nodes()]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=edge_x, y=edge_y, mode="lines",
+                             line=dict(width=1, color="gray"), hoverinfo="none"))
+    fig.add_trace(go.Scatter(x=node_x, y=node_y, mode="markers+text",
+                             text=node_labels, textposition="top center",
+                             marker=dict(size=12, color=node_colors),
+                             hoverinfo="text"))
+    fig.update_layout(
+        title=f"GRN for {query_gene}",
+        showlegend=False,
+        height=500,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+    )
+    return fig
 
 selected_gene = st.selectbox(
     "Quick gene search",
@@ -67,6 +122,8 @@ for msg in st.session_state.messages:
             st.dataframe(msg["df"], use_container_width=True)
         if "fig" in msg and msg["fig"] is not None:
             st.plotly_chart(msg["fig"], use_container_width=True)
+        if "grn_fig" in msg and msg["grn_fig"] is not None:
+            st.plotly_chart(msg["grn_fig"], use_container_width=True)
 
 if selected_gene and selected_gene != st.session_state.last_selected:
     st.session_state.last_selected = selected_gene
@@ -121,10 +178,13 @@ if query_gene:
             fig.update_traces(marker=dict(size=3))
             fig.update_layout(coloraxis_colorbar=dict(title="Expression"))
 
+        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene)
+
         st.session_state.messages.append({
             "role": "assistant",
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
             "df": df,
-            "fig": fig
+            "fig": fig,
+            "grn_fig": grn_fig
         })
         st.rerun()
