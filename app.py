@@ -130,8 +130,11 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
     return fig
 
 
-st.title("Gene Program Explorer")
-st.badge("Beta", color="orange")
+col_title, col_badge = st.columns([6, 1])
+col_title.title("Gene Program Explorer")
+col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
+col_badge.badge("Beta", color="orange")
+col_badge.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("**14,581 unique gene embeddings** across 2 datasets")
 
