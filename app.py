@@ -241,17 +241,87 @@ and maps them to LLM-annotated transcriptional programs.
 It also displays the expression of the queried gene on the original cell UMAP
 and its local gene regulatory network inferred by CARDAMOM.
     """)
-    import os
-    arch_path = os.path.join(LOCAL_DIR, "architecture.png")
-    if os.path.exists(arch_path):
-        st.image(arch_path, use_container_width=True)
-    else:
-        try:
-            token = st.secrets.get("HF_TOKEN", None)
-            arch_file = hf_hub_download(repo_id=REPO_ID, filename="architecture.png", repo_type="dataset", token=token)
-            st.image(arch_file, use_container_width=True)
-        except Exception:
-            pass
+
+    # ── Interactive architecture diagram ──────────────────────────
+    row1 = [
+        ("Query Gene\n(e.g. MKI67)", "#4C72B0",
+         "Enter any gene name to start retrieval"),
+        ("WGCNA\nCo-expression\nGraph", "#7B5EA7",
+         "Pearson correlation + soft-thresholding builds a weighted gene graph"),
+        ("GNN\nEncoder", "#3A9E6E",
+         "Graph Convolutional Network learns 32-dim gene embeddings"),
+        ("Gene Embeddings\n(Vector DB)", "#E8A838",
+         "14,581 unique gene vectors stored as a searchable index"),
+        ("Cosine Similarity\nRetrieval", "#D45F5F",
+         "Top-N nearest neighbors found in embedding space"),
+        ("Similar Genes\n+ Programs", "#3A9E6E",
+         "Co-expressed gene program with cluster annotations"),
+    ]
+    row2 = [
+        ("scRNA-seq\n+ Time Points", "#4C72B0",
+         "Single-cell RNA-seq across 6 time points (0→80)"),
+        ("CARDAMOM\nGRN Inference\n(Mechanistic Model)", "#7B5EA7",
+         "Kinetic ODE model infers directed gene regulatory network from temporal data"),
+        ("Inferred GRN\nStructure", "#3A9E6E",
+         "Directed graph of activations and repressions between genes"),
+        ("KO / OV\nSimulation\n(e.g. BIRC5 KO)", "#E8A838",
+         "In-silico perturbation: knock out or overexpress any gene"),
+        ("Perturbation\nPrediction", "#D45F5F",
+         "Simulated expression changes across the gene network"),
+        ("Therapeutic\nTargets", "#3A9E6E",
+         "Genes that become vulnerable after perturbation — synthetic lethality candidates"),
+    ]
+
+    def make_arch_fig(rows_data):
+        fig = go.Figure()
+        row_configs = [
+            (rows_data[0], 1.0, "RAG Gene Program Retrieval"),
+            (rows_data[1], 0.0, "GRN Inference & Perturbation Simulation"),
+        ]
+        for (steps, y_center, title) in row_configs:
+            n = len(steps)
+            xs = [i / (n - 1) * 0.88 + 0.06 for i in range(n)]
+            # title
+            fig.add_annotation(x=0.5, y=y_center + 0.38, text=f"<b>{title}</b>",
+                                xref="paper", yref="paper", showarrow=False,
+                                font=dict(size=16, color="#222"))
+            # arrows
+            for i in range(n - 1):
+                fig.add_annotation(
+                    x=xs[i + 1] - 0.045, y=y_center,
+                    ax=xs[i] + 0.045, ay=y_center,
+                    xref="paper", yref="paper",
+                    axref="paper", ayref="paper",
+                    showarrow=True, arrowhead=3,
+                    arrowcolor="#888", arrowwidth=2.5, arrowsize=1.2
+                )
+            # boxes
+            for i, (label, color, tooltip) in enumerate(steps):
+                fig.add_trace(go.Scatter(
+                    x=[xs[i]], y=[y_center],
+                    mode="markers+text",
+                    marker=dict(size=90, color=color, opacity=0.92,
+                                line=dict(color="white", width=2)),
+                    text=label.replace("\n", "<br>"),
+                    textposition="middle center",
+                    textfont=dict(size=13, color="white", family="Arial Black"),
+                    hovertext=tooltip,
+                    hoverinfo="text",
+                    showlegend=False
+                ))
+
+        fig.update_layout(
+            height=480,
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(visible=False, range=[-0.02, 1.02]),
+            yaxis=dict(visible=False, range=[-0.5, 1.5]),
+            hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial"),
+        )
+        return fig
+
+    st.plotly_chart(make_arch_fig([row1, row2]), use_container_width=True, key="arch_fig")
 
 # ================================================================
 # DATASET SELECTOR
