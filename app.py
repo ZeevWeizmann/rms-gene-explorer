@@ -87,7 +87,10 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     G.add_node(query_gene)
     frontier = {query_gene}
 
+    hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
+
     for hop in range(hops):
+        n = hop_top_n.get(hop, 2)
         next_frontier = set()
         for gene in frontier:
             if gene not in grn_genes:
@@ -96,12 +99,12 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
             row = grn_mat[idx]
             col = grn_mat[:, idx]
             # targets (gene → X)
-            for j in np.argsort(np.abs(row))[::-1][:top_n]:
+            for j in np.argsort(np.abs(row))[::-1][:n]:
                 if grn_genes[j] != gene and abs(row[j]) > 0:
                     G.add_edge(gene, grn_genes[j], weight=float(row[j]))
                     next_frontier.add(grn_genes[j])
             # regulators (X → gene)
-            for j in np.argsort(np.abs(col))[::-1][:top_n]:
+            for j in np.argsort(np.abs(col))[::-1][:n]:
                 if grn_genes[j] != gene and abs(col[j]) > 0:
                     G.add_edge(grn_genes[j], gene, weight=float(col[j]))
                     next_frontier.add(grn_genes[j])
