@@ -175,10 +175,14 @@ n_genes = len(genes)
 n_clusters = len(set(clusters))
 n_cells = umap_df.shape[0]
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 col1.metric("Gene embeddings", f"{n_genes:,}")
 col2.metric("Gene programs", f"{n_clusters}")
 col3.metric("Cells", f"{n_cells:,}")
+if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
+    st.session_state[f"messages_{dataset_key}"] = []
+    st.session_state[f"last_selected_{dataset_key}"] = ""
+    st.rerun()
 
 selected_gene = st.selectbox(
     "Quick gene search",
