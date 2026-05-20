@@ -322,10 +322,17 @@ for msg in messages:
                     with st.popover("Cluster annotation details"):
                         st.markdown(summary)
         msg_id = id(msg)
-        figs = [(k, msg.get(k)) for k in ["fig", "fig_time", "fig_celltype"] if msg.get(k) is not None]
-        if figs:
-            cols = st.columns(len(figs))
-            for col, (k, f) in zip(cols, figs):
+        # Expression UMAP — full width, taller
+        if msg.get("fig") is not None:
+            fig_expr = msg["fig"]
+            fig_expr.update_layout(height=550)
+            st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
+        # Time + Cell type UMAPs — side by side, smaller
+        side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_celltype"] if msg.get(k) is not None]
+        if side_figs:
+            cols = st.columns(len(side_figs))
+            for col, (k, f) in zip(cols, side_figs):
+                f.update_layout(height=350)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             tab_graph, tab_matrix = st.tabs(["Network graph", "Adjacency matrix"])
