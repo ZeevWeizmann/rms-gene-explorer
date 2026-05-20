@@ -187,11 +187,17 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.session_state[f"last_selected_{dataset_key}"] = ""
     st.rerun()
 
-selected_gene = st.selectbox(
+col_search, col_slider = st.columns([3, 2])
+selected_gene = col_search.selectbox(
     "Quick gene search",
     options=[""] + sorted(genes),
     index=0,
     key=f"selectbox_{dataset_key}"
+)
+program_size = col_slider.slider(
+    "Program size (neighbors)",
+    min_value=5, max_value=200, value=20, step=5,
+    key=f"slider_{dataset_key}"
 )
 
 if f"messages_{dataset_key}" not in st.session_state:
@@ -249,7 +255,7 @@ if query_gene:
 
         sims = cosine_similarity(target_emb, embeddings)[0]
         sorted_idx = np.argsort(sims)[::-1]
-        sorted_idx = [i for i in sorted_idx if genes[i] != query_gene][:20]
+        sorted_idx = [i for i in sorted_idx if genes[i] != query_gene][:program_size]
 
         top_genes = [
             (genes[i], round(sims[i], 4), annotations.get(int(clusters[i]), ""))
