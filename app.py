@@ -284,12 +284,18 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.rerun()
 
 col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
-selected_gene = col_search.selectbox(
-    "Quick gene search",
-    options=[""] + sorted(genes),
+grn_gene_set = set(grn_genes) if grn_genes else set()
+def gene_label(g):
+    return f"🔬 {g}" if g in grn_gene_set else g
+gene_options = [""] + sorted(genes)
+gene_labels = [""] + [gene_label(g) for g in sorted(genes)]
+selected_label = col_search.selectbox(
+    "Quick gene search  (🔬 = GRN available)",
+    options=gene_labels,
     index=0,
     key=f"selectbox_{dataset_key}"
 )
+selected_gene = selected_label.replace("🔬 ", "") if selected_label else ""
 program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
