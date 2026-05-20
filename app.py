@@ -11,18 +11,30 @@ REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
 
 @st.cache_resource
-def load_data():
+def load_data(dataset="v1"):
     import os
-    files = [
-        "gcn_gene_embeddings_clusters.csv",
-        "cluster_annotations.csv",
-        "cluster_summaries.csv",
-        "umap_coords.csv",
-        "gene_names.csv",
-        "expr_matrix_f16.npy",
-        "grn_matrix.npy",
-        "grn_genes.csv",
-    ]
+
+    if dataset == "v1":
+        files = [
+            "gcn_gene_embeddings_clusters.csv",
+            "cluster_annotations.csv",
+            "cluster_summaries.csv",
+            "umap_coords.csv",
+            "gene_names.csv",
+            "expr_matrix_f16.npy",
+            "grn_matrix.npy",
+            "grn_genes.csv",
+        ]
+    else:
+        files = [
+            "gcn_gene_embeddings_clusters_2.csv",
+            "cluster_annotations_v2.csv",
+            "cluster_summaries_v2.csv",
+            "umap_coords_v2.csv",
+            "gene_names_v2.csv",
+            "expr_matrix_f16_v2.npy",
+        ]
+
     paths = {}
     for f in files:
         local_path = os.path.join(LOCAL_DIR, f)
@@ -32,54 +44,42 @@ def load_data():
             token = st.secrets.get("HF_TOKEN", None)
             paths[f] = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
 
-    emb_df = pd.read_csv(paths["gcn_gene_embeddings_clusters.csv"], index_col=0)
+    emb_key = "gcn_gene_embeddings_clusters.csv" if dataset == "v1" else "gcn_gene_embeddings_clusters_2.csv"
+    emb_df = pd.read_csv(paths[emb_key], index_col=0)
     genes = list(emb_df.index)
     embeddings = emb_df.drop(columns=["cluster"]).values
     clusters = emb_df["cluster"].values
 
-    ann_df = pd.read_csv(paths["cluster_annotations.csv"])
+    ann_key = "cluster_annotations.csv" if dataset == "v1" else "cluster_annotations_v2.csv"
+    ann_df = pd.read_csv(paths[ann_key])
     label_col = "label" if "label" in ann_df.columns else "annotation"
     annotations = ann_df.set_index("cluster")[label_col].to_dict()
 
-    summaries_df = pd.read_csv(paths["cluster_summaries.csv"])
-    summaries = summaries_df.set_index("cluster")["summary"].to_dict()
+    sum_key = "cluster_summaries.csv" if dataset == "v1" else "cluster_summaries_v2.csv"
+    summaries_df = pd.read_csv(paths[sum_key])
+    sum_col = "summary" if "summary" in summaries_df.columns else summaries_df.columns[-1]
+    summaries = summaries_df.set_index("cluster")[sum_col].to_dict()
 
-    umap_df = pd.read_csv(paths["umap_coords.csv"], index_col=0)
-    gene_names = pd.read_csv(paths["gene_names.csv"])["0"].tolist()
-    expr = np.load(paths["expr_matrix_f16.npy"])
-    grn_mat = np.load(paths["grn_matrix.npy"])
-    grn_genes = pd.read_csv(paths["grn_genes.csv"])["0"].tolist()
+    umap_key = "umap_coords.csv" if dataset == "v1" else "umap_coords_v2.csv"
+    umap_df = pd.read_csv(paths[umap_key], index_col=0)
+
+    gene_names_key = "gene_names.csv" if dataset == "v1" else "gene_names_v2.csv"
+    gene_names = pd.read_csv(paths[gene_names_key])["0"].tolist()
+
+    expr_key = "expr_matrix_f16.npy" if dataset == "v1" else "expr_matrix_f16_v2.npy"
+    expr = np.load(paths[expr_key])
+
+    grn_mat = None
+    grn_genes = []
+    if dataset == "v1":
+        grn_mat = np.load(paths["grn_matrix.npy"])
+        grn_genes = pd.read_csv(paths["grn_genes.csv"])["0"].tolist()
 
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
-st.title("Gene Program Explorer")
-st.badge("Beta", color="orange")
-
-with st.expander("About this tool"):
-    st.markdown("""
-This is a **RAG-based gene program retrieval system** applied to single-cell data.
-Given a query gene, it retrieves co-expressed genes from a learned GNN embedding space
-and maps them to LLM-annotated transcriptional programs.
-It also displays the expression of the queried gene on the original cell UMAP
-and its local gene regulatory network inferred by CARDAMOM.
-    """)
-    import os
-    arch_path = os.path.join(LOCAL_DIR, "architecture.png")
-    if os.path.exists(arch_path):
-        st.image(arch_path, use_container_width=True)
-    else:
-        try:
-            token = st.secrets.get("HF_TOKEN", None)
-            arch_file = hf_hub_download(repo_id=REPO_ID, filename="architecture.png", repo_type="dataset", token=token)
-            st.image(arch_file, use_container_width=True)
-        except Exception:
-            pass
-
-with st.spinner("Loading data..."):
-    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data()
 
 def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
-    if query_gene not in grn_genes:
+    if grn_mat is None or query_gene not in grn_genes:
         return None
     idx = grn_genes.index(query_gene)
     row = grn_mat[idx]
@@ -113,11 +113,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
         fig.add_annotation(
             x=x1, y=y1, ax=x0, ay=y0,
             xref="x", yref="y", axref="x", ayref="y",
-            showarrow=True,
-            arrowhead=3,
-            arrowsize=1.5,
-            arrowwidth=1.5,
-            arrowcolor=color
+            showarrow=True, arrowhead=3, arrowsize=1.5,
+            arrowwidth=1.5, arrowcolor=color
         )
 
     fig.add_trace(go.Scatter(x=node_x, y=node_y, mode="markers+text",
@@ -126,30 +123,68 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
                              hoverinfo="text"))
     fig.update_layout(
         title=f"GRN for {query_gene} (green = activation, red = repression)",
-        showlegend=False,
-        height=500,
+        showlegend=False, height=500,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
     )
     return fig
 
+
+st.title("Gene Program Explorer")
+st.badge("Beta", color="orange")
+
+with st.expander("About this tool"):
+    st.markdown("""
+This is a **RAG-based gene program retrieval system** applied to single-cell data.
+Given a query gene, it retrieves co-expressed genes from a learned GNN embedding space
+and maps them to LLM-annotated transcriptional programs.
+It also displays the expression of the queried gene on the original cell UMAP
+and its local gene regulatory network inferred by CARDAMOM.
+    """)
+    import os
+    arch_path = os.path.join(LOCAL_DIR, "architecture.png")
+    if os.path.exists(arch_path):
+        st.image(arch_path, use_container_width=True)
+    else:
+        try:
+            token = st.secrets.get("HF_TOKEN", None)
+            arch_file = hf_hub_download(repo_id=REPO_ID, filename="architecture.png", repo_type="dataset", token=token)
+            st.image(arch_file, use_container_width=True)
+        except Exception:
+            pass
+
+# ================================================================
+# DATASET SELECTOR
+# ================================================================
+dataset_choice = st.radio(
+    "Dataset",
+    options=["RMS original", "Dataset 2"],
+    horizontal=True
+)
+dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
+
+with st.spinner("Loading data..."):
+    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
+
 selected_gene = st.selectbox(
     "Quick gene search",
     options=[""] + sorted(genes),
-    index=0
+    index=0,
+    key=f"selectbox_{dataset_key}"
 )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if f"messages_{dataset_key}" not in st.session_state:
+    st.session_state[f"messages_{dataset_key}"] = []
 
-if "last_selected" not in st.session_state:
-    st.session_state.last_selected = ""
+if f"last_selected_{dataset_key}" not in st.session_state:
+    st.session_state[f"last_selected_{dataset_key}"] = ""
 
-if "initialized" not in st.session_state:
-    st.session_state.initialized = True
-    st.session_state.default_run = True
+if f"default_run_{dataset_key}" not in st.session_state:
+    st.session_state[f"default_run_{dataset_key}"] = True
 
-for msg in st.session_state.messages:
+messages = st.session_state[f"messages_{dataset_key}"]
+
+for msg in messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
         if "df" in msg:
@@ -168,25 +203,24 @@ for msg in st.session_state.messages:
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
 
-if st.session_state.get("default_run"):
-    st.session_state.default_run = False
-    query_gene = "NACA"
-elif selected_gene and selected_gene != st.session_state.last_selected:
-    st.session_state.last_selected = selected_gene
+if st.session_state.get(f"default_run_{dataset_key}"):
+    st.session_state[f"default_run_{dataset_key}"] = False
+    query_gene = "NACA" if "NACA" in genes else genes[0]
+elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
+    st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
-elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)"):
+elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)", key=f"chat_{dataset_key}"):
     pass
 else:
     query_gene = None
 
 if query_gene:
-
-    st.session_state.messages.append({"role": "user", "content": query_gene})
+    messages.append({"role": "user", "content": query_gene})
     query_gene = query_gene.strip().upper()
 
     if query_gene not in genes:
         response = f"Gene {query_gene} not found in the co-expression graph."
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        messages.append({"role": "assistant", "content": response})
         st.rerun()
     else:
         idx = genes.index(query_gene)
@@ -248,7 +282,7 @@ if query_gene:
 
         grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene)
 
-        st.session_state.messages.append({
+        messages.append({
             "role": "assistant",
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
             "df": df,
