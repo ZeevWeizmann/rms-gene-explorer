@@ -287,13 +287,20 @@ and its local gene regulatory network inferred by CARDAMOM.
                                 font=dict(size=16, color="#222"))
             # arrows
             for i in range(n - 1):
+                fig.add_shape(
+                    type="line",
+                    x0=xs[i] + 0.045, y0=y_center,
+                    x1=xs[i + 1] - 0.045, y1=y_center,
+                    xref="paper", yref="paper",
+                    line=dict(color="#888", width=2)
+                )
                 fig.add_annotation(
                     x=xs[i + 1] - 0.045, y=y_center,
-                    ax=xs[i] + 0.045, ay=y_center,
+                    ax=0, ay=0,
                     xref="paper", yref="paper",
-                    axref="paper", ayref="paper",
                     showarrow=True, arrowhead=3,
-                    arrowcolor="#888", arrowwidth=2.5, arrowsize=1.2
+                    arrowcolor="#888", arrowwidth=2, arrowsize=1.2,
+                    text=""
                 )
             # boxes
             for i, (label, color, tooltip) in enumerate(steps):
