@@ -348,10 +348,12 @@ for msg in messages:
             with tab_matrix:
                 if "grn_adj" in msg and msg["grn_adj"] is not None:
                     adj_df, genes_list = msg["grn_adj"]
+                    vmax = float(adj_df.abs().values.max())
                     adj_fig = px.imshow(
                         adj_df,
                         color_continuous_scale="RdBu_r",
                         color_continuous_midpoint=0,
+                        zmin=-vmax, zmax=vmax,
                         title="Adjacency matrix (red=activation, blue=repression)",
                         height=600,
                         aspect="auto"
