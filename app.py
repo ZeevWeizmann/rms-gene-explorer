@@ -105,6 +105,67 @@ def load_grn(grn_key="original"):
     return grn_mat, grn_genes
 
 
+@st.cache_resource
+def load_perturbation():
+    """Load BIRC5 KO perturbation data."""
+    import os
+    f = "birc5_ko_perturbation.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+def build_perturbation_figures(pert_df, query_gene):
+    """Build two figures: top-20 barplot + gene dynamics WT vs KO."""
+    times = sorted(pert_df["time"].unique())
+    last_t = times[-1]
+
+    # ── Figure 1: Top-20 most affected genes at last timepoint ──
+    summary = pert_df[pert_df["time"] == last_t].copy()
+    summary["abs_log2fc"] = summary["log2fc"].abs()
+    top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
+    colors = ["#D45F5F" if v > 0 else "#4C72B0" for v in top20["log2fc"]]
+    bar_fig = go.Figure(go.Bar(
+        x=top20["log2fc"], y=top20["gene"],
+        orientation="h",
+        marker_color=colors,
+        hovertemplate="%{y}: %{x:.3f}<extra></extra>"
+    ))
+    bar_fig.update_layout(
+        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)}, red=up, blue=down)",
+        xaxis_title="log₂FC (KO / WT)",
+        height=480, margin=dict(l=10, r=10, t=40, b=40),
+        plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(zeroline=True, zerolinecolor="#aaa")
+    )
+
+    # ── Figure 2: Dynamics of query gene WT vs KO ──
+    gene_df = pert_df[pert_df["gene"] == query_gene]
+    line_fig = go.Figure()
+    if not gene_df.empty:
+        line_fig.add_trace(go.Scatter(
+            x=gene_df["time"], y=gene_df["mean_wt"],
+            mode="lines+markers", name="WT",
+            line=dict(color="#4C72B0", width=2)
+        ))
+        line_fig.add_trace(go.Scatter(
+            x=gene_df["time"], y=gene_df["mean_ko"],
+            mode="lines+markers", name="BIRC5 KO",
+            line=dict(color="#D45F5F", width=2, dash="dash")
+        ))
+    line_fig.update_layout(
+        title=f"{query_gene} expression: WT vs BIRC5 KO",
+        xaxis_title="Time", yaxis_title="Mean expression",
+        height=320, margin=dict(l=10, r=10, t=40, b=40),
+        plot_bgcolor="white", paper_bgcolor="white",
+        legend=dict(orientation="h", y=1.1)
+    )
+    return bar_fig, line_fig
+
+
 def build_grn_from_program(grn_mat, grn_genes, gene_set):
     """Build GRN subgraph restricted to gene_set."""
     gene_set = set(gene_set) & set(grn_genes)
@@ -381,7 +442,7 @@ for msg in messages:
                 f.update_layout(height=350)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            tab_graph, tab_matrix = st.tabs(["Network graph", "Adjacency matrix"])
+            tab_graph, tab_matrix, tab_pert = st.tabs(["Network graph", "Adjacency matrix", "🧬 BIRC5 KO Perturbation"])
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
             with tab_matrix:
@@ -407,6 +468,16 @@ for msg in messages:
                         yaxis=dict(tickfont=dict(size=9))
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
+            with tab_pert:
+                try:
+                    pert_df = load_perturbation()
+                    q_gene = msg.get("query_gene", "MKI67")
+                    bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
+                    st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
+                    st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                    st.caption("Simulation: CARDAMOM kinetic model · MKI67 program (201 genes) · BIRC5 knocked out")
+                except Exception as e:
+                    st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
@@ -494,6 +565,7 @@ if query_gene:
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
             "df": df,
             "cluster_id": query_cluster,
+            "query_gene": query_gene,
             "fig": fig,
             "fig_time": fig_time,
             "fig_celltype": fig_celltype,
