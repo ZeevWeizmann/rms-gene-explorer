@@ -78,6 +78,33 @@ def load_data(dataset="v1"):
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 
+@st.cache_resource
+def load_grn(grn_key="original"):
+    """Load GRN by key: 'original' (159 genes) or 'mki67' (201 genes, MKI67 program)."""
+    import os
+    if grn_key == "mki67":
+        mat_file  = "grn_matrix_mki67.npy"
+        gene_file = "grn_genes_mki67.csv"
+        gene_col  = "gene"
+    else:
+        mat_file  = "grn_matrix.npy"
+        gene_file = "grn_genes.csv"
+        gene_col  = "0"
+
+    paths = {}
+    for f in [mat_file, gene_file]:
+        local = os.path.join(LOCAL_DIR, f)
+        if os.path.exists(local):
+            paths[f] = local
+        else:
+            token = st.secrets.get("HF_TOKEN", None)
+            paths[f] = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+
+    grn_mat   = np.load(paths[mat_file])
+    grn_genes = pd.read_csv(paths[gene_file])[gene_col].tolist()
+    return grn_mat, grn_genes
+
+
 def build_grn_from_program(grn_mat, grn_genes, gene_set):
     """Build GRN subgraph restricted to gene_set."""
     gene_set = set(gene_set) & set(grn_genes)
@@ -231,7 +258,7 @@ col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
 col_badge.badge("Beta", color="orange")
 col_badge.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **GRN inferred for 159 genes**", unsafe_allow_html=True)
+st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **GRN: 159 genes (original) · 201 genes MKI67 program (BIRC5 KO)**", unsafe_allow_html=True)
 
 with st.expander("About this tool"):
     st.markdown("""
@@ -284,6 +311,18 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.rerun()
 
 col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
+
+# ── GRN selector ──────────────────────────────────────────────
+grn_choice = st.radio(
+    "GRN model",
+    options=["MKI67 program (201 genes, BIRC5 KO)", "Original (159 genes)"],
+    horizontal=True,
+    key=f"grn_choice_{dataset_key}"
+)
+grn_key = "mki67" if grn_choice.startswith("MKI67") else "original"
+with st.spinner("Loading GRN..."):
+    grn_mat, grn_genes = load_grn(grn_key)
+
 grn_gene_set = set(grn_genes) if grn_genes else set()
 def gene_label(g):
     return f"🔬 {g}" if g in grn_gene_set else g
