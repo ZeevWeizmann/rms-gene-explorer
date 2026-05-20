@@ -133,6 +133,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
 st.title("Gene Program Explorer")
 st.badge("Beta", color="orange")
 
+st.markdown("**14,581 unique gene embeddings** across 2 datasets")
+
 with st.expander("About this tool"):
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell data.
@@ -165,6 +167,18 @@ dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
 
 with st.spinner("Loading data..."):
     genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
+
+# ================================================================
+# STATS
+# ================================================================
+n_genes = len(genes)
+n_clusters = len(set(clusters))
+n_cells = umap_df.shape[0]
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Gene embeddings", f"{n_genes:,}")
+col2.metric("Gene programs", f"{n_clusters}")
+col3.metric("Cells", f"{n_cells:,}")
 
 selected_gene = st.selectbox(
     "Quick gene search",
