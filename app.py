@@ -78,42 +78,55 @@ def load_data(dataset="v1"):
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 
-def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
+def build_grn_from_program(grn_mat, grn_genes, gene_set):
+    """Build GRN subgraph restricted to gene_set."""
+    gene_set = set(gene_set) & set(grn_genes)
+    G = nx.DiGraph()
+    for gene in gene_set:
+        idx = grn_genes.index(gene)
+        row = grn_mat[idx]
+        for j, w in enumerate(row):
+            if abs(w) > 0 and grn_genes[j] in gene_set and grn_genes[j] != gene:
+                G.add_edge(gene, grn_genes[j], weight=float(w))
+    return G
+
+
+def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10):
     if grn_mat is None or query_gene not in grn_genes:
         return None
 
-    # Build ego graph hop by hop — only expand needed genes
-    G = nx.DiGraph()
-    G.add_node(query_gene)
-    frontier = {query_gene}
+    if gene_set is not None:
+        # Use program genes — show only GRN edges within the program
+        G = build_grn_from_program(grn_mat, grn_genes, gene_set)
+        if query_gene not in G.nodes():
+            G.add_node(query_gene)
+    else:
+        # Fallback: ego graph hop by hop
+        G = nx.DiGraph()
+        G.add_node(query_gene)
+        frontier = {query_gene}
+        hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
+        for hop in range(hops):
+            n = hop_top_n.get(hop, 2)
+            next_frontier = set()
+            for gene in frontier:
+                if gene not in grn_genes:
+                    continue
+                idx = grn_genes.index(gene)
+                row = grn_mat[idx]
+                col = grn_mat[:, idx]
+                for j in np.argsort(np.abs(row))[::-1][:n]:
+                    if grn_genes[j] != gene and abs(row[j]) > 0:
+                        G.add_edge(gene, grn_genes[j], weight=float(row[j]))
+                        next_frontier.add(grn_genes[j])
+                for j in np.argsort(np.abs(col))[::-1][:n]:
+                    if grn_genes[j] != gene and abs(col[j]) > 0:
+                        G.add_edge(grn_genes[j], gene, weight=float(col[j]))
+                        next_frontier.add(grn_genes[j])
+            frontier = next_frontier - set(G.nodes()) | next_frontier
 
-    hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
-
-    for hop in range(hops):
-        n = hop_top_n.get(hop, 2)
-        next_frontier = set()
-        for gene in frontier:
-            if gene not in grn_genes:
-                continue
-            idx = grn_genes.index(gene)
-            row = grn_mat[idx]
-            col = grn_mat[:, idx]
-            # targets (gene → X)
-            for j in np.argsort(np.abs(row))[::-1][:n]:
-                if grn_genes[j] != gene and abs(row[j]) > 0:
-                    G.add_edge(gene, grn_genes[j], weight=float(row[j]))
-                    next_frontier.add(grn_genes[j])
-            # regulators (X → gene)
-            for j in np.argsort(np.abs(col))[::-1][:n]:
-                if grn_genes[j] != gene and abs(col[j]) > 0:
-                    G.add_edge(grn_genes[j], gene, weight=float(col[j]))
-                    next_frontier.add(grn_genes[j])
-        frontier = next_frontier - set(G.nodes()) | next_frontier
-
-    # Color by hop distance from query gene
-    hop_colors = {0: "red", 1: "lightblue", 2: "#90EE90", 3: "#FFD700"}
-    lengths = nx.single_source_shortest_path_length(G.to_undirected(), query_gene)
-    node_colors = [hop_colors.get(lengths.get(n, 3), "#cccccc") for n in G.nodes()]
+    # Color: query=red, others=lightblue
+    node_colors = ["red" if n == query_gene else "lightblue" for n in G.nodes()]
 
     pos = nx.spring_layout(G, seed=42)
 
@@ -169,34 +182,13 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     return fig
 
 
-def build_grn_adjacency(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
-    if grn_mat is None or query_gene not in grn_genes:
+def build_grn_adjacency(grn_mat, grn_genes, gene_set):
+    if grn_mat is None:
         return None
-    # reuse same ego graph logic
-    G = nx.DiGraph()
-    G.add_node(query_gene)
-    frontier = {query_gene}
-    hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
-    for hop in range(hops):
-        n = hop_top_n.get(hop, 2)
-        next_frontier = set()
-        for gene in frontier:
-            if gene not in grn_genes:
-                continue
-            idx = grn_genes.index(gene)
-            row = grn_mat[idx]
-            col = grn_mat[:, idx]
-            for j in np.argsort(np.abs(row))[::-1][:n]:
-                if grn_genes[j] != gene and abs(row[j]) > 0:
-                    G.add_edge(gene, grn_genes[j], weight=float(row[j]))
-                    next_frontier.add(grn_genes[j])
-            for j in np.argsort(np.abs(col))[::-1][:n]:
-                if grn_genes[j] != gene and abs(col[j]) > 0:
-                    G.add_edge(grn_genes[j], gene, weight=float(col[j]))
-                    next_frontier.add(grn_genes[j])
-        frontier = next_frontier - set(G.nodes()) | next_frontier
-
+    G = build_grn_from_program(grn_mat, grn_genes, gene_set)
     nodes = list(G.nodes())
+    if not nodes:
+        return None
     adj = pd.DataFrame(0.0, index=nodes, columns=nodes)
     for u, v, d in G.edges(data=True):
         adj.loc[u, v] = d["weight"]
@@ -403,8 +395,9 @@ if query_gene:
             )
             fig_celltype.update_traces(marker=dict(size=3))
 
-        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, hops=grn_hops)
-        grn_adj = build_grn_adjacency(grn_mat, grn_genes, query_gene, hops=grn_hops)
+        program_genes = [query_gene] + [genes[i] for i in sorted_idx]
+        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes)
+        grn_adj = build_grn_adjacency(grn_mat, grn_genes, gene_set=program_genes)
 
         messages.append({
             "role": "assistant",
