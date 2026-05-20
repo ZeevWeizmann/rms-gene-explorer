@@ -231,7 +231,7 @@ col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
 col_badge.badge("Beta", color="orange")
 col_badge.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("**14,581 unique gene embeddings** across 2 datasets")
+st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **GRN inferred for 159 genes**", unsafe_allow_html=True)
 
 with st.expander("About this tool"):
     st.markdown("""
