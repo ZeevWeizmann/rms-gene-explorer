@@ -51,6 +51,26 @@ def load_data():
 st.title("Gene Program Explorer")
 st.badge("Beta", color="orange")
 
+with st.expander("About this tool"):
+    st.markdown("""
+This is a **RAG-based gene program retrieval system** applied to pediatric RMS single-cell data.
+Given a query gene, it retrieves co-expressed genes from a learned GNN embedding space
+and maps them to LLM-annotated transcriptional programs.
+It also displays the expression of the queried gene on the original cell UMAP
+and its local gene regulatory network inferred by CARDAMOM.
+    """)
+    import os
+    arch_path = os.path.join(LOCAL_DIR, "architecture.png")
+    if os.path.exists(arch_path):
+        st.image(arch_path, use_container_width=True)
+    else:
+        try:
+            token = st.secrets.get("HF_TOKEN", None)
+            arch_file = hf_hub_download(repo_id=REPO_ID, filename="architecture.png", repo_type="dataset", token=token)
+            st.image(arch_file, use_container_width=True)
+        except Exception:
+            pass
+
 with st.spinner("Loading data..."):
     genes, embeddings, clusters, annotations, umap_df, expr, gene_names, grn_mat, grn_genes = load_data()
 
