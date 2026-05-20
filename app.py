@@ -120,14 +120,17 @@ def load_perturbation():
 
 @st.cache_resource
 def load_umap_expr():
-    """Load per-cell WT vs KO expression on UMAP."""
+    """Load per-cell WT vs KO expression on UMAP (v2: includes expr_real)."""
     import os
     f = "birc5_ko_umap_expr.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
-        return pd.read_csv(local)
+        df = pd.read_csv(local)
+        if "expr_real" in df.columns:
+            return df
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset",
+                           token=token, force_download=True)
     return pd.read_csv(path)
 
 
