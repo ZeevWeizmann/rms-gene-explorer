@@ -78,31 +78,32 @@ def load_data(dataset="v1"):
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 
-def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
+def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     if grn_mat is None or query_gene not in grn_genes:
         return None
-    idx = grn_genes.index(query_gene)
-    row = grn_mat[idx]
-    col = grn_mat[:, idx]
 
-    top_targets = np.argsort(np.abs(row))[::-1][:top_n]
-    top_regulators = np.argsort(np.abs(col))[::-1][:top_n]
+    # Build full directed graph (top_n edges per gene to keep it manageable)
+    G_full = nx.DiGraph()
+    for i, g in enumerate(grn_genes):
+        row = grn_mat[i]
+        top_targets = np.argsort(np.abs(row))[::-1][:top_n]
+        for j in top_targets:
+            if i != j and abs(row[j]) > 0:
+                G_full.add_edge(g, grn_genes[j], weight=float(row[j]))
 
-    G = nx.DiGraph()
-    G.add_node(query_gene)
-    for i in top_targets:
-        if grn_genes[i] != query_gene:
-            G.add_edge(query_gene, grn_genes[i], weight=float(row[i]))
-    for i in top_regulators:
-        if grn_genes[i] != query_gene:
-            G.add_edge(grn_genes[i], query_gene, weight=float(col[i]))
+    # Ego graph with requested radius
+    G = nx.ego_graph(G_full, query_gene, radius=hops, undirected=True)
+
+    # Color by hop distance
+    hop_colors = {0: "red", 1: "lightblue", 2: "#90EE90", 3: "#FFD700"}
+    lengths = nx.single_source_shortest_path_length(G.to_undirected(), query_gene)
+    node_colors = [hop_colors.get(lengths.get(n, 3), "#cccccc") for n in G.nodes()]
 
     pos = nx.spring_layout(G, seed=42)
 
     node_x = [pos[n][0] for n in G.nodes()]
     node_y = [pos[n][1] for n in G.nodes()]
     node_labels = list(G.nodes())
-    node_colors = ["red" if n == query_gene else "lightblue" for n in G.nodes()]
 
     fig = go.Figure()
 
@@ -122,7 +123,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
                              marker=dict(size=12, color=node_colors),
                              hoverinfo="text"))
     fig.update_layout(
-        title=f"GRN for {query_gene} (green = activation, red = repression)",
+        title=f"GRN for {query_gene} — {hops}-hop ego network (green = activation, red = repression)",
         showlegend=False, height=500,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
@@ -199,9 +200,9 @@ program_size = col_slider.slider(
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
 )
-grn_size = col_grn_slider.slider(
-    "GRN ego-network size",
-    min_value=3, max_value=30, value=10, step=1,
+grn_hops = col_grn_slider.slider(
+    "GRN hops (ego-network depth)",
+    min_value=1, max_value=3, value=1, step=1,
     key=f"grn_slider_{dataset_key}"
 )
 
@@ -312,7 +313,7 @@ if query_gene:
             )
             fig_celltype.update_traces(marker=dict(size=3))
 
-        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, top_n=grn_size)
+        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, hops=grn_hops)
 
         messages.append({
             "role": "assistant",
