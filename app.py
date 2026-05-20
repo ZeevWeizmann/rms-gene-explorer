@@ -170,7 +170,7 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     for col, vals in enumerate([real_vals, wt_vals, ko_vals], start=1):
         fig.add_trace(go.Scatter(
             x=x.tolist(), y=y.tolist(), mode="markers",
-            marker=dict(size=2, color=vals.tolist(), colorscale="Reds",
+            marker=dict(size=2, color=vals.tolist(), colorscale="Turbo",
                         cmin=0, cmax=vmax, showscale=(col == 3),
                         colorbar=dict(thickness=8, len=0.6, x=1.01, title="")),
             showlegend=False
