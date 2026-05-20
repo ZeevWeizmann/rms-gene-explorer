@@ -4,3 +4,4 @@ pandas
 plotly
 scikit-learn
 huggingface_hub
+networkx
