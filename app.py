@@ -16,6 +16,7 @@ def load_data():
     files = [
         "gcn_gene_embeddings_clusters.csv",
         "cluster_annotations.csv",
+        "cluster_summaries.csv",
         "umap_coords.csv",
         "gene_names.csv",
         "expr_matrix_f16.npy",
@@ -40,13 +41,16 @@ def load_data():
     label_col = "label" if "label" in ann_df.columns else "annotation"
     annotations = ann_df.set_index("cluster")[label_col].to_dict()
 
+    summaries_df = pd.read_csv(paths["cluster_summaries.csv"])
+    summaries = summaries_df.set_index("cluster")["summary"].to_dict()
+
     umap_df = pd.read_csv(paths["umap_coords.csv"], index_col=0)
     gene_names = pd.read_csv(paths["gene_names.csv"])["0"].tolist()
     expr = np.load(paths["expr_matrix_f16.npy"])
     grn_mat = np.load(paths["grn_matrix.npy"])
     grn_genes = pd.read_csv(paths["grn_genes.csv"])["0"].tolist()
 
-    return genes, embeddings, clusters, annotations, umap_df, expr, gene_names, grn_mat, grn_genes
+    return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 st.title("Gene Program Explorer")
 st.badge("Beta", color="orange")
@@ -72,7 +76,7 @@ and its local gene regulatory network inferred by CARDAMOM.
             pass
 
 with st.spinner("Loading data..."):
-    genes, embeddings, clusters, annotations, umap_df, expr, gene_names, grn_mat, grn_genes = load_data()
+    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data()
 
 def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
     if query_gene not in grn_genes:
@@ -150,6 +154,11 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
         if "df" in msg:
             st.dataframe(msg["df"], use_container_width=True)
+            if "cluster_id" in msg:
+                summary = summaries.get(msg["cluster_id"], "")
+                if summary:
+                    with st.popover("Cluster annotation details"):
+                        st.markdown(summary)
         msg_id = id(msg)
         figs = [(k, msg.get(k)) for k in ["fig", "fig_time", "fig_celltype"] if msg.get(k) is not None]
         if figs:
@@ -243,6 +252,7 @@ if query_gene:
             "role": "assistant",
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
             "df": df,
+            "cluster_id": query_cluster,
             "fig": fig,
             "fig_time": fig_time,
             "fig_celltype": fig_celltype,
