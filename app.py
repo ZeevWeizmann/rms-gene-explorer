@@ -481,7 +481,7 @@ for msg in messages:
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
-    query_gene = "NACA" if "NACA" in genes else genes[0]
+    query_gene = "BIRC5" if "BIRC5" in genes else genes[0]
 elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
