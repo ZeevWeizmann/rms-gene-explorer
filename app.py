@@ -184,17 +184,19 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     wt_vals = gene_df["expr_wt"].values[:n]
     vmax = float(wt_vals.max()) or 1.0
     fig.add_trace(go.Scatter(
-        x=x, y=y, mode="markers",
-        marker=dict(size=2, color=wt_vals, colorscale="Reds",
-                    cmin=0, cmax=vmax, showscale=False),
+        x=x.tolist(), y=y.tolist(), mode="markers",
+        marker=dict(size=2, color=wt_vals.tolist(), colorscale="Reds",
+                    cmin=0, cmax=vmax, showscale=True,
+                    colorbar=dict(thickness=8, len=0.5, x=0.65, title="")),
         showlegend=False
     ), row=1, col=2)
 
     # Panel 3: Diff KO-WT
     fig.add_trace(go.Scatter(
-        x=x, y=y, mode="markers",
-        marker=dict(size=2, color=diff_vals, colorscale="RdBu_r",
-                    cmin=-dmax, cmax=dmax, showscale=False),
+        x=x.tolist(), y=y.tolist(), mode="markers",
+        marker=dict(size=2, color=diff_vals.tolist(), colorscale="RdBu_r",
+                    cmin=-dmax, cmax=dmax, showscale=True,
+                    colorbar=dict(thickness=8, len=0.5, x=1.0, title="")),
         showlegend=False
     ), row=1, col=3)
 
