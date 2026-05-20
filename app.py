@@ -319,7 +319,7 @@ col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
 col_badge.badge("Beta", color="orange")
 col_badge.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **GRN: 159 genes (original) · 201 genes MKI67 program (BIRC5 KO)**", unsafe_allow_html=True)
+st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **1 perturbation simulation (BIRC5 KO)**", unsafe_allow_html=True)
 
 with st.expander("About this tool"):
     st.markdown("""
@@ -328,6 +328,10 @@ Given a query gene, it retrieves co-expressed genes from a learned GNN embedding
 and maps them to LLM-annotated transcriptional programs.
 It also displays the expression of the queried gene on the original cell UMAP
 and its local gene regulatory network inferred by CARDAMOM.
+
+**Available GRN models:**
+- **Original** — 159 genes, inferred from full RMS scRNA-seq data
+- **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
     """)
 
     import os
