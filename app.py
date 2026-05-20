@@ -53,7 +53,7 @@ st.badge("Beta", color="orange")
 
 with st.expander("About this tool"):
     st.markdown("""
-This is a **RAG-based gene program retrieval system** applied to pediatric RMS single-cell data.
+This is a **RAG-based gene program retrieval system** applied to single-cell data.
 Given a query gene, it retrieves co-expressed genes from a learned GNN embedding space
 and maps them to LLM-annotated transcriptional programs.
 It also displays the expression of the queried gene on the original cell UMAP
