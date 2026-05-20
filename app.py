@@ -82,19 +82,32 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     if grn_mat is None or query_gene not in grn_genes:
         return None
 
-    # Build full directed graph (top_n edges per gene to keep it manageable)
-    G_full = nx.DiGraph()
-    for i, g in enumerate(grn_genes):
-        row = grn_mat[i]
-        top_targets = np.argsort(np.abs(row))[::-1][:top_n]
-        for j in top_targets:
-            if i != j and abs(row[j]) > 0:
-                G_full.add_edge(g, grn_genes[j], weight=float(row[j]))
+    # Build ego graph hop by hop — only expand needed genes
+    G = nx.DiGraph()
+    G.add_node(query_gene)
+    frontier = {query_gene}
 
-    # Ego graph with requested radius
-    G = nx.ego_graph(G_full, query_gene, radius=hops, undirected=True)
+    for hop in range(hops):
+        next_frontier = set()
+        for gene in frontier:
+            if gene not in grn_genes:
+                continue
+            idx = grn_genes.index(gene)
+            row = grn_mat[idx]
+            col = grn_mat[:, idx]
+            # targets (gene → X)
+            for j in np.argsort(np.abs(row))[::-1][:top_n]:
+                if grn_genes[j] != gene and abs(row[j]) > 0:
+                    G.add_edge(gene, grn_genes[j], weight=float(row[j]))
+                    next_frontier.add(grn_genes[j])
+            # regulators (X → gene)
+            for j in np.argsort(np.abs(col))[::-1][:top_n]:
+                if grn_genes[j] != gene and abs(col[j]) > 0:
+                    G.add_edge(grn_genes[j], gene, weight=float(col[j]))
+                    next_frontier.add(grn_genes[j])
+        frontier = next_frontier - set(G.nodes()) | next_frontier
 
-    # Color by hop distance
+    # Color by hop distance from query gene
     hop_colors = {0: "red", 1: "lightblue", 2: "#90EE90", 3: "#FFD700"}
     lengths = nx.single_source_shortest_path_length(G.to_undirected(), query_gene)
     node_colors = [hop_colors.get(lengths.get(n, 3), "#cccccc") for n in G.nodes()]
