@@ -187,7 +187,7 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.session_state[f"last_selected_{dataset_key}"] = ""
     st.rerun()
 
-col_search, col_slider = st.columns([3, 2])
+col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
 selected_gene = col_search.selectbox(
     "Quick gene search",
     options=[""] + sorted(genes),
@@ -198,6 +198,11 @@ program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
+)
+grn_size = col_grn_slider.slider(
+    "GRN ego-network size",
+    min_value=3, max_value=30, value=10, step=1,
+    key=f"grn_slider_{dataset_key}"
 )
 
 if f"messages_{dataset_key}" not in st.session_state:
@@ -307,7 +312,7 @@ if query_gene:
             )
             fig_celltype.update_traces(marker=dict(size=3))
 
-        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene)
+        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, top_n=grn_size)
 
         messages.append({
             "role": "assistant",
