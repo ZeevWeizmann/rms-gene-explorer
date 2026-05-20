@@ -131,19 +131,31 @@ def load_umap_expr():
     return pd.read_csv(path)
 
 
-def build_umap_perturbation(umap_df, umap_expr_df, query_gene):
+def build_umap_perturbation(umap_expr_df, query_gene):
     """Show WT vs KO expression of query_gene on UMAP side by side."""
+    import os
+    # Always use v1 UMAP (MKI67 program was built on v1 data)
+    umap_path = os.path.join(LOCAL_DIR, "umap_coords.csv")
+    if not os.path.exists(umap_path):
+        token = st.secrets.get("HF_TOKEN", None)
+        umap_path = hf_hub_download(repo_id=REPO_ID, filename="umap_coords.csv",
+                                     repo_type="dataset", token=token)
+    umap_df = pd.read_csv(umap_path, index_col=0)
+
     gene_df = umap_expr_df[umap_expr_df["gene"] == query_gene].copy()
     if gene_df.empty:
         return None
     gene_df = gene_df.set_index("cell")
-    # Align with umap
-    shared = umap_df.index.intersection(gene_df.index)
-    umap_sub = umap_df.loc[shared]
-    gene_sub = gene_df.loc[shared]
 
-    vmax = float(max(gene_sub["expr_wt"].max(), gene_sub["expr_ko"].max()))
-    vmin = 0.0
+    # Reset both to positional index to align (same 13968 cells, same order)
+    n = min(len(umap_df), len(gene_df))
+    umap_arr = umap_df.iloc[:n][["x", "y"]].values
+    wt_vals  = gene_df["expr_wt"].values[:n]
+    ko_vals  = gene_df["expr_ko"].values[:n]
+    diff_vals = gene_df["diff"].values[:n]
+
+    vmax = float(max(wt_vals.max(), ko_vals.max()))
+    dmax = float(np.abs(diff_vals).max()) or 1.0
 
     from plotly.subplots import make_subplots
     fig = make_subplots(rows=1, cols=3,
@@ -151,36 +163,26 @@ def build_umap_perturbation(umap_df, umap_expr_df, query_gene):
                                         f"{query_gene} — BIRC5 KO",
                                         f"{query_gene} — Difference (KO−WT)"])
 
-    marker_size = 2
-    for col, (vals, cscale, czero, title) in enumerate([
-        (gene_sub["expr_wt"],  "Reds",  None,  "WT"),
-        (gene_sub["expr_ko"],  "Reds",  None,  "KO"),
-        (gene_sub["diff"],     "RdBu_r", 0.0,  "Diff"),
+    for col, (vals, cscale, cmin, cmax) in enumerate([
+        (wt_vals,   "Reds",   0,     vmax),
+        (ko_vals,   "Reds",   0,     vmax),
+        (diff_vals, "RdBu_r", -dmax, dmax),
     ], start=1):
-        dmax = float(vals.abs().max()) if col == 3 else vmax
         fig.add_trace(go.Scatter(
-            x=umap_sub["x"], y=umap_sub["y"],
+            x=umap_arr[:, 0], y=umap_arr[:, 1],
             mode="markers",
-            marker=dict(
-                size=marker_size,
-                color=vals,
-                colorscale=cscale,
-                cmin=-dmax if col == 3 else vmin,
-                cmax=dmax,
-                colorbar=dict(thickness=10, x=0.33*col - 0.05),
-                showscale=True
-            ),
-            hovertemplate=f"{title}: %{{marker.color:.2f}}<extra></extra>",
+            marker=dict(size=2, color=vals, colorscale=cscale,
+                        cmin=cmin, cmax=cmax, showscale=False),
             showlegend=False
         ), row=1, col=col)
 
     fig.update_layout(
-        height=380, margin=dict(l=0, r=0, t=40, b=0),
+        height=360, margin=dict(l=0, r=0, t=40, b=0),
         plot_bgcolor="white", paper_bgcolor="white",
     )
     for i in range(1, 4):
-        fig.update_xaxes(showticklabels=False, showgrid=False, row=1, col=i)
-        fig.update_yaxes(showticklabels=False, showgrid=False, row=1, col=i)
+        fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=i)
+        fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=i)
     return fig
 
 
@@ -544,7 +546,7 @@ for msg in messages:
                     umap_expr   = load_umap_expr()
                     q_gene      = msg.get("query_gene", "MKI67")
                     # UMAP: WT vs KO vs Diff
-                    umap_pert_fig = build_umap_perturbation(umap_df, umap_expr, q_gene)
+                    umap_pert_fig = build_umap_perturbation(umap_expr, q_gene)
                     if umap_pert_fig:
                         st.plotly_chart(umap_pert_fig, use_container_width=True, key=f"{msg_id}_pert_umap")
                     # Dynamics + barplot
