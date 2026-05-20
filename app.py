@@ -147,6 +147,40 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
     return fig
 
 
+def build_grn_adjacency(grn_mat, grn_genes, query_gene, hops=1, top_n=10):
+    if grn_mat is None or query_gene not in grn_genes:
+        return None
+    # reuse same ego graph logic
+    G = nx.DiGraph()
+    G.add_node(query_gene)
+    frontier = {query_gene}
+    hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
+    for hop in range(hops):
+        n = hop_top_n.get(hop, 2)
+        next_frontier = set()
+        for gene in frontier:
+            if gene not in grn_genes:
+                continue
+            idx = grn_genes.index(gene)
+            row = grn_mat[idx]
+            col = grn_mat[:, idx]
+            for j in np.argsort(np.abs(row))[::-1][:n]:
+                if grn_genes[j] != gene and abs(row[j]) > 0:
+                    G.add_edge(gene, grn_genes[j], weight=float(row[j]))
+                    next_frontier.add(grn_genes[j])
+            for j in np.argsort(np.abs(col))[::-1][:n]:
+                if grn_genes[j] != gene and abs(col[j]) > 0:
+                    G.add_edge(grn_genes[j], gene, weight=float(col[j]))
+                    next_frontier.add(grn_genes[j])
+        frontier = next_frontier - set(G.nodes()) | next_frontier
+
+    nodes = list(G.nodes())
+    adj = pd.DataFrame(0.0, index=nodes, columns=nodes)
+    for u, v, d in G.edges(data=True):
+        adj.loc[u, v] = d["weight"]
+    return adj, nodes
+
+
 col_title, col_badge = st.columns([6, 1])
 col_title.title("Gene Program Explorer")
 col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
@@ -250,7 +284,25 @@ for msg in messages:
             for col, (k, f) in zip(cols, figs):
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+            tab_graph, tab_matrix = st.tabs(["Network graph", "Adjacency matrix"])
+            with tab_graph:
+                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+            with tab_matrix:
+                if "grn_adj" in msg and msg["grn_adj"] is not None:
+                    adj_df, genes_list = msg["grn_adj"]
+                    adj_fig = px.imshow(
+                        adj_df,
+                        color_continuous_scale="RdBu_r",
+                        color_continuous_midpoint=0,
+                        title="Adjacency matrix (red=activation, blue=repression)",
+                        height=600,
+                        aspect="auto"
+                    )
+                    adj_fig.update_layout(
+                        xaxis=dict(tickfont=dict(size=9)),
+                        yaxis=dict(tickfont=dict(size=9))
+                    )
+                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
@@ -330,6 +382,7 @@ if query_gene:
             fig_celltype.update_traces(marker=dict(size=3))
 
         grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, hops=grn_hops)
+        grn_adj = build_grn_adjacency(grn_mat, grn_genes, query_gene, hops=grn_hops)
 
         messages.append({
             "role": "assistant",
@@ -339,6 +392,7 @@ if query_gene:
             "fig": fig,
             "fig_time": fig_time,
             "fig_celltype": fig_celltype,
-            "grn_fig": grn_fig
+            "grn_fig": grn_fig,
+            "grn_adj": grn_adj
         })
         st.rerun()
