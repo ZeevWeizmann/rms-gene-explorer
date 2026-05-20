@@ -159,7 +159,8 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     real_vals = gene_df["expr_real"].values[:n]
     wt_vals   = gene_df["expr_wt"].values[:n]
     ko_vals   = gene_df["expr_ko"].values[:n]
-    vmax = float(max(real_vals.max(), wt_vals.max(), ko_vals.max())) or 1.0
+    all_vals = np.concatenate([real_vals, wt_vals, ko_vals])
+    vmax = float(np.percentile(all_vals[all_vals > 0], 98)) if np.any(all_vals > 0) else 1.0
 
     from plotly.subplots import make_subplots
     fig = make_subplots(rows=1, cols=3,
