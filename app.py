@@ -160,7 +160,7 @@ and its local gene regulatory network inferred by CARDAMOM.
 # ================================================================
 dataset_choice = st.radio(
     "Dataset",
-    options=["RMS original", "Dataset 2"],
+    options=["RMS original", "RMS 2"],
     horizontal=True
 )
 dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
