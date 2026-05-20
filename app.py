@@ -75,27 +75,33 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, top_n=10):
 
     pos = nx.spring_layout(G, seed=42)
 
-    edge_x, edge_y = [], []
-    for u, v in G.edges():
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        edge_x += [x0, x1, None]
-        edge_y += [y0, y1, None]
-
     node_x = [pos[n][0] for n in G.nodes()]
     node_y = [pos[n][1] for n in G.nodes()]
     node_labels = list(G.nodes())
     node_colors = ["red" if n == query_gene else "lightblue" for n in G.nodes()]
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=edge_x, y=edge_y, mode="lines",
-                             line=dict(width=1, color="gray"), hoverinfo="none"))
+
+    for u, v, d in G.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        color = "green" if d["weight"] > 0 else "red"
+        fig.add_annotation(
+            x=x1, y=y1, ax=x0, ay=y0,
+            xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True,
+            arrowhead=3,
+            arrowsize=1.5,
+            arrowwidth=1.5,
+            arrowcolor=color
+        )
+
     fig.add_trace(go.Scatter(x=node_x, y=node_y, mode="markers+text",
                              text=node_labels, textposition="top center",
                              marker=dict(size=12, color=node_colors),
                              hoverinfo="text"))
     fig.update_layout(
-        title=f"GRN for {query_gene}",
+        title=f"GRN for {query_gene} (green = activation, red = repression)",
         showlegend=False,
         height=500,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -115,6 +121,10 @@ if "messages" not in st.session_state:
 if "last_selected" not in st.session_state:
     st.session_state.last_selected = ""
 
+if "initialized" not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.default_run = True
+
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
@@ -125,7 +135,10 @@ for msg in st.session_state.messages:
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             st.plotly_chart(msg["grn_fig"], use_container_width=True)
 
-if selected_gene and selected_gene != st.session_state.last_selected:
+if st.session_state.get("default_run"):
+    st.session_state.default_run = False
+    query_gene = "NACA"
+elif selected_gene and selected_gene != st.session_state.last_selected:
     st.session_state.last_selected = selected_gene
     query_gene = selected_gene
 elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)"):
