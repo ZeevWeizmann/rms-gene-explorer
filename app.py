@@ -95,38 +95,21 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     if grn_mat is None or query_gene not in grn_genes:
         return None
 
-    if gene_set is not None:
-        # Use program genes — show only GRN edges within the program
-        G = build_grn_from_program(grn_mat, grn_genes, gene_set)
-        if query_gene not in G.nodes():
-            G.add_node(query_gene)
-    else:
-        # Fallback: ego graph hop by hop
-        G = nx.DiGraph()
-        G.add_node(query_gene)
-        frontier = {query_gene}
-        hop_top_n = {0: top_n, 1: max(3, top_n // 3), 2: max(2, top_n // 6)}
-        for hop in range(hops):
-            n = hop_top_n.get(hop, 2)
-            next_frontier = set()
-            for gene in frontier:
-                if gene not in grn_genes:
-                    continue
-                idx = grn_genes.index(gene)
-                row = grn_mat[idx]
-                col = grn_mat[:, idx]
-                for j in np.argsort(np.abs(row))[::-1][:n]:
-                    if grn_genes[j] != gene and abs(row[j]) > 0:
-                        G.add_edge(gene, grn_genes[j], weight=float(row[j]))
-                        next_frontier.add(grn_genes[j])
-                for j in np.argsort(np.abs(col))[::-1][:n]:
-                    if grn_genes[j] != gene and abs(col[j]) > 0:
-                        G.add_edge(grn_genes[j], gene, weight=float(col[j]))
-                        next_frontier.add(grn_genes[j])
-            frontier = next_frontier - set(G.nodes()) | next_frontier
+    # Build full GRN within program genes
+    G_full = build_grn_from_program(grn_mat, grn_genes, gene_set or [query_gene])
+    if query_gene not in G_full.nodes():
+        G_full.add_node(query_gene)
 
-    # Color: query=red, others=lightblue
-    node_colors = ["red" if n == query_gene else "lightblue" for n in G.nodes()]
+    # Filter to nodes reachable within hops from query_gene
+    reachable = nx.single_source_shortest_path_length(
+        G_full.to_undirected(), query_gene, cutoff=hops
+    )
+    nodes_to_keep = set(reachable.keys())
+    G = G_full.subgraph(nodes_to_keep).copy()
+
+    # Color by hop distance
+    hop_colors = {0: "red", 1: "lightblue", 2: "#90EE90", 3: "#FFD700"}
+    node_colors = [hop_colors.get(reachable.get(n, 3), "#cccccc") for n in G.nodes()]
 
     pos = nx.spring_layout(G, seed=42)
 
@@ -182,10 +165,17 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     return fig
 
 
-def build_grn_adjacency(grn_mat, grn_genes, gene_set):
+def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
     if grn_mat is None:
         return None
-    G = build_grn_from_program(grn_mat, grn_genes, gene_set)
+    G_full = build_grn_from_program(grn_mat, grn_genes, gene_set)
+    if query_gene and query_gene in G_full.nodes():
+        reachable = nx.single_source_shortest_path_length(
+            G_full.to_undirected(), query_gene, cutoff=hops
+        )
+        G = G_full.subgraph(set(reachable.keys())).copy()
+    else:
+        G = G_full
     nodes = list(G.nodes())
     if not nodes:
         return None
@@ -396,8 +386,8 @@ if query_gene:
             fig_celltype.update_traces(marker=dict(size=3))
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
-        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes)
-        grn_adj = build_grn_adjacency(grn_mat, grn_genes, gene_set=program_genes)
+        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes, hops=grn_hops)
+        grn_adj = build_grn_adjacency(grn_mat, grn_genes, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
         messages.append({
             "role": "assistant",
