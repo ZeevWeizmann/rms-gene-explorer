@@ -475,7 +475,7 @@ for msg in messages:
                     bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
                     st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                     st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                    st.caption("Simulation: CARDAMOM kinetic model · MKI67 program (201 genes) · BIRC5 knocked out")
+                    st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
 
