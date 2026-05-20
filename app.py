@@ -150,13 +150,14 @@ for msg in st.session_state.messages:
         st.write(msg["content"])
         if "df" in msg:
             st.dataframe(msg["df"], use_container_width=True)
-        figs = [f for f in [msg.get("fig"), msg.get("fig_time"), msg.get("fig_celltype")] if f is not None]
+        msg_id = id(msg)
+        figs = [(k, msg.get(k)) for k in ["fig", "fig_time", "fig_celltype"] if msg.get(k) is not None]
         if figs:
             cols = st.columns(len(figs))
-            for col, f in zip(cols, figs):
-                col.plotly_chart(f, use_container_width=True)
+            for col, (k, f) in zip(cols, figs):
+                col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            st.plotly_chart(msg["grn_fig"], use_container_width=True)
+            st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
 
 if st.session_state.get("default_run"):
     st.session_state.default_run = False
