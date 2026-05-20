@@ -211,21 +211,18 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
     if grn_mat is None:
         return None
-    G_full = build_grn_from_program(grn_mat, grn_genes, gene_set)
-    if query_gene and query_gene in G_full.nodes():
-        reachable = nx.single_source_shortest_path_length(
-            G_full.to_undirected(), query_gene, cutoff=hops
-        )
-        G = G_full.subgraph(set(reachable.keys())).copy()
-    else:
-        G = G_full
-    nodes = list(G.nodes())
-    if not nodes:
-        return None
-    adj = pd.DataFrame(0.0, index=nodes, columns=nodes)
-    for u, v, d in G.edges(data=True):
-        adj.loc[u, v] = d["weight"]
-    return adj, nodes
+    # Use all program genes as rows/cols — even if no edges
+    all_nodes = list(gene_set)
+    adj = pd.DataFrame(0.0, index=all_nodes, columns=all_nodes)
+    # Fill edges that exist within program
+    program_set = set(gene_set) & set(grn_genes)
+    for gene in program_set:
+        idx = grn_genes.index(gene)
+        row = grn_mat[idx]
+        for j, w in enumerate(row):
+            if abs(w) > 0 and grn_genes[j] in program_set and grn_genes[j] != gene:
+                adj.loc[gene, grn_genes[j]] = float(w)
+    return adj, all_nodes
 
 
 col_title, col_badge = st.columns([6, 1])
