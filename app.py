@@ -95,21 +95,67 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     if grn_mat is None or query_gene not in grn_genes:
         return None
 
-    # Build full GRN within program genes
-    G_full = build_grn_from_program(grn_mat, grn_genes, gene_set or [query_gene])
-    if query_gene not in G_full.nodes():
-        G_full.add_node(query_gene)
+    program_set = set(gene_set or [query_gene])
 
-    # Filter to nodes reachable within hops from query_gene
+    # Build full GRN over ALL grn_genes (not just program)
+    G_full = nx.DiGraph()
+    if query_gene in grn_genes:
+        idx = grn_genes.index(query_gene)
+        for j, w in enumerate(grn_mat[idx]):
+            if abs(w) > 0 and grn_genes[j] != query_gene:
+                G_full.add_edge(query_gene, grn_genes[j], weight=float(w))
+        for i, w in enumerate(grn_mat[:, idx]):
+            if abs(w) > 0 and grn_genes[i] != query_gene:
+                G_full.add_edge(grn_genes[i], query_gene, weight=float(w))
+
+    # Expand hops from query through full GRN
+    frontier = {query_gene}
+    visited = {query_gene}
+    for hop in range(hops - 1):
+        next_frontier = set()
+        for gene in frontier:
+            if gene not in grn_genes:
+                continue
+            idx = grn_genes.index(gene)
+            for j, w in enumerate(grn_mat[idx]):
+                if abs(w) > 0 and grn_genes[j] not in visited:
+                    G_full.add_edge(gene, grn_genes[j], weight=float(w))
+                    next_frontier.add(grn_genes[j])
+                    visited.add(grn_genes[j])
+            for i, w in enumerate(grn_mat[:, idx]):
+                if abs(w) > 0 and grn_genes[i] not in visited:
+                    G_full.add_edge(grn_genes[i], gene, weight=float(w))
+                    next_frontier.add(grn_genes[i])
+                    visited.add(grn_genes[i])
+        frontier = next_frontier
+
+    # Keep only: query + intermediate nodes + program genes reachable within hops
     reachable = nx.single_source_shortest_path_length(
         G_full.to_undirected(), query_gene, cutoff=hops
     )
-    nodes_to_keep = set(reachable.keys())
+    # Show node if: it's the query, in program, or is intermediate on path to program gene
+    nodes_to_keep = {query_gene}
+    for node, dist in reachable.items():
+        if node in program_set:
+            # add this node and all nodes on shortest path
+            try:
+                path = nx.shortest_path(G_full.to_undirected(), query_gene, node)
+                nodes_to_keep.update(path)
+            except nx.NetworkXNoPath:
+                pass
+
     G = G_full.subgraph(nodes_to_keep).copy()
 
-    # Color by hop distance
-    hop_colors = {0: "red", 1: "lightblue", 2: "#90EE90", 3: "#FFD700"}
-    node_colors = [hop_colors.get(reachable.get(n, 3), "#cccccc") for n in G.nodes()]
+    # Color: query=red, program genes=lightblue, intermediate=lightgray
+    hop_colors = {0: "red"}
+    node_colors = []
+    for n in G.nodes():
+        if n == query_gene:
+            node_colors.append("red")
+        elif n in program_set:
+            node_colors.append("lightblue")
+        else:
+            node_colors.append("#cccccc")  # intermediate
 
     pos = nx.spring_layout(G, seed=42)
 
@@ -135,20 +181,17 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                              marker=dict(size=12, color=node_colors),
                              hoverinfo="text", showlegend=False))
 
-    # Legend — one dummy trace per hop
-    hop_legend = [
-        (0, "red",       "Query gene (hop 0)"),
-        (1, "lightblue", "Direct neighbors (hop 1)"),
-        (2, "#90EE90",   "2nd neighbors (hop 2)"),
-        (3, "#FFD700",   "3rd neighbors (hop 3)"),
-    ]
-    for h, color, label in hop_legend:
-        if h <= hops:
-            fig.add_trace(go.Scatter(
-                x=[None], y=[None], mode="markers",
-                marker=dict(size=12, color=color),
-                name=label, showlegend=True
-            ))
+    # Legend
+    for color, label in [
+        ("red",       "Query gene"),
+        ("lightblue", "Program gene"),
+        ("#cccccc",   "Intermediate node (not in program)"),
+    ]:
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers",
+            marker=dict(size=12, color=color),
+            name=label, showlegend=True
+        ))
 
     fig.update_layout(
         title=f"GRN for {query_gene} — {hops}-hop ego network (green = activation, red = repression)",
