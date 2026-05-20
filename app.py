@@ -149,56 +149,29 @@ def build_umap_perturbation(umap_expr_df, query_gene):
 
     # Positional alignment (same 13968 cells, same order)
     n = min(len(umap_df), len(gene_df))
-    umap_sub  = umap_df.iloc[:n]
+    umap_sub = umap_df.iloc[:n]
     x = umap_sub["x"].values
     y = umap_sub["y"].values
-    diff_vals = gene_df["diff"].values[:n]
-    dmax = float(np.abs(diff_vals).max()) or 1.0
 
-    # Time colors from umap_coords
-    time_vals = umap_sub["time"].astype(str).values if "time" in umap_sub.columns else None
-    times_sorted = sorted(umap_sub["time"].unique()) if time_vals is not None else []
-    time_palette = px.colors.qualitative.Plotly
+    real_vals = gene_df["expr_real"].values[:n]
+    wt_vals   = gene_df["expr_wt"].values[:n]
+    ko_vals   = gene_df["expr_ko"].values[:n]
+    vmax = float(max(real_vals.max(), wt_vals.max(), ko_vals.max())) or 1.0
 
     from plotly.subplots import make_subplots
     fig = make_subplots(rows=1, cols=3,
-                        subplot_titles=["Timepoints (reference)",
-                                        f"{query_gene} — WT",
-                                        f"{query_gene} — Diff (KO−WT)"])
+                        subplot_titles=[f"{query_gene} — Original data",
+                                        f"{query_gene} — WT simulation",
+                                        f"{query_gene} — BIRC5 KO simulation"])
 
-    # Panel 1: colored by time
-    if time_vals is not None:
-        for i, t in enumerate(times_sorted):
-            mask = umap_sub["time"].values == t
-            fig.add_trace(go.Scatter(
-                x=x[mask], y=y[mask], mode="markers",
-                marker=dict(size=2, color=time_palette[i % len(time_palette)]),
-                name=f"t={int(t)}", legendgroup=f"t{t}", showlegend=True
-            ), row=1, col=1)
-    else:
-        fig.add_trace(go.Scatter(x=x, y=y, mode="markers",
-                                  marker=dict(size=2, color="gray"),
-                                  showlegend=False), row=1, col=1)
-
-    # Panel 2: WT expression
-    wt_vals = gene_df["expr_wt"].values[:n]
-    vmax = float(wt_vals.max()) or 1.0
-    fig.add_trace(go.Scatter(
-        x=x.tolist(), y=y.tolist(), mode="markers",
-        marker=dict(size=2, color=wt_vals.tolist(), colorscale="Reds",
-                    cmin=0, cmax=vmax, showscale=True,
-                    colorbar=dict(thickness=8, len=0.5, x=0.65, title="")),
-        showlegend=False
-    ), row=1, col=2)
-
-    # Panel 3: Diff KO-WT
-    fig.add_trace(go.Scatter(
-        x=x.tolist(), y=y.tolist(), mode="markers",
-        marker=dict(size=2, color=diff_vals.tolist(), colorscale="RdBu_r",
-                    cmin=-dmax, cmax=dmax, showscale=True,
-                    colorbar=dict(thickness=8, len=0.5, x=1.0, title="")),
-        showlegend=False
-    ), row=1, col=3)
+    for col, vals in enumerate([real_vals, wt_vals, ko_vals], start=1):
+        fig.add_trace(go.Scatter(
+            x=x.tolist(), y=y.tolist(), mode="markers",
+            marker=dict(size=2, color=vals.tolist(), colorscale="Reds",
+                        cmin=0, cmax=vmax, showscale=(col == 3),
+                        colorbar=dict(thickness=8, len=0.6, x=1.01, title="")),
+            showlegend=False
+        ), row=1, col=col)
 
     fig.update_layout(
         height=380, margin=dict(l=0, r=0, t=40, b=10),
