@@ -565,9 +565,10 @@ for msg in messages:
 | **KIF2C** | −0.13 log₂FC | Kinetochore microtubule depolymerization | Part of mitotic machinery |
 | **PPP1R12B** | +1.53 log₂FC | Myosin phosphatase (stress response) | Compensatory survival — co-inhibition candidate |
 
-**Strategy:** BIRC5 inhibition selectively disrupts the cytokinesis sub-module (CEP55, NEK2, KIF2C)
-without affecting the transcriptional core (MKI67, TOP2A). Combining a BIRC5 inhibitor with
-a **NEK2 inhibitor** may achieve synthetic lethality in RMS.
+**Strategy:** Three key findings from the simulation:
+1. **CEP55 + LPP co-suppression** — BIRC5 KO simultaneously disrupts cytokinesis (CEP55) and cell migration (LPP), suggesting a dual anti-proliferative and anti-invasive effect
+2. **PPP1R12B as resistance mechanism** — its strong upregulation (+1.53) indicates a compensatory survival pathway; co-inhibiting PPP1R12B may prevent resistance to BIRC5 inhibitors
+3. **Transcriptional core intact** — MKI67, TOP2A unchanged, meaning BIRC5 inhibition is selective for the cytokinesis/adhesion module rather than broadly toxic
                     """)
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
