@@ -215,35 +215,12 @@ def build_perturbation_figures(pert_df, query_gene):
         marker_color=colors,
         hovertemplate="%{y}: %{x:.3f}<extra></extra>"
     ))
-    target_labels = {
-        "BIRC5":    "direct target",
-        "CEP55":    "cytokinesis",
-        "LPP":      "migration",
-        "NEK2":     "mitotic kinase",
-        "KIF2C":    "kinetochore",
-        "PPP1R12B": "resistance?",
-    }
-    annotations = []
-    genes_list = top20["gene"].tolist()
-    fc_list    = top20["log2fc"].tolist()
-    for gene, fc in zip(genes_list, fc_list):
-        if gene in target_labels:
-            x_pos = fc + (0.05 if fc >= 0 else -0.05)
-            annotations.append(dict(
-                x=x_pos, y=gene,
-                text=f"← {target_labels[gene]}" if fc < 0 else f"{target_labels[gene]} →",
-                showarrow=False,
-                font=dict(size=10, color="#FF8C00"),
-                xanchor="left" if fc >= 0 else "right"
-            ))
-
     bar_fig.update_layout(
         title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})  🟠 = potential target",
         xaxis_title="log₂FC (KO / WT)",
-        height=480, margin=dict(l=10, r=120, t=40, b=40),
+        height=480, margin=dict(l=10, r=10, t=40, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(zeroline=True, zerolinecolor="#aaa"),
-        annotations=annotations
+        xaxis=dict(zeroline=True, zerolinecolor="#aaa")
     )
 
     # ── Figure 2: Dynamics of query gene WT vs KO ──
