@@ -236,7 +236,7 @@ def build_perturbation_figures(pert_df, query_gene):
         hovertemplate="%{y}: %{x:.3f}<extra></extra>"
     ))
     bar_fig.update_layout(
-        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})  🟠 = potential target",
+        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})",
         xaxis_title="log₂FC (KO / WT)",
         height=480, margin=dict(l=80, r=80, t=40, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
