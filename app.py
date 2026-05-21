@@ -289,6 +289,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 
     # Build full GRN over ALL grn_genes (not just program)
     G_full = nx.DiGraph()
+    G_full.add_node(query_gene)   # ensure node exists even with no edges
     if query_gene in grn_genes:
         idx = grn_genes.index(query_gene)
         for j, w in enumerate(grn_mat[idx]):
