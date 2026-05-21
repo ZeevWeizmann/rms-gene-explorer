@@ -195,22 +195,55 @@ def build_perturbation_figures(pert_df, query_gene):
     last_t = times[-1]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
+    targets = {"CEP55", "LPP", "PPP1R12B", "NEK2", "KIF2C", "BIRC5"}
     summary = pert_df[pert_df["time"] == last_t].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
-    colors = ["#D45F5F" if v > 0 else "#4C72B0" for v in top20["log2fc"]]
+
+    colors = []
+    for gene, val in zip(top20["gene"], top20["log2fc"]):
+        if gene in targets:
+            colors.append("#FF8C00")   # orange = potential target
+        elif val > 0:
+            colors.append("#D45F5F")   # red = up
+        else:
+            colors.append("#4C72B0")   # blue = down
+
     bar_fig = go.Figure(go.Bar(
         x=top20["log2fc"], y=top20["gene"],
         orientation="h",
         marker_color=colors,
         hovertemplate="%{y}: %{x:.3f}<extra></extra>"
     ))
+    target_labels = {
+        "BIRC5":    "direct target",
+        "CEP55":    "cytokinesis",
+        "LPP":      "migration",
+        "NEK2":     "mitotic kinase",
+        "KIF2C":    "kinetochore",
+        "PPP1R12B": "resistance?",
+    }
+    annotations = []
+    genes_list = top20["gene"].tolist()
+    fc_list    = top20["log2fc"].tolist()
+    for gene, fc in zip(genes_list, fc_list):
+        if gene in target_labels:
+            x_pos = fc + (0.05 if fc >= 0 else -0.05)
+            annotations.append(dict(
+                x=x_pos, y=gene,
+                text=f"← {target_labels[gene]}" if fc < 0 else f"{target_labels[gene]} →",
+                showarrow=False,
+                font=dict(size=10, color="#FF8C00"),
+                xanchor="left" if fc >= 0 else "right"
+            ))
+
     bar_fig.update_layout(
-        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)}, red=up, blue=down)",
+        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})  🟠 = potential target",
         xaxis_title="log₂FC (KO / WT)",
-        height=480, margin=dict(l=10, r=10, t=40, b=40),
+        height=480, margin=dict(l=10, r=120, t=40, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(zeroline=True, zerolinecolor="#aaa")
+        xaxis=dict(zeroline=True, zerolinecolor="#aaa"),
+        annotations=annotations
     )
 
     # ── Figure 2: Dynamics of query gene WT vs KO ──
@@ -553,23 +586,6 @@ for msg in messages:
                     st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
                     st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
                     # ── Potential therapeutic targets ──────────────────────
-                    st.markdown("---")
-                    st.markdown("#### 🎯 Potential therapeutic targets")
-                    st.markdown("""
-| Gene | Effect upon BIRC5 KO | Function | Rationale |
-|------|---------------------|----------|-----------|
-| **BIRC5** | −4.3 log₂FC | Anti-apoptosis (survivin) | Direct target — YM155, Sepantronium in trials |
-| **CEP55** | −0.84 log₂FC | Cytokinesis completion | Co-dependent with BIRC5; no clinical inhibitor yet |
-| **LPP** | −0.58 log₂FC | Focal adhesion / cell migration | 3rd most affected; may link proliferation to invasion |
-| **NEK2** | −0.21 log₂FC | Mitotic kinase, centrosome separation | Experimental inhibitors available |
-| **KIF2C** | −0.13 log₂FC | Kinetochore microtubule depolymerization | Part of mitotic machinery |
-| **PPP1R12B** | +1.53 log₂FC | Myosin phosphatase (stress response) | Compensatory survival — co-inhibition candidate |
-
-**Strategy:** Three key findings from the simulation:
-1. **CEP55 + LPP co-suppression** — BIRC5 KO simultaneously disrupts cytokinesis (CEP55) and cell migration (LPP), suggesting a dual anti-proliferative and anti-invasive effect
-2. **PPP1R12B as resistance mechanism** — its strong upregulation (+1.53) indicates a compensatory survival pathway; co-inhibiting PPP1R12B may prevent resistance to BIRC5 inhibitors
-3. **Transcriptional core intact** — MKI67, TOP2A unchanged, meaning BIRC5 inhibition is selective for the cytokinesis/adhesion module rather than broadly toxic
-                    """)
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
 
