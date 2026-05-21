@@ -560,6 +560,7 @@ for msg in messages:
 |------|---------------------|----------|-----------|
 | **BIRC5** | −4.3 log₂FC | Anti-apoptosis (survivin) | Direct target — YM155, Sepantronium in trials |
 | **CEP55** | −0.84 log₂FC | Cytokinesis completion | Co-dependent with BIRC5; no clinical inhibitor yet |
+| **LPP** | −0.58 log₂FC | Focal adhesion / cell migration | 3rd most affected; may link proliferation to invasion |
 | **NEK2** | −0.21 log₂FC | Mitotic kinase, centrosome separation | Experimental inhibitors available |
 | **KIF2C** | −0.13 log₂FC | Kinetochore microtubule depolymerization | Part of mitotic machinery |
 | **PPP1R12B** | +1.53 log₂FC | Myosin phosphatase (stress response) | Compensatory survival — co-inhibition candidate |
