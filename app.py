@@ -565,8 +565,8 @@ for msg in messages:
 | **PPP1R12B** | +1.53 log₂FC | Myosin phosphatase (stress response) | Compensatory survival — co-inhibition candidate |
 
 **Strategy:** BIRC5 inhibition selectively disrupts the cytokinesis sub-module (CEP55, NEK2, KIF2C)
-without affecting the transcriptional core (MKI67, TOP2A). Combining BIRC5 inhibitor with
-**doxorubicin** (TOP2A) or a **NEK2 inhibitor** may achieve synthetic lethality in RMS.
+without affecting the transcriptional core (MKI67, TOP2A). Combining a BIRC5 inhibitor with
+a **NEK2 inhibitor** may achieve synthetic lethality in RMS.
                     """)
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
