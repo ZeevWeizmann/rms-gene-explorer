@@ -195,7 +195,7 @@ def build_perturbation_figures(pert_df, query_gene):
     last_t = times[-1]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    targets = {"CEP55", "LPP", "PPP1R12B", "NEK2", "KIF2C", "BIRC5"}
+    targets = {"CEP55", "LPP", "PPP1R12B", "NEK2", "KIF2C", "BIRC5", "AC096732.1"}
     summary = pert_df[pert_df["time"] == last_t].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
@@ -209,6 +209,26 @@ def build_perturbation_figures(pert_df, query_gene):
         else:
             colors.append("#4C72B0")   # blue = down
 
+    # Arrow annotations for each target gene visible in top20
+    annotations = []
+    genes_list = top20["gene"].tolist()
+    lfc_list   = top20["log2fc"].tolist()
+    for gene, val in zip(genes_list, lfc_list):
+        if gene in targets:
+            ax_offset = 30 if val >= 0 else -30
+            annotations.append(dict(
+                x=val, y=gene,
+                xref="x", yref="y",
+                text="◀ target" if val < 0 else "target ▶",
+                showarrow=True,
+                arrowhead=2,
+                arrowcolor="#FF8C00",
+                arrowwidth=1.5,
+                ax=ax_offset, ay=0,
+                font=dict(color="#FF8C00", size=11),
+                xanchor="left" if val >= 0 else "right",
+            ))
+
     bar_fig = go.Figure(go.Bar(
         x=top20["log2fc"], y=top20["gene"],
         orientation="h",
@@ -218,9 +238,10 @@ def build_perturbation_figures(pert_df, query_gene):
     bar_fig.update_layout(
         title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})  🟠 = potential target",
         xaxis_title="log₂FC (KO / WT)",
-        height=480, margin=dict(l=10, r=10, t=40, b=40),
+        height=480, margin=dict(l=80, r=80, t=40, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(zeroline=True, zerolinecolor="#aaa")
+        xaxis=dict(zeroline=True, zerolinecolor="#aaa"),
+        annotations=annotations
     )
 
     # ── Figure 2: Dynamics of query gene WT vs KO ──
