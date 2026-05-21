@@ -195,7 +195,7 @@ def build_perturbation_figures(pert_df, query_gene):
     last_t = times[-1]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    targets = {"CEP55", "LPP", "PPP1R12B", "NEK2", "KIF2C", "BIRC5", "AC096732.1"}
+    targets = {"PPP1R12B", "MAP3K21"}   # compensatory/survival genes upregulated after BIRC5 KO
     summary = pert_df[pert_df["time"] == last_t].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
