@@ -545,18 +545,29 @@ for msg in messages:
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
             with tab_pert:
                 try:
-                    pert_df     = load_perturbation()
-                    umap_expr   = load_umap_expr()
-                    q_gene      = msg.get("query_gene", "MKI67")
-                    # UMAP: WT vs KO vs Diff
-                    umap_pert_fig = build_umap_perturbation(umap_expr, q_gene)
-                    if umap_pert_fig:
-                        st.plotly_chart(umap_pert_fig, use_container_width=True, key=f"{msg_id}_pert_umap")
+                    pert_df = load_perturbation()
+                    q_gene  = msg.get("query_gene", "MKI67")
                     # Dynamics + barplot
                     bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
                     st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                     st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
                     st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
+                    # ── Potential therapeutic targets ──────────────────────
+                    st.markdown("---")
+                    st.markdown("#### 🎯 Potential therapeutic targets")
+                    st.markdown("""
+| Gene | Effect upon BIRC5 KO | Function | Rationale |
+|------|---------------------|----------|-----------|
+| **BIRC5** | −4.3 log₂FC | Anti-apoptosis (survivin) | Direct target — YM155, Sepantronium in trials |
+| **CEP55** | −0.84 log₂FC | Cytokinesis completion | Co-dependent with BIRC5; no clinical inhibitor yet |
+| **NEK2** | −0.21 log₂FC | Mitotic kinase, centrosome separation | Experimental inhibitors available |
+| **KIF2C** | −0.13 log₂FC | Kinetochore microtubule depolymerization | Part of mitotic machinery |
+| **PPP1R12B** | +1.53 log₂FC | Myosin phosphatase (stress response) | Compensatory survival — co-inhibition candidate |
+
+**Strategy:** BIRC5 inhibition selectively disrupts the cytokinesis sub-module (CEP55, NEK2, KIF2C)
+without affecting the transcriptional core (MKI67, TOP2A). Combining BIRC5 inhibitor with
+**doxorubicin** (TOP2A) or a **NEK2 inhibitor** may achieve synthetic lethality in RMS.
+                    """)
                 except Exception as e:
                     st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
 
