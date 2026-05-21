@@ -548,7 +548,7 @@ for msg in messages:
                 f.update_layout(height=350)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            tab_graph, tab_matrix, tab_pert = st.tabs(["Network graph", "Adjacency matrix", "🧬 BIRC5 KO Perturbation"])
+            tab_pert, tab_graph, tab_matrix = st.tabs(["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"])
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
             with tab_matrix:
