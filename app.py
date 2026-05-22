@@ -195,31 +195,39 @@ def build_perturbation_figures(pert_df, query_gene):
     last_t = times[-1]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    targets = {"PPP1R12B", "MAP3K21"}   # compensatory/survival genes upregulated after BIRC5 KO
+    # co-targets: compensatory survival genes that go UP after BIRC5 KO
+    co_targets     = {"PPP1R12B", "MAP3K21"}
+    # direct targets: overexpressed in cancer, essential for cytokinesis
+    direct_targets = {"CEP55"}
+    all_targets    = co_targets | direct_targets
+
     summary = pert_df[pert_df["time"] == last_t].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
 
     colors = []
     for gene, val in zip(top20["gene"], top20["log2fc"]):
-        if gene in targets:
+        if gene in all_targets:
             colors.append("#FF8C00")   # orange = potential target
         elif val > 0:
             colors.append("#D45F5F")   # red = up
         else:
             colors.append("#4C72B0")   # blue = down
 
-    # Arrow annotations for each target gene visible in top20
+    # Arrow annotations — label differs by target type
     annotations = []
-    genes_list = top20["gene"].tolist()
-    lfc_list   = top20["log2fc"].tolist()
-    for gene, val in zip(genes_list, lfc_list):
-        if gene in targets:
-            ax_offset = 30 if val >= 0 else -30
+    for gene, val in zip(top20["gene"].tolist(), top20["log2fc"].tolist()):
+        if gene in all_targets:
+            if gene in direct_targets:
+                label = "◀ direct target (overexpressed)"
+                ax_offset = -30
+            else:
+                label = "co-target ▶" if val >= 0 else "◀ co-target"
+                ax_offset = 30 if val >= 0 else -30
             annotations.append(dict(
                 x=val, y=gene,
                 xref="x", yref="y",
-                text="◀ target" if val < 0 else "target ▶",
+                text=label,
                 showarrow=True,
                 arrowhead=2,
                 arrowcolor="#FF8C00",
@@ -239,9 +247,8 @@ def build_perturbation_figures(pert_df, query_gene):
         title=dict(
             text=(
                 f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})<br>"
-                "<sup style='color:#FF8C00'>🟠 Potential co-targets: genes that go UP after BIRC5 KO "
-                "— compensatory survival mechanisms the cell activates to escape. "
-                "Blocking them leaves no escape route.</sup>"
+                "<sup style='color:#FF8C00'>🟠 co-target: goes UP after KO — compensatory escape mechanism &nbsp;|&nbsp;"
+                " direct target: overexpressed in cancer, drives cytokinesis (CEP55)</sup>"
             ),
             font=dict(size=14),
         ),
