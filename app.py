@@ -282,7 +282,8 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
     subtitle       = _def["subtitle"]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    summary = pert_df[pert_df["time"] == last_t].copy()
+    # exclude the KO gene itself (trivial — we set it to 0 by design)
+    summary = pert_df[(pert_df["time"] == last_t) & (pert_df["gene"] != ko_gene)].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
 
