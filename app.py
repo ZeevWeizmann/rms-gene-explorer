@@ -443,6 +443,9 @@ and its local gene regulatory network inferred by CARDAMOM.
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
 - **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
+
+**References:**
+- CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
     """)
 
     import os
