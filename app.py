@@ -441,11 +441,22 @@ st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; 
 
 with st.expander("About this tool"):
     st.markdown("""
-This is a **RAG-based gene program retrieval system** applied to single-cell data.
-Given a query gene, it retrieves co-expressed genes from a learned GNN embedding space
-and maps them to LLM-annotated transcriptional programs.
-It also displays the expression of the queried gene on the original cell UMAP
-and its local gene regulatory network inferred by CARDAMOM.
+This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
+
+**How it works:**
+1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
+2. Nearest neighbors in embedding space define a **transcriptional program**
+3. The program is displayed on a cell UMAP and mapped to its **gene regulatory network (GRN)** inferred by CARDAMOM
+4. In silico **perturbation simulations** (e.g. BIRC5 knockout) reveal which genes change — enabling **network-based target identification**
+
+**Therapeutic target logic (network perturbation approach):**
+- **Direct targets** — genes overexpressed in the tumor that are essential nodes in the GRN (e.g. CEP55: drives cytokinesis, supra-expressed in RMS)
+- **Co-targets** — genes that go *up* after BIRC5 KO, acting as compensatory escape mechanisms (e.g. PPP1R12B, MAP3K21); blocking them alongside BIRC5 leaves the cell no survival route
+- This approach is called **network-informed synthetic lethality** — targets are chosen not in isolation but based on their role in the regulatory network under perturbation
+
+**Upload your own data:**
+Upload any `.h5ad` file to compute a UMAP and visualize gene expression in your dataset.
+Genes overlapping with the RMS embedding space can be queried directly in the chat to retrieve co-expression programs and GRN context from the RMS model.
 
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
