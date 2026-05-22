@@ -577,7 +577,7 @@ st.markdown(f"""
         vertical-align:middle;'>BETA</span>
     </div>
     <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#888; margin-top:2px;'>
-      <b>14,581</b> embeddings &nbsp;·&nbsp; <b>359</b> GRN genes &nbsp;·&nbsp; BIRC5 KO &nbsp;·&nbsp; RMS
+      <b>8,442</b> embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
     </div>
   </div>
 </div>
