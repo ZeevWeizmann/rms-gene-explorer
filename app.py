@@ -729,7 +729,7 @@ st.markdown(f"""
         <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
                      color:#002395; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Gene</span>
         <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
-                     color:#1a1a1a; text-shadow:0 1px 3px rgba(255,255,255,0.8);'> Program </span>
+                     color:#FFFFFF; text-shadow:0 1px 4px rgba(0,0,0,0.4);'> Program </span>
         <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
                      color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Explorer</span>
         <span style='background:#E8A838; color:white; font-size:0.6rem; font-weight:700;
