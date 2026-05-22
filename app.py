@@ -662,10 +662,14 @@ if _logo_local:
     with open(_logo_local, "rb") as _f:
         _logo_b64 = _b64.b64encode(_f.read()).decode()
 
-# Calanques inline SVG (animated boat — needs inline, not <img>)
-_calanques_inline = """
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 160"
-     style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.55;">
+# ── Calanques de Marseille header ────────────────────────────────
+# Streamlit's HTML sanitizer strips <svg> tags from st.markdown(), so we must
+# encode SVGs as base64 <img> tags.  CSS @keyframes animations work fine in
+# Streamlit unsafe_allow_html; SVG SMIL animations inside <img> do NOT.
+# Strategy: static background as base64 <img>, animated boat as a second
+# absolutely-positioned base64 <img> driven by CSS @keyframes.
+
+_calanques_static_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 160">
   <defs>
     <linearGradient id="csky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#E0F4FF"/>
@@ -680,13 +684,10 @@ _calanques_inline = """
       <stop offset="0%" stop-color="#DDD5C5"/><stop offset="100%" stop-color="#BCA888"/>
     </linearGradient>
   </defs>
-  <!-- Sky -->
   <rect width="900" height="160" fill="url(#csky)"/>
-  <!-- Sea -->
   <path d="M0 95 Q225 80 450 90 Q675 100 900 85 L900 160 L0 160 Z" fill="url(#csea)"/>
   <path d="M80 110 Q180 106 280 112" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
   <path d="M550 108 Q650 104 750 110" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
-  <!-- Left cliff -->
   <path d="M0 160 L0 40 L30 20 L55 35 L80 15 L110 30 L140 10 L170 28 L200 18 L230 45 L255 35 L280 60 L300 50 L330 75 L310 160 Z" fill="url(#ccl)"/>
   <path d="M0 160 L0 60 L20 45 L50 55 L80 40 L120 55 L160 40 L200 55 L240 65 L270 75 L300 70 L310 160 Z" fill="#C8B89A" opacity="0.5"/>
   <path d="M60 60 L70 90 L65 110" stroke="#A89880" stroke-width="0.8" fill="none" opacity="0.6"/>
@@ -696,7 +697,6 @@ _calanques_inline = """
     <polygon points="145,8 139,22 151,22" fill="#2D5A27"/><polygon points="145,17 137,30 153,30" fill="#2D5A27"/><rect x="143" y="30" width="4" height="5" fill="#5C3D2E"/>
     <polygon points="200,16 195,28 205,28" fill="#336B2C"/><polygon points="200,24 193,36 207,36" fill="#336B2C"/><rect x="198" y="36" width="4" height="5" fill="#5C3D2E"/>
   </g>
-  <!-- Right cliff -->
   <path d="M900 160 L900 35 L870 18 L845 32 L820 12 L790 28 L760 8 L730 25 L700 15 L670 40 L645 30 L620 55 L600 48 L575 70 L590 160 Z" fill="url(#ccr)"/>
   <path d="M900 160 L900 55 L880 42 L850 52 L820 38 L780 52 L740 38 L700 52 L660 62 L630 72 L600 68 L590 160 Z" fill="#BCA888" opacity="0.5"/>
   <path d="M840 55 L830 82 L835 105" stroke="#A08868" stroke-width="0.8" fill="none" opacity="0.6"/>
@@ -706,29 +706,6 @@ _calanques_inline = """
     <polygon points="760,6 755,20 765,20" fill="#2D5A27"/><polygon points="760,15 753,28 767,28" fill="#2D5A27"/><rect x="758" y="28" width="4" height="5" fill="#5C3D2E"/>
     <polygon points="700,13 695,26 705,26" fill="#336B2C"/><polygon points="700,22 693,34 707,34" fill="#336B2C"/><rect x="698" y="34" width="4" height="5" fill="#5C3D2E"/>
   </g>
-  <!-- Animated sailboat -->
-  <g>
-    <animateTransform attributeName="transform" type="translate"
-      values="440,88; 455,86; 470,88; 455,90; 440,88"
-      dur="8s" repeatCount="indefinite" calcMode="spline"
-      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"/>
-    <!-- Hull -->
-    <path d="M-18 10 Q0 8 18 10 L12 15 L-12 15 Z" fill="#F5F0E8"/>
-    <!-- Mast -->
-    <line x1="0" y1="15" x2="0" y2="-15" stroke="#8B7355" stroke-width="1"/>
-    <!-- Main sail with slight flutter -->
-    <path fill="white" opacity="0.9">
-      <animate attributeName="d"
-        values="M0 -14 L16 8 L0 10 Z; M0 -14 L18 7 L0 10 Z; M0 -14 L16 8 L0 10 Z"
-        dur="3s" repeatCount="indefinite"/>
-    </path>
-    <!-- Front sail -->
-    <path d="M0 -8 L-10 6 L0 8 Z" fill="#F0E8D8" opacity="0.8"/>
-    <!-- Wake lines -->
-    <path d="M-20 16 Q-28 18 -35 16" stroke="#6DD4DF" stroke-width="0.8" fill="none" opacity="0.5"/>
-    <path d="M20 16 Q28 18 35 16" stroke="#6DD4DF" stroke-width="0.8" fill="none" opacity="0.5"/>
-  </g>
-  <!-- Seagulls -->
   <g stroke="#555" stroke-width="1" fill="none" opacity="0.5">
     <path d="M320 45 Q325 41 330 45"/><path d="M340 38 Q346 34 352 38"/>
     <path d="M560 42 Q565 38 570 42"/><path d="M578 50 Q583 46 588 50"/>
@@ -736,9 +713,37 @@ _calanques_inline = """
   <rect width="900" height="160" fill="white" opacity="0.08"/>
 </svg>"""
 
+# Sailboat — separate SVG, animated via CSS @keyframes (SMIL won't work inside <img>)
+_boat_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -20 76 40">
+  <path d="M-18 10 Q0 8 18 10 L12 15 L-12 15 Z" fill="#F5F0E8"/>
+  <line x1="0" y1="15" x2="0" y2="-15" stroke="#8B7355" stroke-width="1.2"/>
+  <path d="M0 -14 L16 8 L0 10 Z" fill="white" opacity="0.92"/>
+  <path d="M0 -8 L-10 6 L0 8 Z" fill="#F0E8D8" opacity="0.82"/>
+  <path d="M-20 16 Q-30 19 -37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
+  <path d="M20 16 Q30 19 37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
+</svg>"""
+
+_cal_b64  = _b64.b64encode(_calanques_static_svg.encode()).decode()
+_boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
+
 st.markdown(f"""
+<style>
+@keyframes boatSail {{
+  0%   {{ left:42%; top:54%; }}
+  25%  {{ left:46%; top:51%; }}
+  50%  {{ left:50%; top:54%; }}
+  75%  {{ left:46%; top:57%; }}
+  100% {{ left:42%; top:54%; }}
+}}
+</style>
 <div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
-  {_calanques_inline}
+  <img src='data:image/svg+xml;base64,{_cal_b64}'
+       style='position:absolute;top:0;left:0;width:100%;height:100%;
+              object-fit:cover;opacity:0.55;pointer-events:none;'/>
+  <img src='data:image/svg+xml;base64,{_boat_b64}'
+       style='position:absolute;width:5.5%;min-width:36px;
+              animation:boatSail 10s ease-in-out infinite;
+              pointer-events:none;'/>
   <div style='position:relative; z-index:1;
               display:flex; align-items:center; gap:12px;
               padding:18px 20px 14px 20px; flex-wrap:nowrap;'>
