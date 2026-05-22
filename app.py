@@ -408,12 +408,11 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
             zeroline=True, zerolinecolor="#aaa",
         ),
         xaxis2=dict(
-            title="Mean expression (real data)",
+            title=dict(text="Mean expression (real data)", font=dict(size=10, color="#999")),
             overlaying="x", side="top",
             range=[0, _real_max * 1.25],
             showgrid=False,
             tickfont=dict(size=9, color="#999"),
-            titlefont=dict(size=10, color="#999"),
         ) if real_expr_means else {},
         height=540, margin=dict(l=80, r=100, t=100, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
@@ -676,7 +675,7 @@ st.markdown(f"""
         vertical-align:middle;'>BETA</span>
     </div>
     <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#888; margin-top:2px;'>
-      <b>14,581</b> генных эмбеддингов &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
+      <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
     </div>
   </div>
 </div>
