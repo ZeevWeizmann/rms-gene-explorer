@@ -256,13 +256,32 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
     times = sorted(pert_df["time"].unique())
     last_t = times[-1]
 
-    # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    # co-targets: compensatory survival genes that go UP after BIRC5 KO
-    co_targets     = {"PPP1R12B", "MAP3K21"}
-    # direct targets: overexpressed in cancer, essential for cytokinesis
-    direct_targets = {"CEP55"}
+    # ── Model-specific target annotations ───────────────────────
+    _TARGET_DEFS = {
+        "BIRC5": {
+            "co_targets":     {"PPP1R12B", "MAP3K21"},
+            "direct_targets": {"CEP55"},
+            "subtitle": (
+                "🟠 co-target: goes UP after KO — compensatory escape mechanism &nbsp;|&nbsp;"
+                " direct target: overexpressed in cancer, drives cytokinesis (CEP55)"
+            ),
+        },
+        "TUBB": {
+            "co_targets":     {"KIFC1"},   # goes UP — compensatory minus-end kinesin
+            "direct_targets": set(),
+            "subtitle": (
+                "🟠 co-target: goes UP after KO — compensatory kinesin (KIFC1) &nbsp;|&nbsp;"
+                " blue: mitotic genes suppressed by TUBB loss"
+            ),
+        },
+    }
+    _def = _TARGET_DEFS.get(ko_gene, {"co_targets": set(), "direct_targets": set(), "subtitle": ""})
+    co_targets     = _def["co_targets"]
+    direct_targets = _def["direct_targets"]
     all_targets    = co_targets | direct_targets
+    subtitle       = _def["subtitle"]
 
+    # ── Figure 1: Top-20 most affected genes at last timepoint ──
     summary = pert_df[pert_df["time"] == last_t].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
@@ -309,8 +328,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
         title=dict(
             text=(
                 f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})<br>"
-                "<sup style='color:#FF8C00'>🟠 co-target: goes UP after KO — compensatory escape mechanism &nbsp;|&nbsp;"
-                " direct target: overexpressed in cancer, drives cytokinesis (CEP55)</sup>"
+                f"<sup style='color:#FF8C00'>{subtitle}</sup>"
             ),
             font=dict(size=14),
         ),
