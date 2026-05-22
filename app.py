@@ -14,33 +14,38 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ── Responsive CSS ───────────────────────────────────────────────
+# ── Detect mobile via JS → session_state ────────────────────────
 st.markdown("""
 <style>
-/* On small screens: stack columns vertically */
-@media (max-width: 640px) {
+/* Stack columns on narrow screens */
+@media screen and (max-width: 640px) {
     div[data-testid="column"] {
         width: 100% !important;
         flex: 1 1 100% !important;
         min-width: 100% !important;
     }
-    /* Smaller chart heights */
-    div[data-testid="stPlotlyChart"] > div {
-        height: 320px !important;
-    }
-    /* Compact header */
-    h1 { font-size: 1.4rem !important; }
-    /* Wider chat input */
-    div[data-testid="stChatInput"] {
-        width: 100% !important;
-    }
-    /* Hide topology table on mobile to save space */
-    .mobile-hide { display: none !important; }
+    div[data-testid="stChatInput"] { width: 100% !important; }
 }
-/* General: limit max width on desktop too for readability */
 section.main > div { max-width: 900px; margin: auto; }
 </style>
+<script>
+(function() {
+    const w = window.innerWidth;
+    const isMobile = w < 700;
+    // inject into Streamlit via URL hash trick
+    window.parent.postMessage({type:"streamlit:setComponentValue", value: isMobile}, "*");
+})();
+</script>
 """, unsafe_allow_html=True)
+
+# simple mobile detection via screen width stored in session_state
+if "is_mobile" not in st.session_state:
+    st.session_state["is_mobile"] = False   # default desktop, JS updates on rerun
+
+is_mobile = st.session_state.get("is_mobile", False)
+CHART_H       = 320 if is_mobile else 520
+CHART_H_SMALL = 260 if is_mobile else 380
+LOGO_W        = 55  if is_mobile else 90
 
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
@@ -531,26 +536,28 @@ if not _os.path.exists(_logo_local):
     except Exception:
         _logo_local = None
 
-col_logo, col_title = st.columns([1, 6])
+col_logo, col_title = st.columns([1, 5])
 if _logo_local:
-    col_logo.image(_logo_local, width=90)
+    col_logo.image(_logo_local, width=LOGO_W)
 
+title_size = "1.5rem" if is_mobile else "2.2rem"
+sub_size   = "0.75rem" if is_mobile else "0.88rem"
 col_title.markdown(
-    """
-    <div style='padding-top:6px'>
-      <span style='font-size:2.2rem; font-weight:800; color:#002395;'>Gene</span>
-      <span style='font-size:2.2rem; font-weight:800; color:#555555;'> Program </span>
-      <span style='font-size:2.2rem; font-weight:800; color:#ED2939;'>Explorer</span>
+    f"""
+    <div style='padding-top:4px'>
+      <span style='font-size:{title_size}; font-weight:800; color:#002395;'>Gene</span>
+      <span style='font-size:{title_size}; font-weight:800; color:#555555;'> Program </span>
+      <span style='font-size:{title_size}; font-weight:800; color:#ED2939;'>Explorer</span>
       <span style='
-        background:#E8A838; color:white; font-size:0.72rem; font-weight:700;
-        padding:2px 8px; border-radius:10px; margin-left:10px;
+        background:#E8A838; color:white; font-size:0.65rem; font-weight:700;
+        padding:2px 7px; border-radius:10px; margin-left:8px;
         vertical-align:middle; letter-spacing:0.05em;
       '>BETA</span>
     </div>
-    <div style='font-size:0.88rem; color:#888; margin-top:2px;'>
-      <b>14,581</b> gene embeddings &nbsp;·&nbsp;
-      <b>359</b> genes with GRN &nbsp;·&nbsp;
-      <b>1</b> perturbation simulation (BIRC5 KO) &nbsp;·&nbsp; RMS scRNA-seq
+    <div style='font-size:{sub_size}; color:#888; margin-top:2px; line-height:1.6'>
+      <b>14,581</b> embeddings &nbsp;·&nbsp;
+      <b>359</b> GRN genes &nbsp;·&nbsp;
+      BIRC5 KO sim &nbsp;·&nbsp; RMS
     </div>
     """,
     unsafe_allow_html=True
@@ -785,14 +792,14 @@ for msg in messages:
         # Expression UMAP — full width, taller
         if msg.get("fig") is not None:
             fig_expr = msg["fig"]
-            fig_expr.update_layout(height=550)
+            fig_expr.update_layout(height=CHART_H)
             st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
         # Time + Cell type UMAPs — side by side, smaller
         side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_celltype"] if msg.get(k) is not None]
         if side_figs:
-            cols = st.columns(len(side_figs))
+            cols = st.columns(1 if is_mobile else len(side_figs))
             for col, (k, f) in zip(cols, side_figs):
-                f.update_layout(height=350)
+                f.update_layout(height=CHART_H_SMALL)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             tab_pert, tab_graph, tab_matrix = st.tabs(["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"])
