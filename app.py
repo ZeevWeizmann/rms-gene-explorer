@@ -485,13 +485,41 @@ def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
     return adj, all_nodes
 
 
-col_title, col_badge = st.columns([6, 1])
-col_title.title("Gene Program Explorer")
-col_badge.markdown("<div style='padding-top:18px'>", unsafe_allow_html=True)
-col_badge.badge("Beta", color="orange")
-col_badge.markdown("</div>", unsafe_allow_html=True)
+# ── Logo + Title ─────────────────────────────────────────────────
+import os as _os
+_logo_local = _os.path.join(LOCAL_DIR, "logo.png")
+if not _os.path.exists(_logo_local):
+    try:
+        _token = st.secrets.get("HF_TOKEN", None)
+        _logo_local = hf_hub_download(repo_id=REPO_ID, filename="logo.png",
+                                      repo_type="dataset", token=_token)
+    except Exception:
+        _logo_local = None
 
-st.markdown("**14,581 unique gene embeddings** across 2 datasets &nbsp;·&nbsp; **359 genes with GRN** (2 models) &nbsp;·&nbsp; **1 perturbation simulation (BIRC5 KO)**", unsafe_allow_html=True)
+col_logo, col_title = st.columns([1, 6])
+if _logo_local:
+    col_logo.image(_logo_local, width=90)
+
+col_title.markdown(
+    """
+    <div style='padding-top:6px'>
+      <span style='font-size:2.2rem; font-weight:800; color:#002395;'>Gene</span>
+      <span style='font-size:2.2rem; font-weight:800; color:#555555;'> Program </span>
+      <span style='font-size:2.2rem; font-weight:800; color:#ED2939;'>Explorer</span>
+      <span style='
+        background:#E8A838; color:white; font-size:0.72rem; font-weight:700;
+        padding:2px 8px; border-radius:10px; margin-left:10px;
+        vertical-align:middle; letter-spacing:0.05em;
+      '>BETA</span>
+    </div>
+    <div style='font-size:0.88rem; color:#888; margin-top:2px;'>
+      <b>14,581</b> gene embeddings &nbsp;·&nbsp;
+      <b>359</b> genes with GRN &nbsp;·&nbsp;
+      <b>1</b> perturbation simulation (BIRC5 KO) &nbsp;·&nbsp; RMS scRNA-seq
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 with st.expander("About this tool"):
     st.markdown("""
