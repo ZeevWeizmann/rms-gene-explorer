@@ -5,3 +5,6 @@ plotly
 scikit-learn
 huggingface_hub
 networkx
+anndata
+scanpy
+leidenalg
