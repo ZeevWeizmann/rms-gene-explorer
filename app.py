@@ -515,13 +515,16 @@ with st.expander("📂 Upload your own .h5ad", expanded=False):
         expr_up    = st.session_state.get("_upload_expr")
 
         if umap_up is not None:
-            # overlap with currently loaded RMS embedding genes
-            overlap = [g for g in var_names if g in set(genes)]
             meta_cols = [c for c in umap_up.columns if c not in ["x", "y"]]
 
-            st.info(f"**{len(overlap):,}** genes overlap with RMS embedding space "
-                    f"({len(var_names):,} total in your file). "
-                    "Type any gene in the chat below to query it in the RMS context.")
+            try:
+                overlap = [g for g in var_names if g in set(genes)]
+                st.info(f"**{len(overlap):,}** genes overlap with RMS embedding space "
+                        f"({len(var_names):,} total in your file). "
+                        "Type any gene in the chat below to query it in the RMS context.")
+            except NameError:
+                st.info(f"**{len(var_names):,}** genes loaded. "
+                        "Scroll down to select a dataset and query genes in the RMS context.")
 
             col_gene_up, col_meta_up = st.columns([2, 1])
             gene_sel_up = col_gene_up.selectbox(
