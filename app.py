@@ -646,7 +646,8 @@ def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
 
 
 # ── Logo + Title ─────────────────────────────────────────────────
-import os as _os
+import os as _os, base64 as _b64
+
 _logo_local = _os.path.join(LOCAL_DIR, "logo.png")
 if not _os.path.exists(_logo_local):
     try:
@@ -658,24 +659,86 @@ if not _os.path.exists(_logo_local):
 
 _logo_b64 = ""
 if _logo_local:
-    import base64
     with open(_logo_local, "rb") as _f:
-        _logo_b64 = base64.b64encode(_f.read()).decode()
+        _logo_b64 = _b64.b64encode(_f.read()).decode()
+
+# Calanques SVG background
+_calanques_svg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 160" width="900" height="160">
+  <defs>
+    <linearGradient id="csky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#E0F4FF"/>
+    </linearGradient>
+    <linearGradient id="csea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A9DAB"/><stop offset="100%" stop-color="#0D6E78"/>
+    </linearGradient>
+    <linearGradient id="ccl" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#E8E0D0"/><stop offset="100%" stop-color="#C8B89A"/>
+    </linearGradient>
+    <linearGradient id="ccr" x1="1" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#DDD5C5"/><stop offset="100%" stop-color="#BCA888"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="160" fill="url(#csky)"/>
+  <ellipse cx="450" cy="155" rx="120" ry="8" fill="#FFE89A" opacity="0.3"/>
+  <path d="M0 95 Q225 80 450 90 Q675 100 900 85 L900 160 L0 160 Z" fill="url(#csea)"/>
+  <path d="M80 110 Q180 106 280 112" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
+  <path d="M550 108 Q650 104 750 110" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
+  <path d="M0 160 L0 40 L30 20 L55 35 L80 15 L110 30 L140 10 L170 28 L200 18 L230 45 L255 35 L280 60 L300 50 L330 75 L310 160 Z" fill="url(#ccl)"/>
+  <path d="M0 160 L0 60 L20 45 L50 55 L80 40 L120 55 L160 40 L200 55 L240 65 L270 75 L300 70 L310 160 Z" fill="#C8B89A" opacity="0.5"/>
+  <path d="M60 60 L70 90 L65 110" stroke="#A89880" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <path d="M130 48 L140 78" stroke="#A89880" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <g opacity="0.85">
+    <polygon points="85,14 80,30 90,30" fill="#2D5A27"/><polygon points="85,22 78,36 92,36" fill="#2D5A27"/><rect x="83" y="36" width="4" height="6" fill="#5C3D2E"/>
+    <polygon points="145,8 139,22 151,22" fill="#2D5A27"/><polygon points="145,17 137,30 153,30" fill="#2D5A27"/><rect x="143" y="30" width="4" height="5" fill="#5C3D2E"/>
+    <polygon points="200,16 195,28 205,28" fill="#336B2C"/><polygon points="200,24 193,36 207,36" fill="#336B2C"/><rect x="198" y="36" width="4" height="5" fill="#5C3D2E"/>
+  </g>
+  <path d="M900 160 L900 35 L870 18 L845 32 L820 12 L790 28 L760 8 L730 25 L700 15 L670 40 L645 30 L620 55 L600 48 L575 70 L590 160 Z" fill="url(#ccr)"/>
+  <path d="M900 160 L900 55 L880 42 L850 52 L820 38 L780 52 L740 38 L700 52 L660 62 L630 72 L600 68 L590 160 Z" fill="#BCA888" opacity="0.5"/>
+  <path d="M840 55 L830 82 L835 105" stroke="#A08868" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <path d="M760 42 L750 70" stroke="#A08868" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <g opacity="0.85">
+    <polygon points="820,10 815,24 825,24" fill="#2D5A27"/><polygon points="820,18 813,32 827,32" fill="#2D5A27"/><rect x="818" y="32" width="4" height="5" fill="#5C3D2E"/>
+    <polygon points="760,6 755,20 765,20" fill="#2D5A27"/><polygon points="760,15 753,28 767,28" fill="#2D5A27"/><rect x="758" y="28" width="4" height="5" fill="#5C3D2E"/>
+    <polygon points="700,13 695,26 705,26" fill="#336B2C"/><polygon points="700,22 693,34 707,34" fill="#336B2C"/><rect x="698" y="34" width="4" height="5" fill="#5C3D2E"/>
+  </g>
+  <g transform="translate(440,88)">
+    <path d="M-18 10 Q0 8 18 10 L12 15 L-12 15 Z" fill="#F5F0E8"/>
+    <line x1="0" y1="15" x2="0" y2="-15" stroke="#8B7355" stroke-width="1"/>
+    <path d="M0 -14 L16 8 L0 10 Z" fill="white" opacity="0.9"/>
+    <path d="M0 -8 L-10 6 L0 8 Z" fill="#F0E8D8" opacity="0.8"/>
+  </g>
+  <g stroke="#555" stroke-width="1" fill="none" opacity="0.5">
+    <path d="M320 45 Q325 41 330 45"/><path d="M340 38 Q346 34 352 38"/>
+    <path d="M560 42 Q565 38 570 42"/><path d="M578 50 Q583 46 588 50"/>
+  </g>
+  <rect width="900" height="160" fill="white" opacity="0.08"/>
+</svg>'''
+_cal_b64 = _b64.b64encode(_calanques_svg.encode()).decode()
 
 st.markdown(f"""
-<div style='display:flex; align-items:center; gap:12px; flex-wrap:nowrap; margin-bottom:4px;'>
-  {"<img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; flex-shrink:0;'/>" if _logo_b64 else ""}
-  <div>
-    <div style='white-space:nowrap;'>
-      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#002395;'>Gene</span>
-      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#555555;'> Program </span>
-      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#ED2939;'>Explorer</span>
-      <span style='background:#E8A838; color:white; font-size:0.6rem; font-weight:700;
-        padding:2px 7px; border-radius:10px; margin-left:8px;
-        vertical-align:middle;'>BETA</span>
-    </div>
-    <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#888; margin-top:2px;'>
-      <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
+<div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
+  <img src="data:image/svg+xml;base64,{_cal_b64}"
+       style='position:absolute; top:0; left:0; width:100%; height:100%;
+              object-fit:cover; object-position:center; opacity:0.55;'/>
+  <div style='position:relative; z-index:1;
+              display:flex; align-items:center; gap:12px;
+              padding:18px 20px 14px 20px; flex-wrap:nowrap;'>
+    {"<img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));'/>" if _logo_b64 else ""}
+    <div>
+      <div style='white-space:nowrap;'>
+        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
+                     color:#002395; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Gene</span>
+        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
+                     color:#1a1a1a; text-shadow:0 1px 3px rgba(255,255,255,0.8);'> Program </span>
+        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
+                     color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Explorer</span>
+        <span style='background:#E8A838; color:white; font-size:0.6rem; font-weight:700;
+          padding:2px 7px; border-radius:10px; margin-left:8px; vertical-align:middle;'>BETA</span>
+      </div>
+      <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
+                  margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
+        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
+      </div>
     </div>
   </div>
 </div>
