@@ -146,6 +146,20 @@ def load_grn(grn_key="original"):
 
 
 @st.cache_resource
+def load_grn_gene_list(grn_key="original"):
+    """Load only the gene list (no matrix) — cheap, used to decide which GRN options to show."""
+    import os
+    gene_file = "grn_genes_mki67.csv" if grn_key == "mki67" else "grn_genes.csv"
+    gene_col  = "gene"                 if grn_key == "mki67" else "0"
+    local = os.path.join(LOCAL_DIR, gene_file)
+    if os.path.exists(local):
+        return set(pd.read_csv(local)[gene_col].tolist())
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=gene_file, repo_type="dataset", token=token)
+    return set(pd.read_csv(path)[gene_col].tolist())
+
+
+@st.cache_resource
 def load_perturbation():
     """Load BIRC5 KO perturbation data."""
     import os
@@ -731,12 +745,29 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
 
 col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
 
-# ── GRN selector ──────────────────────────────────────────────
+# ── GRN selector — show "Original" only if query gene is in it ─
+_orig_gene_set = load_grn_gene_list("original")
+# use last queried gene (or most recent search) to decide visibility
+_last_q = st.session_state.get(f"last_selected_{dataset_key}", "")
+_recent_list = st.session_state.get(f"recent_{dataset_key}", [])
+_check_gene = (_last_q or (_recent_list[0] if _recent_list else "")).strip().upper()
+
+_gene_in_orig = (not _check_gene) or (_check_gene in _orig_gene_set)
+
+grn_options = ["MKI67 program (201 genes, BIRC5 KO)"]
+if _gene_in_orig:
+    grn_options.append("Original (159 genes)")
+
+# if previously selected "Original" but gene no longer qualifies → reset to MKI67
+_grn_state_key = f"grn_choice_{dataset_key}"
+if st.session_state.get(_grn_state_key, "") not in grn_options:
+    st.session_state[_grn_state_key] = grn_options[0]
+
 grn_choice = st.radio(
     "GRN model",
-    options=["MKI67 program (201 genes, BIRC5 KO)", "Original (159 genes)"],
+    options=grn_options,
     horizontal=True,
-    key=f"grn_choice_{dataset_key}"
+    key=_grn_state_key
 )
 grn_key = "mki67" if grn_choice.startswith("MKI67") else "original"
 with st.spinner("Loading GRN..."):
