@@ -637,41 +637,40 @@ with st.expander("📂 Upload your own .h5ad", expanded=False):
             st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in RMS embedding space. "
                     "Type any of them in the chat below to query similar genes and GRN.")
 
-            col_gene_up, col_meta_up = st.columns([2, 1])
-            gene_sel_up = col_gene_up.selectbox(
+            # ── Auto-show cell_type and time side by side ────────────
+            auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
+            if auto_cols:
+                auto_figs = st.columns(len(auto_cols))
+                for col_ui, meta_col in zip(auto_figs, auto_cols):
+                    fig_auto = px.scatter(umap_up, x="x", y="y", color=meta_col,
+                                         title=meta_col,
+                                         labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                         render_mode="webgl", height=400)
+                    fig_auto.update_traces(marker=dict(size=2.5, opacity=0.75))
+                    fig_auto.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                                           margin=dict(l=0, r=0, t=30, b=0))
+                    col_ui.plotly_chart(fig_auto, use_container_width=True,
+                                        key=f"upload_auto_{meta_col}")
+
+            # ── Gene expression coloring ─────────────────────────────
+            gene_sel_up = st.selectbox(
                 "Color UMAP by gene expression",
                 options=["— none —"] + sorted(var_names),
                 key="upload_gene_sel"
             )
-            meta_sel_up = col_meta_up.selectbox(
-                "Color by metadata column",
-                options=["— none —"] + meta_cols,
-                key="upload_meta_sel"
-            ) if meta_cols else "— none —"
-
-            plot_up = umap_up.copy()
             if gene_sel_up != "— none —" and gene_sel_up in var_names:
                 g_idx = var_names.index(gene_sel_up)
+                plot_up = umap_up.copy()
                 plot_up["expression"] = expr_up[:, g_idx].astype(float)
-                fig_up = px.scatter(plot_up, x="x", y="y", color="expression",
-                                    color_continuous_scale="Viridis",
-                                    title=f"{gene_sel_up} — uploaded data",
-                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                    render_mode="webgl", height=480)
-            elif meta_sel_up != "— none —":
-                fig_up = px.scatter(plot_up, x="x", y="y", color=meta_sel_up,
-                                    title=f"Uploaded data — colored by {meta_sel_up}",
-                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                    render_mode="webgl", height=480)
-            else:
-                fig_up = px.scatter(plot_up, x="x", y="y",
-                                    title="Uploaded data — UMAP",
-                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                    render_mode="webgl", height=480)
-
-            fig_up.update_traces(marker=dict(size=3, opacity=0.7))
-            fig_up.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-            st.plotly_chart(fig_up, use_container_width=True, key="upload_umap_fig")
+                fig_gene = px.scatter(plot_up, x="x", y="y", color="expression",
+                                      color_continuous_scale="Viridis",
+                                      title=f"{gene_sel_up}",
+                                      labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                      render_mode="webgl", height=420)
+                fig_gene.update_traces(marker=dict(size=2.5, opacity=0.8))
+                fig_gene.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                                       margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
 
 
 # ================================================================
