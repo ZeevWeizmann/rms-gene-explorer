@@ -236,9 +236,17 @@ def build_perturbation_figures(pert_df, query_gene):
         hovertemplate="%{y}: %{x:.3f}<extra></extra>"
     ))
     bar_fig.update_layout(
-        title=f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})",
+        title=dict(
+            text=(
+                f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})<br>"
+                "<sup style='color:#FF8C00'>🟠 Potential co-targets: genes that go UP after BIRC5 KO "
+                "— compensatory survival mechanisms the cell activates to escape. "
+                "Blocking them leaves no escape route.</sup>"
+            ),
+            font=dict(size=14),
+        ),
         xaxis_title="log₂FC (KO / WT)",
-        height=480, margin=dict(l=80, r=80, t=40, b=40),
+        height=520, margin=dict(l=80, r=80, t=80, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
         xaxis=dict(zeroline=True, zerolinecolor="#aaa"),
         annotations=annotations
