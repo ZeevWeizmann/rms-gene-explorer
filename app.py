@@ -861,6 +861,10 @@ grn_hops = col_grn_slider.slider(
     key=f"grn_slider_{dataset_key}"
 )
 
+# Pre-load both perturbation datasets into cache
+load_perturbation("mki67")
+load_perturbation("tubb")
+
 if f"messages_{dataset_key}" not in st.session_state:
     st.session_state[f"messages_{dataset_key}"] = []
 
