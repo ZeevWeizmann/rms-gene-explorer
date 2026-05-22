@@ -763,31 +763,30 @@ _gene_in_any_grn = (
 _grn_state_key = f"grn_choice_{dataset_key}"
 if not _gene_in_any_grn:
     # gene not in any GRN — hide radio and GRN section entirely
-    st.session_state[_grn_state_key] = ""
     grn_mat, grn_genes = None, []
 else:
-    grn_options = [
-        "MKI67 program (201 genes, BIRC5 KO)",
-        "Original (159 genes)",
-    ]
-    # auto-switch to the model that actually contains the gene
-    if _check_gene:
-        _in_mki67 = _check_gene in _mki67_gene_set
-        _in_orig  = _check_gene in _orig_gene_set
-        if _in_mki67 and not _in_orig:
-            st.session_state[_grn_state_key] = "MKI67 program (201 genes, BIRC5 KO)"
-        elif _in_orig and not _in_mki67:
-            st.session_state[_grn_state_key] = "Original (159 genes)"
-        # if in both → keep user's current choice
+    _in_mki67 = (not _check_gene) or (_check_gene in _mki67_gene_set)
+    _in_orig  = (not _check_gene) or (_check_gene in _orig_gene_set)
 
-    if st.session_state.get(_grn_state_key, "") not in grn_options:
-        st.session_state[_grn_state_key] = grn_options[0]
-    grn_choice = st.radio(
-        "GRN model",
-        options=grn_options,
-        horizontal=True,
-        key=_grn_state_key
-    )
+    if _in_mki67 and _in_orig:
+        # gene in both → let user choose
+        grn_options = [
+            "MKI67 program (201 genes, BIRC5 KO)",
+            "Original (159 genes)",
+        ]
+        if st.session_state.get(_grn_state_key, "") not in grn_options:
+            st.session_state[_grn_state_key] = grn_options[0]
+        grn_choice = st.radio(
+            "GRN model", options=grn_options,
+            horizontal=True, key=_grn_state_key
+        )
+    elif _in_mki67:
+        grn_choice = "MKI67 program (201 genes, BIRC5 KO)"
+        st.caption(f"GRN model: **{grn_choice}**")
+    else:
+        grn_choice = "Original (159 genes)"
+        st.caption(f"GRN model: **{grn_choice}**")
+
     grn_key = "mki67" if grn_choice.startswith("MKI67") else "original"
     with st.spinner("Loading GRN..."):
         grn_mat, grn_genes = load_grn(grn_key)
