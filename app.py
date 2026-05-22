@@ -897,17 +897,12 @@ for msg in messages:
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
-            _has_pert = _msg_grn_model in ("mki67", "tubb")
-            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB"}.get(_msg_grn_model, "")
-            _pert_tab_label = f"🧬 {_ko_gene_label} KO Perturbation" if _has_pert else ""
-            _tabs = ([_pert_tab_label, "Network graph", "Adjacency matrix"]
-                     if _has_pert else ["Network graph", "Adjacency matrix"])
-            _tab_results = st.tabs(_tabs)
-            if _has_pert:
-                tab_pert, tab_graph, tab_matrix = _tab_results
-            else:
-                tab_graph, tab_matrix = _tab_results
-                tab_pert = None
+            # Always show both KO perturbation tabs regardless of active GRN model
+            _tab_results = st.tabs([
+                "🧬 BIRC5 KO", "🧬 TUBB KO", "Network graph", "Adjacency matrix"
+            ])
+            tab_birc5_ko, tab_tubb_ko, tab_graph, tab_matrix = _tab_results
+            tab_pert = None  # kept for compatibility, not used
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
                 topo = msg.get("grn_topo")
@@ -965,17 +960,21 @@ for msg in messages:
                         yaxis=dict(tickfont=dict(size=9))
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
-            if tab_pert is not None:
-                with tab_pert:
+            for _tab_ko, _ko_key, _ko_lbl, _prog_lbl in [
+                (tab_birc5_ko, "mki67", "BIRC5", "MKI67 program"),
+                (tab_tubb_ko,  "tubb",  "TUBB",  "TUBB program"),
+            ]:
+                with _tab_ko:
                     try:
-                        pert_df = load_perturbation(_msg_grn_model)
-                        q_gene  = msg.get("query_gene", "MKI67")
+                        pert_df = load_perturbation(_ko_key)
+                        q_gene  = msg.get("query_gene", "")
                         bar_fig, line_fig = build_perturbation_figures(
-                            pert_df, q_gene, ko_gene=_ko_gene_label)
-                        st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
-                        _prog = "TUBB program" if _msg_grn_model == "tubb" else "MKI67 program"
-                        st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} (201 genes) · {_ko_gene_label} knocked out")
+                            pert_df, q_gene, ko_gene=_ko_lbl)
+                        st.plotly_chart(line_fig, use_container_width=True,
+                                        key=f"{msg_id}_pert_line_{_ko_key}")
+                        st.plotly_chart(bar_fig,  use_container_width=True,
+                                        key=f"{msg_id}_pert_bar_{_ko_key}")
+                        st.caption(f"CARDAMOM · {_prog_lbl} (201 genes) · {_ko_lbl} KO")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
 
