@@ -166,16 +166,20 @@ mini_graph(ax_top, 13.7, by, bw, bh, G4, pos4,
 
 arrow(ax_top, 15.35, 16.15, by, C["red"], "retrieve")
 
-# 5. Output: program subgraph
-G5 = nx.DiGraph()
-G5.add_edges_from([("MKI67","BIRC5"),("MKI67","TOP2A"),("ASPM","MKI67"),
-                   ("TOP2A","CEP55"),("BIRC5","NEK2")])
-pos5 = nx.spring_layout(G5, seed=12)
+# 5. Output: gene program — cluster of similar genes (no edges, just proximity)
+G5 = nx.Graph()
+program_nodes = ["MKI67","BIRC5","TOP2A","ASPM","CEP55","NEK2","KIF2C","DLGAP5"]
+G5.add_nodes_from(program_nodes)
+np.random.seed(17)
+# cluster layout: query in center, others around it
+angles = np.linspace(0, 2*np.pi, len(program_nodes)-1, endpoint=False)
+pos5 = {"MKI67": (0.5, 0.5)}
+for i, n in enumerate(program_nodes[1:]):
+    pos5[n] = (0.5 + 0.38*np.cos(angles[i]), 0.5 + 0.38*np.sin(angles[i]))
 nc5 = [C["red"] if n=="MKI67" else C["green"] for n in G5.nodes()]
-ec5 = [C["green"]]*G5.number_of_edges()
 mini_graph(ax_top, 17.8, by, bw*1.1, bh, G5, pos5,
-           nc5, ec5,
-           "Gene Program", C["green"], "similar genes + GRN")
+           nc5, [],
+           "Gene Program", C["green"], "co-expression neighbors")
 
 
 # ════════════════════════════════════════════════════════════════
