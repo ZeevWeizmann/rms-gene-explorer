@@ -791,7 +791,8 @@ else:
     with st.spinner("Loading GRN..."):
         grn_mat, grn_genes = load_grn(grn_key)
 
-grn_gene_set = set(grn_genes) if grn_genes else set()
+# 🔬 icon in search = gene present in ANY GRN model
+grn_gene_set = _mki67_gene_set | _orig_gene_set
 
 # ── Recent searches ───────────────────────────────────────────────
 recent_key = f"recent_{dataset_key}"
@@ -867,7 +868,14 @@ for msg in messages:
                 f.update_layout(height=CHART_H_SMALL)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            tab_pert, tab_graph, tab_matrix = st.tabs(["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"])
+            _has_pert = msg.get("grn_model") == "mki67"
+            _tabs = ["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"] if _has_pert else ["Network graph", "Adjacency matrix"]
+            _tab_results = st.tabs(_tabs)
+            if _has_pert:
+                tab_pert, tab_graph, tab_matrix = _tab_results
+            else:
+                tab_graph, tab_matrix = _tab_results
+                tab_pert = None
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
                 topo = msg.get("grn_topo")
@@ -925,18 +933,17 @@ for msg in messages:
                         yaxis=dict(tickfont=dict(size=9))
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
-            with tab_pert:
-                try:
-                    pert_df = load_perturbation()
-                    q_gene  = msg.get("query_gene", "MKI67")
-                    # Dynamics + barplot
-                    bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
-                    st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                    st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
-                    st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
-                    # ── Potential therapeutic targets ──────────────────────
-                except Exception as e:
-                    st.info(f"Perturbation data available only for MKI67 program GRN. ({e})")
+            if tab_pert is not None:
+                with tab_pert:
+                    try:
+                        pert_df = load_perturbation()
+                        q_gene  = msg.get("query_gene", "MKI67")
+                        bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
+                        st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
+                        st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
+                        st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
+                    except Exception as e:
+                        st.info(f"Perturbation data not available. ({e})")
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
@@ -1037,10 +1044,13 @@ if query_gene:
         _q = query_gene.upper()
         if _q in _mki67_gene_set and _q not in _orig_gene_set:
             _grn_mat_q, _grn_genes_q = load_grn("mki67")
+            _grn_model_q = "mki67"
         elif _q in _orig_gene_set and _q not in _mki67_gene_set:
             _grn_mat_q, _grn_genes_q = load_grn("original")
+            _grn_model_q = "original"
         else:
-            _grn_mat_q, _grn_genes_q = grn_mat, grn_genes  # in both or neither → use selector
+            _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
+            _grn_model_q = grn_key if grn_mat is not None else None
 
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
@@ -1056,6 +1066,7 @@ if query_gene:
             "fig_celltype": fig_celltype,
             "grn_fig": grn_fig,
             "grn_topo": grn_topo,
-            "grn_adj": grn_adj
+            "grn_adj": grn_adj,
+            "grn_model": _grn_model_q,
         })
         st.rerun()
