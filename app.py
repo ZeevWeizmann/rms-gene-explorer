@@ -1031,8 +1031,19 @@ if query_gene:
             fig_celltype.update_layout(plot_bgcolor="white", paper_bgcolor="white")
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
-        grn_fig, grn_topo = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes, hops=grn_hops)
-        grn_adj = build_grn_adjacency(grn_mat, grn_genes, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
+
+        # Always pick the right GRN model for THIS query gene (not the selector,
+        # which lags one step behind because it's rendered before query processing)
+        _q = query_gene.upper()
+        if _q in _mki67_gene_set and _q not in _orig_gene_set:
+            _grn_mat_q, _grn_genes_q = load_grn("mki67")
+        elif _q in _orig_gene_set and _q not in _mki67_gene_set:
+            _grn_mat_q, _grn_genes_q = load_grn("original")
+        else:
+            _grn_mat_q, _grn_genes_q = grn_mat, grn_genes  # in both or neither → use selector
+
+        grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
+        grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
         messages.append({
             "role": "assistant",
