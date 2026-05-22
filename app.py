@@ -729,8 +729,54 @@ _boat_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -20 76 40">
   <path d="M20 16 Q30 19 37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
 </svg>"""
 
-_cal_b64  = _b64.b64encode(_calanques_static_svg.encode()).decode()
-_boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
+# Donkey walking on the right cliff — CSS animated, faces left toward center
+# Body proportions: Mediterranean grey/beige donkey, long ears, stocky legs
+_donkey_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 52">
+  <!-- Shadow -->
+  <ellipse cx="32" cy="50" rx="18" ry="3" fill="#00000022"/>
+  <!-- Body -->
+  <ellipse cx="34" cy="30" rx="19" ry="12" fill="#A89478"/>
+  <!-- Belly lighter patch -->
+  <ellipse cx="34" cy="35" rx="13" ry="7" fill="#C8B49A" opacity="0.6"/>
+  <!-- Neck -->
+  <path d="M18 24 Q14 14 17 8 Q22 5 26 12 Q26 20 22 24 Z" fill="#A89478"/>
+  <!-- Head -->
+  <ellipse cx="14" cy="9" rx="9" ry="8" fill="#A89478" transform="rotate(-10 14 9)"/>
+  <!-- Muzzle -->
+  <ellipse cx="7" cy="12" rx="6" ry="5" fill="#C8A882"/>
+  <!-- Nostril -->
+  <ellipse cx="5" cy="13" rx="1.2" ry="0.8" fill="#7A5A45"/>
+  <!-- Eye -->
+  <circle cx="13" cy="7" r="2" fill="#2A1A0A"/>
+  <circle cx="12.3" cy="6.4" r="0.7" fill="white"/>
+  <!-- Left ear (long!) -->
+  <path d="M11 3 Q9 -9 12 -9 Q15 -9 14 3 Z" fill="#A89478"/>
+  <path d="M11 3 Q10 -7 12 -7 Q14 -7 13.5 3 Z" fill="#E8C4A8"/>
+  <!-- Right ear -->
+  <path d="M18 3 Q17 -8 20 -8 Q23 -8 21 3 Z" fill="#A89478"/>
+  <path d="M18 3 Q18 -6 20 -6 Q22 -6 21 3 Z" fill="#E8C4A8"/>
+  <!-- Front legs -->
+  <rect x="17" y="39" width="6" height="12" rx="2.5" fill="#9A8468"/>
+  <rect x="26" y="39" width="6" height="11" rx="2.5" fill="#9A8468"/>
+  <!-- Hooves front -->
+  <rect x="17" y="48" width="6" height="4" rx="1.5" fill="#3A2A18"/>
+  <rect x="26" y="47" width="6" height="4" rx="1.5" fill="#3A2A18"/>
+  <!-- Back legs -->
+  <rect x="38" y="39" width="6" height="11" rx="2.5" fill="#9A8468"/>
+  <rect x="47" y="39" width="6" height="12" rx="2.5" fill="#9A8468"/>
+  <!-- Hooves back -->
+  <rect x="38" y="47" width="6" height="4" rx="1.5" fill="#3A2A18"/>
+  <rect x="47" y="48" width="6" height="4" rx="1.5" fill="#3A2A18"/>
+  <!-- Tail -->
+  <path d="M53 26 Q62 18 60 28 Q58 34 54 32" stroke="#9A8468" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M60 28 Q66 34 61 40" stroke="#7A6450" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Dorsal stripe (typical for Mediterranean donkeys) -->
+  <path d="M20 20 Q34 16 52 22" stroke="#7A6450" stroke-width="1.5" fill="none" opacity="0.5"/>
+</svg>"""
+
+_cal_b64    = _b64.b64encode(_calanques_static_svg.encode()).decode()
+_boat_b64   = _b64.b64encode(_boat_svg.encode()).decode()
+_donkey_b64 = _b64.b64encode(_donkey_svg.encode()).decode()
 
 st.markdown(f"""
 <style>
@@ -741,6 +787,14 @@ st.markdown(f"""
   75%  {{ left:46%; top:57%; }}
   100% {{ left:42%; top:54%; }}
 }}
+@keyframes donkeyWalk {{
+  0%   {{ right:6%;  top:28%; transform:scaleX(1);  }}
+  38%  {{ right:19%; top:25%; transform:scaleX(1);  }}
+  42%  {{ right:20%; top:25%; transform:scaleX(-1); }}
+  80%  {{ right:7%;  top:28%; transform:scaleX(-1); }}
+  84%  {{ right:6%;  top:28%; transform:scaleX(1);  }}
+  100% {{ right:6%;  top:28%; transform:scaleX(1);  }}
+}}
 </style>
 <div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
   <img src='data:image/svg+xml;base64,{_cal_b64}'
@@ -749,6 +803,10 @@ st.markdown(f"""
   <img src='data:image/svg+xml;base64,{_boat_b64}'
        style='position:absolute;width:5.5%;min-width:36px;
               animation:boatSail 10s ease-in-out infinite;
+              pointer-events:none;'/>
+  <img src='data:image/svg+xml;base64,{_donkey_b64}'
+       style='position:absolute;width:7%;min-width:44px;
+              animation:donkeyWalk 14s ease-in-out infinite;
               pointer-events:none;'/>
   <div style='position:relative; z-index:1;
               display:flex; align-items:center; gap:12px;
