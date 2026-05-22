@@ -743,32 +743,35 @@ with st.spinner("Loading GRN..."):
     grn_mat, grn_genes = load_grn(grn_key)
 
 grn_gene_set = set(grn_genes) if grn_genes else set()
-def gene_label(g):
-    return f"🔬 {g}" if g in grn_gene_set else g
-gene_options = [""] + sorted(genes)
-gene_labels = [""] + [gene_label(g) for g in sorted(genes)]
-selected_label = col_search.selectbox(
-    "Quick gene search  (🔬 = GRN available)",
-    options=gene_labels,
-    index=0,
-    key=f"selectbox_{dataset_key}"
-)
-selected_gene = selected_label.replace("🔬 ", "") if selected_label else ""
 
 # ── Recent searches ───────────────────────────────────────────────
 recent_key = f"recent_{dataset_key}"
 if recent_key not in st.session_state:
     st.session_state[recent_key] = []
-
 recent = st.session_state[recent_key]
-if recent:
-    st.caption("Recent:")
-    cols_r = st.columns(min(len(recent), 8))
-    for i, g in enumerate(recent):
-        if cols_r[i].button(g, key=f"recent_btn_{dataset_key}_{g}_{i}",
-                            use_container_width=True):
-            st.session_state[f"recent_clicked_{dataset_key}"] = g
-            st.rerun()
+
+def gene_label(g, is_recent=False):
+    prefix = "🕐 " if is_recent else ""
+    suffix = " 🔬" if g in grn_gene_set else ""
+    return f"{prefix}{g}{suffix}"
+
+# recent первыми, потом все остальные по алфавиту
+recent_labels   = [gene_label(g, is_recent=True) for g in recent]
+all_labels      = [gene_label(g) for g in sorted(genes) if g not in recent]
+separator       = ["─── Recent ───"] if recent else []
+separator2      = ["─── All genes ───"] if recent else []
+gene_labels_all = [""] + separator + recent_labels + separator2 + all_labels
+
+selected_label = col_search.selectbox(
+    "Quick gene search  (🕐 = recent · 🔬 = GRN)",
+    options=gene_labels_all,
+    index=0,
+    key=f"selectbox_{dataset_key}"
+)
+# strip prefixes/suffixes to get clean gene name
+selected_gene = (selected_label
+    .replace("🕐 ", "").replace(" 🔬", "").replace("🔬 ", "")
+    .strip()) if selected_label and not selected_label.startswith("─") else ""
 program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
