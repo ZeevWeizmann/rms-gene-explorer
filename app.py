@@ -7,6 +7,41 @@ import networkx as nx
 from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
 
+st.set_page_config(
+    page_title="Gene Program Explorer",
+    page_icon="🧬",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# ── Responsive CSS ───────────────────────────────────────────────
+st.markdown("""
+<style>
+/* On small screens: stack columns vertically */
+@media (max-width: 640px) {
+    div[data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+    }
+    /* Smaller chart heights */
+    div[data-testid="stPlotlyChart"] > div {
+        height: 320px !important;
+    }
+    /* Compact header */
+    h1 { font-size: 1.4rem !important; }
+    /* Wider chat input */
+    div[data-testid="stChatInput"] {
+        width: 100% !important;
+    }
+    /* Hide topology table on mobile to save space */
+    .mobile-hide { display: none !important; }
+}
+/* General: limit max width on desktop too for readability */
+section.main > div { max-width: 900px; margin: auto; }
+</style>
+""", unsafe_allow_html=True)
+
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
 
