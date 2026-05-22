@@ -458,6 +458,19 @@ and its local gene regulatory network inferred by CARDAMOM.
             pass
 
 # ================================================================
+# DATASET SELECTOR  (must come before upload so `genes` is defined)
+# ================================================================
+dataset_choice = st.radio(
+    "Dataset",
+    options=["RMS original", "RMS 2"],
+    horizontal=True
+)
+dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
+
+with st.spinner("Loading data..."):
+    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
+
+# ================================================================
 # UPLOAD YOUR OWN DATA
 # ================================================================
 with st.expander("📂 Upload your own .h5ad", expanded=False):
@@ -517,14 +530,9 @@ with st.expander("📂 Upload your own .h5ad", expanded=False):
         if umap_up is not None:
             meta_cols = [c for c in umap_up.columns if c not in ["x", "y"]]
 
-            try:
-                overlap = [g for g in var_names if g in set(genes)]
-                st.info(f"**{len(overlap):,}** genes overlap with RMS embedding space "
-                        f"({len(var_names):,} total in your file). "
-                        "Type any gene in the chat below to query it in the RMS context.")
-            except NameError:
-                st.info(f"**{len(var_names):,}** genes loaded. "
-                        "Scroll down to select a dataset and query genes in the RMS context.")
+            overlap = [g for g in var_names if g in set(genes)]
+            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in RMS embedding space. "
+                    "Type any of them in the chat below to query similar genes and GRN.")
 
             col_gene_up, col_meta_up = st.columns([2, 1])
             gene_sel_up = col_gene_up.selectbox(
@@ -562,19 +570,6 @@ with st.expander("📂 Upload your own .h5ad", expanded=False):
             fig_up.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             st.plotly_chart(fig_up, use_container_width=True, key="upload_umap_fig")
 
-
-# ================================================================
-# DATASET SELECTOR
-# ================================================================
-dataset_choice = st.radio(
-    "Dataset",
-    options=["RMS original", "RMS 2"],
-    horizontal=True
-)
-dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
-
-with st.spinner("Loading data..."):
-    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
 # ================================================================
 # STATS
