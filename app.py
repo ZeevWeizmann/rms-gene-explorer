@@ -770,6 +770,16 @@ else:
         "MKI67 program (201 genes, BIRC5 KO)",
         "Original (159 genes)",
     ]
+    # auto-switch to the model that actually contains the gene
+    if _check_gene:
+        _in_mki67 = _check_gene in _mki67_gene_set
+        _in_orig  = _check_gene in _orig_gene_set
+        if _in_mki67 and not _in_orig:
+            st.session_state[_grn_state_key] = "MKI67 program (201 genes, BIRC5 KO)"
+        elif _in_orig and not _in_mki67:
+            st.session_state[_grn_state_key] = "Original (159 genes)"
+        # if in both → keep user's current choice
+
     if st.session_state.get(_grn_state_key, "") not in grn_options:
         st.session_state[_grn_state_key] = grn_options[0]
     grn_choice = st.radio(
