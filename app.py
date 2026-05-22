@@ -729,48 +729,9 @@ _boat_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -20 76 40">
   <path d="M20 16 Q30 19 37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
 </svg>"""
 
-# Donkey walking on the right cliff — CSS animated, faces left toward center
-# Small body, very long ears (classic cartoon donkey proportions)
-_donkey_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 56">
-  <!-- Body -->
-  <ellipse cx="30" cy="36" rx="15" ry="9" fill="#A89478"/>
-  <ellipse cx="30" cy="40" rx="10" ry="5" fill="#C8B49A" opacity="0.55"/>
-  <!-- Neck -->
-  <path d="M18 30 Q15 22 17 17 Q21 14 24 19 Q24 26 20 30 Z" fill="#A89478"/>
-  <!-- Head (small) -->
-  <ellipse cx="14" cy="15" rx="7" ry="6" fill="#A89478" transform="rotate(-8 14 15)"/>
-  <!-- Muzzle -->
-  <ellipse cx="8" cy="17" rx="5" ry="4" fill="#C8A882"/>
-  <ellipse cx="6.5" cy="18" rx="1" ry="0.7" fill="#7A5A45"/>
-  <!-- Eye -->
-  <circle cx="13" cy="13" r="1.6" fill="#2A1A0A"/>
-  <circle cx="12.4" cy="12.5" r="0.55" fill="white"/>
-  <!-- BIG LEFT EAR — very tall and narrow -->
-  <path d="M10 10 Q7 -8 11 -10 Q15 -10 13 10 Z" fill="#A89478"/>
-  <path d="M10 10 Q8 -6 11 -8 Q14 -7 13 10 Z" fill="#EECAAA"/>
-  <!-- BIG RIGHT EAR -->
-  <path d="M17 10 Q15 -9 19 -10 Q23 -9 20 10 Z" fill="#A89478"/>
-  <path d="M17 10 Q16 -7 19 -8 Q22 -7 20 10 Z" fill="#EECAAA"/>
-  <!-- Front legs -->
-  <rect x="17" y="43" width="5" height="11" rx="2" fill="#9A8468"/>
-  <rect x="24" y="43" width="5" height="10" rx="2" fill="#9A8468"/>
-  <rect x="17" y="51" width="5" height="3" rx="1" fill="#3A2A18"/>
-  <rect x="24" y="50" width="5" height="3" rx="1" fill="#3A2A18"/>
-  <!-- Back legs -->
-  <rect x="34" y="43" width="5" height="10" rx="2" fill="#9A8468"/>
-  <rect x="41" y="43" width="5" height="11" rx="2" fill="#9A8468"/>
-  <rect x="34" y="50" width="5" height="3" rx="1" fill="#3A2A18"/>
-  <rect x="41" y="51" width="5" height="3" rx="1" fill="#3A2A18"/>
-  <!-- Tail -->
-  <path d="M45 32 Q53 25 51 34 Q49 39 46 37" stroke="#9A8468" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M51 34 Q56 39 52 44" stroke="#7A6450" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-  <!-- Dorsal stripe -->
-  <path d="M18 27 Q30 23 44 28" stroke="#7A6450" stroke-width="1.2" fill="none" opacity="0.45"/>
-</svg>"""
 
-_cal_b64    = _b64.b64encode(_calanques_static_svg.encode()).decode()
-_boat_b64   = _b64.b64encode(_boat_svg.encode()).decode()
-_donkey_b64 = _b64.b64encode(_donkey_svg.encode()).decode()
+_cal_b64  = _b64.b64encode(_calanques_static_svg.encode()).decode()
+_boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
 
 st.markdown(f"""
 <style>
@@ -781,14 +742,6 @@ st.markdown(f"""
   75%  {{ left:46%; top:57%; }}
   100% {{ left:42%; top:54%; }}
 }}
-@keyframes donkeyWalk {{
-  0%   {{ right:6%;  top:28%; transform:scaleX(1);  }}
-  38%  {{ right:19%; top:25%; transform:scaleX(1);  }}
-  42%  {{ right:20%; top:25%; transform:scaleX(-1); }}
-  80%  {{ right:7%;  top:28%; transform:scaleX(-1); }}
-  84%  {{ right:6%;  top:28%; transform:scaleX(1);  }}
-  100% {{ right:6%;  top:28%; transform:scaleX(1);  }}
-}}
 </style>
 <div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
   <img src='data:image/svg+xml;base64,{_cal_b64}'
@@ -797,10 +750,6 @@ st.markdown(f"""
   <img src='data:image/svg+xml;base64,{_boat_b64}'
        style='position:absolute;width:5.5%;min-width:36px;
               animation:boatSail 10s ease-in-out infinite;
-              pointer-events:none;'/>
-  <img src='data:image/svg+xml;base64,{_donkey_b64}'
-       style='position:absolute;width:3.8%;min-width:24px;
-              animation:donkeyWalk 14s ease-in-out infinite;
               pointer-events:none;'/>
   <div style='position:relative; z-index:1;
               display:flex; align-items:center; gap:12px;
