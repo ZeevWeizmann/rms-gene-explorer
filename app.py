@@ -754,6 +754,20 @@ selected_label = col_search.selectbox(
     key=f"selectbox_{dataset_key}"
 )
 selected_gene = selected_label.replace("🔬 ", "") if selected_label else ""
+
+# ── Recent searches ───────────────────────────────────────────────
+recent_key = f"recent_{dataset_key}"
+if recent_key not in st.session_state:
+    st.session_state[recent_key] = []
+
+recent = st.session_state[recent_key]
+if recent:
+    st.caption("Recent:")
+    cols_r = st.columns(min(len(recent), 8))
+    for i, g in enumerate(recent):
+        if cols_r[i].button(g, key=f"recent_btn_{dataset_key}_{g}_{i}",
+                            use_container_width=True):
+            selected_gene = g
 program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
@@ -885,6 +899,13 @@ else:
 if query_gene:
     messages.append({"role": "user", "content": query_gene})
     query_gene = query_gene.strip().upper()
+
+    # Save to recent searches (max 8, no duplicates)
+    recent = st.session_state.get(recent_key, [])
+    if query_gene in recent:
+        recent.remove(query_gene)
+    recent.insert(0, query_gene)
+    st.session_state[recent_key] = recent[:8]
 
     if query_gene not in genes:
         response = f"Gene {query_gene} not found in the co-expression graph."
