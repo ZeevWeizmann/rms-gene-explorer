@@ -458,6 +458,109 @@ and its local gene regulatory network inferred by CARDAMOM.
             pass
 
 # ================================================================
+# UPLOAD YOUR OWN DATA
+# ================================================================
+with st.expander("📂 Upload your own .h5ad", expanded=False):
+    st.caption("Your file is processed in memory only — not stored anywhere. Max recommended: ~50k cells.")
+    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
+
+    if uploaded_file is not None:
+        file_id = uploaded_file.name + str(uploaded_file.size)
+
+        if st.session_state.get("_upload_file_id") != file_id:
+            import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
+
+            with st.spinner("Reading file..."):
+                bytes_data = uploaded_file.read()
+                adata = ad.read_h5ad(io.BytesIO(bytes_data))
+
+            st.success(f"✅ Loaded: **{adata.n_obs:,} cells × {adata.n_vars:,} genes**")
+
+            if adata.n_obs > 100_000:
+                st.warning("Large dataset — UMAP may be slow or run out of memory on Streamlit Cloud.")
+
+            with st.spinner("Normalizing → PCA → UMAP (1–2 min for ~10k cells)…"):
+                sc.pp.normalize_total(adata, target_sum=1e4)
+                sc.pp.log1p(adata)
+                n_top = min(3000, adata.n_vars)
+                sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
+                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
+                sc.pp.pca(adata, n_comps=n_comps)
+                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
+                sc.tl.umap(adata)
+
+            umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
+            for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
+                if col in adata.obs.columns:
+                    umap_coords[col] = adata.obs[col].values
+
+            # store gene names (all)
+            uploaded_var_names = list(adata.var_names)
+
+            # overlap with RMS embeddings — store expression for those genes only
+            # (will be used later when `genes` is available in scope)
+            X_full = adata.X
+            if sp_sparse.issparse(X_full):
+                X_full = X_full.toarray()
+            X_f16 = X_full.astype(np.float16)
+
+            st.session_state["_upload_file_id"]   = file_id
+            st.session_state["_upload_umap"]       = umap_coords
+            st.session_state["_upload_var_names"]  = uploaded_var_names
+            st.session_state["_upload_expr"]       = X_f16
+
+        # ── Render ──────────────────────────────────────────────────────
+        umap_up    = st.session_state.get("_upload_umap")
+        var_names  = st.session_state.get("_upload_var_names", [])
+        expr_up    = st.session_state.get("_upload_expr")
+
+        if umap_up is not None:
+            # overlap with currently loaded RMS embedding genes
+            overlap = [g for g in var_names if g in set(genes)]
+            meta_cols = [c for c in umap_up.columns if c not in ["x", "y"]]
+
+            st.info(f"**{len(overlap):,}** genes overlap with RMS embedding space "
+                    f"({len(var_names):,} total in your file). "
+                    "Type any gene in the chat below to query it in the RMS context.")
+
+            col_gene_up, col_meta_up = st.columns([2, 1])
+            gene_sel_up = col_gene_up.selectbox(
+                "Color UMAP by gene expression",
+                options=["— none —"] + sorted(var_names),
+                key="upload_gene_sel"
+            )
+            meta_sel_up = col_meta_up.selectbox(
+                "Color by metadata column",
+                options=["— none —"] + meta_cols,
+                key="upload_meta_sel"
+            ) if meta_cols else "— none —"
+
+            plot_up = umap_up.copy()
+            if gene_sel_up != "— none —" and gene_sel_up in var_names:
+                g_idx = var_names.index(gene_sel_up)
+                plot_up["expression"] = expr_up[:, g_idx].astype(float)
+                fig_up = px.scatter(plot_up, x="x", y="y", color="expression",
+                                    color_continuous_scale="Viridis",
+                                    title=f"{gene_sel_up} — uploaded data",
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=480)
+            elif meta_sel_up != "— none —":
+                fig_up = px.scatter(plot_up, x="x", y="y", color=meta_sel_up,
+                                    title=f"Uploaded data — colored by {meta_sel_up}",
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=480)
+            else:
+                fig_up = px.scatter(plot_up, x="x", y="y",
+                                    title="Uploaded data — UMAP",
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=480)
+
+            fig_up.update_traces(marker=dict(size=3, opacity=0.7))
+            fig_up.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            st.plotly_chart(fig_up, use_container_width=True, key="upload_umap_fig")
+
+
+# ================================================================
 # DATASET SELECTOR
 # ================================================================
 dataset_choice = st.radio(
