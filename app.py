@@ -536,32 +536,30 @@ if not _os.path.exists(_logo_local):
     except Exception:
         _logo_local = None
 
-col_logo, col_title = st.columns([1, 5])
+_logo_b64 = ""
 if _logo_local:
-    col_logo.image(_logo_local, width=LOGO_W)
+    import base64
+    with open(_logo_local, "rb") as _f:
+        _logo_b64 = base64.b64encode(_f.read()).decode()
 
-title_size = "1.5rem" if is_mobile else "2.2rem"
-sub_size   = "0.75rem" if is_mobile else "0.88rem"
-col_title.markdown(
-    f"""
-    <div style='padding-top:4px'>
-      <span style='font-size:{title_size}; font-weight:800; color:#002395;'>Gene</span>
-      <span style='font-size:{title_size}; font-weight:800; color:#555555;'> Program </span>
-      <span style='font-size:{title_size}; font-weight:800; color:#ED2939;'>Explorer</span>
-      <span style='
-        background:#E8A838; color:white; font-size:0.65rem; font-weight:700;
+st.markdown(f"""
+<div style='display:flex; align-items:center; gap:12px; flex-wrap:nowrap; margin-bottom:4px;'>
+  {"<img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; flex-shrink:0;'/>" if _logo_b64 else ""}
+  <div>
+    <div style='white-space:nowrap;'>
+      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#002395;'>Gene</span>
+      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#555555;'> Program </span>
+      <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800; color:#ED2939;'>Explorer</span>
+      <span style='background:#E8A838; color:white; font-size:0.6rem; font-weight:700;
         padding:2px 7px; border-radius:10px; margin-left:8px;
-        vertical-align:middle; letter-spacing:0.05em;
-      '>BETA</span>
+        vertical-align:middle;'>BETA</span>
     </div>
-    <div style='font-size:{sub_size}; color:#888; margin-top:2px; line-height:1.6'>
-      <b>14,581</b> embeddings &nbsp;·&nbsp;
-      <b>359</b> GRN genes &nbsp;·&nbsp;
-      BIRC5 KO sim &nbsp;·&nbsp; RMS
+    <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#888; margin-top:2px;'>
+      <b>14,581</b> embeddings &nbsp;·&nbsp; <b>359</b> GRN genes &nbsp;·&nbsp; BIRC5 KO &nbsp;·&nbsp; RMS
     </div>
-    """,
-    unsafe_allow_html=True
-)
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 with st.expander("About this tool"):
     st.markdown("""
