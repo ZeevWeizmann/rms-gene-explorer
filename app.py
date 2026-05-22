@@ -993,10 +993,12 @@ if query_gene:
                 color_continuous_scale="Viridis",
                 title=f"{query_gene} — Expression",
                 labels={"x": "UMAP 1", "y": "UMAP 2"},
-                opacity=0.6, height=450
+                opacity=0.6, height=450,
+                render_mode="svg"
             )
             fig.update_traces(marker=dict(size=3))
-            fig.update_layout(coloraxis_colorbar=dict(title="Expression"))
+            fig.update_layout(coloraxis_colorbar=dict(title="Expression"),
+                              plot_bgcolor="white", paper_bgcolor="white")
 
         if "time" in umap_df.columns:
             fig_time = px.scatter(
@@ -1005,9 +1007,11 @@ if query_gene:
                 title="Time",
                 labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
                 opacity=0.6, height=450,
+                render_mode="svg",
                 category_orders={"color": [str(t) for t in sorted(umap_df["time"].unique())]}
             )
             fig_time.update_traces(marker=dict(size=3))
+            fig_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
 
         if "cell_type" in umap_df.columns:
             fig_celltype = px.scatter(
@@ -1015,9 +1019,11 @@ if query_gene:
                 color="cell_type",
                 title="Cell Type",
                 labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Cell Type"},
-                opacity=0.6, height=450
+                opacity=0.6, height=450,
+                render_mode="svg"
             )
             fig_celltype.update_traces(marker=dict(size=3))
+            fig_celltype.update_layout(plot_bgcolor="white", paper_bgcolor="white")
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
         grn_fig, grn_topo = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes, hops=grn_hops)
