@@ -298,13 +298,13 @@ def build_grn_from_program(grn_mat, grn_genes, gene_set):
 
 def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10):
     if grn_mat is None or query_gene not in grn_genes:
-        return None
+        return None, None
 
     program_set = set(gene_set or [query_gene])
 
     # Build full GRN over ALL grn_genes (not just program)
     G_full = nx.DiGraph()
-    G_full.add_node(query_gene)   # ensure node exists even with no edges
+    G_full.add_node(query_gene)
     if query_gene in grn_genes:
         idx = grn_genes.index(query_gene)
         for j, w in enumerate(grn_mat[idx]):
@@ -314,9 +314,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             if abs(w) > 0 and grn_genes[i] != query_gene:
                 G_full.add_edge(grn_genes[i], query_gene, weight=float(w))
 
-    # Expand hops from query through full GRN
     frontier = {query_gene}
-    visited = {query_gene}
+    visited  = {query_gene}
     for hop in range(hops - 1):
         next_frontier = set()
         for gene in frontier:
@@ -326,24 +325,19 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             for j, w in enumerate(grn_mat[idx]):
                 if abs(w) > 0 and grn_genes[j] not in visited:
                     G_full.add_edge(gene, grn_genes[j], weight=float(w))
-                    next_frontier.add(grn_genes[j])
-                    visited.add(grn_genes[j])
+                    next_frontier.add(grn_genes[j]); visited.add(grn_genes[j])
             for i, w in enumerate(grn_mat[:, idx]):
                 if abs(w) > 0 and grn_genes[i] not in visited:
                     G_full.add_edge(grn_genes[i], gene, weight=float(w))
-                    next_frontier.add(grn_genes[i])
-                    visited.add(grn_genes[i])
+                    next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
 
-    # Keep only: query + intermediate nodes + program genes reachable within hops
     reachable = nx.single_source_shortest_path_length(
         G_full.to_undirected(), query_gene, cutoff=hops
     )
-    # Show node if: it's the query, in program, or is intermediate on path to program gene
     nodes_to_keep = {query_gene}
     for node, dist in reachable.items():
         if node in program_set:
-            # add this node and all nodes on shortest path
             try:
                 path = nx.shortest_path(G_full.to_undirected(), query_gene, node)
                 nodes_to_keep.update(path)
@@ -352,29 +346,92 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
-    # Color: query=red, program genes=lightblue, intermediate=lightgray
-    hop_colors = {0: "red"}
-    node_colors = []
+    # ── Topology analysis ────────────────────────────────────────
+    # upstream / downstream relative to query
+    try:
+        upstream   = set(nx.ancestors(G, query_gene))
+    except Exception:
+        upstream   = set()
+    try:
+        downstream = set(nx.descendants(G, query_gene))
+    except Exception:
+        downstream = set()
+    feedback_nodes = upstream & downstream   # in a cycle with query
+
+    # all simple cycles in subgraph (length ≤ 5 to stay fast)
+    all_cycles = list(nx.simple_cycles(G))
+    cycle_nodes = {n for cyc in all_cycles for n in cyc}
+
+    # per-node metrics
+    in_deg  = dict(G.in_degree())
+    out_deg = dict(G.out_degree())
+    try:
+        between = nx.betweenness_centrality(G, normalized=True)
+    except Exception:
+        between = {n: 0.0 for n in G.nodes()}
+
+    topo_rows = []
     for n in G.nodes():
         if n == query_gene:
-            node_colors.append("red")
-        elif n in program_set:
-            node_colors.append("lightblue")
+            role = "query"
+        elif n in feedback_nodes:
+            role = "feedback loop"
+        elif n in upstream:
+            role = "upstream"
+        elif n in downstream:
+            role = "downstream"
         else:
-            node_colors.append("#cccccc")  # intermediate
+            role = "intermediate"
+        topo_rows.append({
+            "Gene": n,
+            "Role": role,
+            "In-degree":  in_deg.get(n, 0),
+            "Out-degree": out_deg.get(n, 0),
+            "Total degree": in_deg.get(n, 0) + out_deg.get(n, 0),
+            "Betweenness": round(between.get(n, 0), 3),
+            "Feedback loop": n in cycle_nodes,
+        })
+    topo_df = pd.DataFrame(topo_rows).sort_values("Total degree", ascending=False)
+
+    # ── Node visual properties ───────────────────────────────────
+    ROLE_COLOR = {
+        "query":         "#D62728",   # red
+        "upstream":      "#FF7F0E",   # orange
+        "downstream":    "#4C72B0",   # blue
+        "feedback loop": "#9467BD",   # purple
+        "intermediate":  "#AAAAAA",   # gray
+    }
+    max_deg = max((in_deg[n] + out_deg[n]) for n in G.nodes()) or 1
+    node_colors = []
+    node_sizes  = []
+    node_symbols = []
+    for n in G.nodes():
+        role = topo_df.loc[topo_df["Gene"] == n, "Role"].values[0]
+        node_colors.append(ROLE_COLOR[role])
+        deg = in_deg[n] + out_deg[n]
+        node_sizes.append(14 + 22 * (deg / max_deg))
+        node_symbols.append("diamond" if n in cycle_nodes and n != query_gene else "circle")
 
     pos = nx.spring_layout(G, seed=42)
-
     node_x = [pos[n][0] for n in G.nodes()]
     node_y = [pos[n][1] for n in G.nodes()]
     node_labels = list(G.nodes())
 
+    hover_texts = []
+    for n in G.nodes():
+        row = topo_df[topo_df["Gene"] == n].iloc[0]
+        fl = " 🔄" if row["Feedback loop"] else ""
+        hover_texts.append(
+            f"<b>{n}</b>{fl}<br>Role: {row['Role']}<br>"
+            f"In: {row['In-degree']}  Out: {row['Out-degree']}<br>"
+            f"Betweenness: {row['Betweenness']}"
+        )
+
     fig = go.Figure()
 
     for u, v, d in G.edges(data=True):
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        color = "green" if d["weight"] > 0 else "red"
+        x0, y0 = pos[u]; x1, y1 = pos[v]
+        color = "#2CA02C" if d["weight"] > 0 else "#D62728"
         fig.add_annotation(
             x=x1, y=y1, ax=x0, ay=y0,
             xref="x", yref="y", axref="x", ayref="y",
@@ -382,36 +439,33 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             arrowwidth=1.5, arrowcolor=color
         )
 
-    fig.add_trace(go.Scatter(x=node_x, y=node_y, mode="markers+text",
-                             text=node_labels, textposition="top center",
-                             marker=dict(size=12, color=node_colors),
-                             hoverinfo="text", showlegend=False))
+    fig.add_trace(go.Scatter(
+        x=node_x, y=node_y, mode="markers+text",
+        text=node_labels, textposition="top center",
+        marker=dict(size=node_sizes, color=node_colors,
+                    symbol=node_symbols,
+                    line=dict(width=1.5, color="white")),
+        hovertext=hover_texts, hoverinfo="text",
+        showlegend=False
+    ))
 
-    # Legend
-    for color, label in [
-        ("red",       "Query gene"),
-        ("lightblue", "Program gene"),
-        ("#cccccc",   "Intermediate node (not in program)"),
-    ]:
+    for role, color in ROLE_COLOR.items():
         fig.add_trace(go.Scatter(
             x=[None], y=[None], mode="markers",
             marker=dict(size=12, color=color),
-            name=label, showlegend=True
+            name=role.capitalize(), showlegend=True
         ))
 
     fig.update_layout(
-        title=f"GRN for {query_gene} — {hops}-hop ego network (green = activation, red = repression)",
+        title=(f"GRN for {query_gene} — {hops}-hop ego network  "
+               f"(green=activation, red=repression | size=degree | ◆=feedback loop)"),
         showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom", y=1.02,
-            xanchor="left", x=0
-        ),
-        height=550,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        height=580,
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
     )
-    return fig
+    return fig, topo_df
 
 
 def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
@@ -682,6 +736,38 @@ for msg in messages:
             tab_pert, tab_graph, tab_matrix = st.tabs(["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"])
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+                topo = msg.get("grn_topo")
+                if topo is not None and not topo.empty:
+                    with st.expander("📊 Network topology analysis", expanded=True):
+                        # summary metrics
+                        n_fb = int(topo["Feedback loop"].sum())
+                        n_up = int((topo["Role"] == "upstream").sum())
+                        n_dn = int((topo["Role"] == "downstream").sum())
+                        n_fb_role = int((topo["Role"] == "feedback loop").sum())
+                        top_hub = topo[topo["Role"] != "query"].nlargest(1, "Total degree")
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("Upstream regulators", n_up)
+                        c2.metric("Downstream targets", n_dn)
+                        c3.metric("Feedback loop nodes", n_fb_role)
+                        c4.metric("Nodes in any cycle", n_fb)
+                        if not top_hub.empty:
+                            hub_name = top_hub.iloc[0]["Gene"]
+                            hub_deg  = int(top_hub.iloc[0]["Total degree"])
+                            st.info(f"🔵 **Top hub**: **{hub_name}** (degree {hub_deg}) — "
+                                    f"most connected node in this subnetwork")
+                        # table
+                        show_cols = ["Gene", "Role", "In-degree", "Out-degree",
+                                     "Total degree", "Betweenness", "Feedback loop"]
+                        st.dataframe(
+                            topo[show_cols].reset_index(drop=True),
+                            use_container_width=True,
+                            hide_index=True,
+                            column_config={
+                                "Betweenness": st.column_config.ProgressColumn(
+                                    "Betweenness", min_value=0, max_value=1, format="%.3f"),
+                                "Feedback loop": st.column_config.CheckboxColumn("🔄 Cycle"),
+                            }
+                        )
             with tab_matrix:
                 if "grn_adj" in msg and msg["grn_adj"] is not None:
                     adj_df, genes_list = msg["grn_adj"]
@@ -796,7 +882,7 @@ if query_gene:
             fig_celltype.update_traces(marker=dict(size=3))
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
-        grn_fig = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes, hops=grn_hops)
+        grn_fig, grn_topo = build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(grn_mat, grn_genes, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
         messages.append({
@@ -809,6 +895,7 @@ if query_gene:
             "fig_time": fig_time,
             "fig_celltype": fig_celltype,
             "grn_fig": grn_fig,
+            "grn_topo": grn_topo,
             "grn_adj": grn_adj
         })
         st.rerun()
