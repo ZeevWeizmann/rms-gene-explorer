@@ -767,7 +767,8 @@ if recent:
     for i, g in enumerate(recent):
         if cols_r[i].button(g, key=f"recent_btn_{dataset_key}_{g}_{i}",
                             use_container_width=True):
-            selected_gene = g
+            st.session_state[f"recent_clicked_{dataset_key}"] = g
+            st.rerun()
 program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
@@ -888,6 +889,8 @@ for msg in messages:
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
     query_gene = "BIRC5" if "BIRC5" in genes else genes[0]
+elif st.session_state.get(f"recent_clicked_{dataset_key}"):
+    query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
 elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
