@@ -267,11 +267,11 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
             ),
         },
         "TUBB": {
-            "co_targets":     {"KIFC1"},   # goes UP — compensatory minus-end kinesin
-            "direct_targets": set(),
+            "co_targets":     {"KIFC1"},    # goes UP — compensatory minus-end kinesin
+            "direct_targets": {"MAPK4"},    # goes DOWN — pro-oncogenic kinase in sarcoma
             "subtitle": (
                 "🟠 co-target: goes UP after KO — compensatory kinesin (KIFC1) &nbsp;|&nbsp;"
-                " blue: mitotic genes suppressed by TUBB loss"
+                " direct target: pro-oncogenic kinase suppressed by TUBB loss (MAPK4)"
             ),
         },
     }
