@@ -120,11 +120,15 @@ def load_data(dataset="v1"):
 
 @st.cache_resource
 def load_grn(grn_key="original"):
-    """Load GRN by key: 'original' (159 genes) or 'mki67' (201 genes, MKI67 program)."""
+    """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), or 'tubb' (201 genes)."""
     import os
     if grn_key == "mki67":
         mat_file  = "grn_matrix_mki67.npy"
         gene_file = "grn_genes_mki67.csv"
+        gene_col  = "gene"
+    elif grn_key == "tubb":
+        mat_file  = "grn_matrix_tubb.npy"
+        gene_file = "grn_genes_tubb.csv"
         gene_col  = "gene"
     else:
         mat_file  = "grn_matrix.npy"
@@ -149,8 +153,12 @@ def load_grn(grn_key="original"):
 def load_grn_gene_list(grn_key="original"):
     """Load only the gene list (no matrix) — cheap, used to decide which GRN options to show."""
     import os
-    gene_file = "grn_genes_mki67.csv" if grn_key == "mki67" else "grn_genes.csv"
-    gene_col  = "gene"                 if grn_key == "mki67" else "0"
+    if grn_key == "mki67":
+        gene_file, gene_col = "grn_genes_mki67.csv", "gene"
+    elif grn_key == "tubb":
+        gene_file, gene_col = "grn_genes_tubb.csv", "gene"
+    else:
+        gene_file, gene_col = "grn_genes.csv", "0"
     local = os.path.join(LOCAL_DIR, gene_file)
     if os.path.exists(local):
         return set(pd.read_csv(local)[gene_col].tolist())
@@ -160,10 +168,10 @@ def load_grn_gene_list(grn_key="original"):
 
 
 @st.cache_resource
-def load_perturbation():
-    """Load BIRC5 KO perturbation data."""
+def load_perturbation(grn_key="mki67"):
+    """Load KO perturbation data for the given GRN model."""
     import os
-    f = "birc5_ko_perturbation.csv"
+    f = "tubb_ko_perturbation.csv" if grn_key == "tubb" else "birc5_ko_perturbation.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
         return pd.read_csv(local)
@@ -243,7 +251,7 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     return fig
 
 
-def build_perturbation_figures(pert_df, query_gene):
+def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
     """Build two figures: top-20 barplot + gene dynamics WT vs KO."""
     times = sorted(pert_df["time"].unique())
     last_t = times[-1]
@@ -300,7 +308,7 @@ def build_perturbation_figures(pert_df, query_gene):
     bar_fig.update_layout(
         title=dict(
             text=(
-                f"Top 20 genes affected by BIRC5 KO (t={int(last_t)})<br>"
+                f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})<br>"
                 "<sup style='color:#FF8C00'>🟠 co-target: goes UP after KO — compensatory escape mechanism &nbsp;|&nbsp;"
                 " direct target: overexpressed in cancer, drives cytokinesis (CEP55)</sup>"
             ),
@@ -324,11 +332,11 @@ def build_perturbation_figures(pert_df, query_gene):
         ))
         line_fig.add_trace(go.Scatter(
             x=gene_df["time"], y=gene_df["mean_ko"],
-            mode="lines+markers", name="BIRC5 KO",
+            mode="lines+markers", name=f"{ko_gene} KO",
             line=dict(color="#D45F5F", width=2, dash="dash")
         ))
     line_fig.update_layout(
-        title=f"{query_gene} expression: WT vs BIRC5 KO",
+        title=f"{query_gene} expression: WT vs {ko_gene} KO",
         xaxis_title="Time", yaxis_title="Mean expression",
         height=320, margin=dict(l=10, r=10, t=40, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
@@ -597,6 +605,7 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
 - **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
+- **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
 
 **References:**
 - CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
@@ -748,51 +757,51 @@ col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
 # ── GRN selector — hide only if gene is in NO model at all ──────
 _orig_gene_set  = load_grn_gene_list("original")
 _mki67_gene_set = load_grn_gene_list("mki67")
+_tubb_gene_set  = load_grn_gene_list("tubb")
+
+# model label → (key, gene_set)
+_ALL_MODELS = {
+    "MKI67 program (201 genes, BIRC5 KO)":  ("mki67",    _mki67_gene_set),
+    "TUBB program (201 genes, TUBB KO)":     ("tubb",     _tubb_gene_set),
+    "Original (159 genes)":                  ("original", _orig_gene_set),
+}
 
 # use last queried gene (or most recent search) to decide visibility
 _last_q      = st.session_state.get(f"last_selected_{dataset_key}", "")
 _recent_list = st.session_state.get(f"recent_{dataset_key}", [])
 _check_gene  = (_last_q or (_recent_list[0] if _recent_list else "")).strip().upper()
 
-_gene_in_any_grn = (
-    not _check_gene or
-    _check_gene in _orig_gene_set or
-    _check_gene in _mki67_gene_set
+_gene_in_any_grn = (not _check_gene) or any(
+    _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
 _grn_state_key = f"grn_choice_{dataset_key}"
 if not _gene_in_any_grn:
-    # gene not in any GRN — hide radio and GRN section entirely
     grn_mat, grn_genes = None, []
 else:
-    _in_mki67 = (not _check_gene) or (_check_gene in _mki67_gene_set)
-    _in_orig  = (not _check_gene) or (_check_gene in _orig_gene_set)
+    if _check_gene:
+        grn_options = [label for label, (_, gs) in _ALL_MODELS.items()
+                       if _check_gene in gs]
+    else:
+        grn_options = list(_ALL_MODELS.keys())
 
-    if _in_mki67 and _in_orig:
-        # gene in both → let user choose
-        grn_options = [
-            "MKI67 program (201 genes, BIRC5 KO)",
-            "Original (159 genes)",
-        ]
+    if len(grn_options) == 1:
+        grn_choice = grn_options[0]
+        st.caption(f"GRN model: **{grn_choice}**")
+    else:
         if st.session_state.get(_grn_state_key, "") not in grn_options:
             st.session_state[_grn_state_key] = grn_options[0]
         grn_choice = st.radio(
             "GRN model", options=grn_options,
             horizontal=True, key=_grn_state_key
         )
-    elif _in_mki67:
-        grn_choice = "MKI67 program (201 genes, BIRC5 KO)"
-        st.caption(f"GRN model: **{grn_choice}**")
-    else:
-        grn_choice = "Original (159 genes)"
-        st.caption(f"GRN model: **{grn_choice}**")
 
-    grn_key = "mki67" if grn_choice.startswith("MKI67") else "original"
+    grn_key = _ALL_MODELS[grn_choice][0]
     with st.spinner("Loading GRN..."):
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon in search = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set
+grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set
 
 # ── Recent searches ───────────────────────────────────────────────
 recent_key = f"recent_{dataset_key}"
@@ -868,8 +877,12 @@ for msg in messages:
                 f.update_layout(height=CHART_H_SMALL)
                 col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
         if "grn_fig" in msg and msg["grn_fig"] is not None:
-            _has_pert = msg.get("grn_model") == "mki67"
-            _tabs = ["🧬 BIRC5 KO Perturbation", "Network graph", "Adjacency matrix"] if _has_pert else ["Network graph", "Adjacency matrix"]
+            _msg_grn_model = msg.get("grn_model")
+            _has_pert = _msg_grn_model in ("mki67", "tubb")
+            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB"}.get(_msg_grn_model, "")
+            _pert_tab_label = f"🧬 {_ko_gene_label} KO Perturbation" if _has_pert else ""
+            _tabs = ([_pert_tab_label, "Network graph", "Adjacency matrix"]
+                     if _has_pert else ["Network graph", "Adjacency matrix"])
             _tab_results = st.tabs(_tabs)
             if _has_pert:
                 tab_pert, tab_graph, tab_matrix = _tab_results
@@ -936,12 +949,14 @@ for msg in messages:
             if tab_pert is not None:
                 with tab_pert:
                     try:
-                        pert_df = load_perturbation()
+                        pert_df = load_perturbation(_msg_grn_model)
                         q_gene  = msg.get("query_gene", "MKI67")
-                        bar_fig, line_fig = build_perturbation_figures(pert_df, q_gene)
+                        bar_fig, line_fig = build_perturbation_figures(
+                            pert_df, q_gene, ko_gene=_ko_gene_label)
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
-                        st.caption("Simulation: CARDAMOM mechanistic model · MKI67 program (201 genes) · BIRC5 knocked out")
+                        _prog = "TUBB program" if _msg_grn_model == "tubb" else "MKI67 program"
+                        st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} (201 genes) · {_ko_gene_label} knocked out")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
 
@@ -1042,15 +1057,20 @@ if query_gene:
         # Always pick the right GRN model for THIS query gene (not the selector,
         # which lags one step behind because it's rendered before query processing)
         _q = query_gene.upper()
-        if _q in _mki67_gene_set and _q not in _orig_gene_set:
-            _grn_mat_q, _grn_genes_q = load_grn("mki67")
-            _grn_model_q = "mki67"
-        elif _q in _orig_gene_set and _q not in _mki67_gene_set:
-            _grn_mat_q, _grn_genes_q = load_grn("original")
-            _grn_model_q = "original"
-        else:
+        _q_models = [k for k, (key, gs) in _ALL_MODELS.items() if _q in gs]
+        if len(_q_models) == 1:
+            # unambiguous — use the only matching model
+            _grn_model_label = _q_models[0]
+            _grn_mat_q, _grn_genes_q = load_grn(_ALL_MODELS[_grn_model_label][0])
+            _grn_model_q = _ALL_MODELS[_grn_model_label][0]
+        elif len(_q_models) > 1:
+            # gene in multiple models → respect what the selector shows
             _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
             _grn_model_q = grn_key if grn_mat is not None else None
+        else:
+            # gene in no model
+            _grn_mat_q, _grn_genes_q = None, []
+            _grn_model_q = None
 
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
