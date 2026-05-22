@@ -283,10 +283,10 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         },
         "TUBB": {
             "co_targets":     {"KIFC1"},    # goes UP — compensatory minus-end kinesin
-            "direct_targets": {"MAPK4"},    # goes DOWN — pro-oncogenic kinase in sarcoma
+            "direct_targets": {"MAPK4"},    # goes DOWN — suppressed by TUBB loss
             "subtitle": (
                 "🟠 co-target: goes UP after KO — compensatory kinesin (KIFC1) &nbsp;|&nbsp;"
-                " direct target: pro-oncogenic kinase suppressed by TUBB loss (MAPK4)"
+                " direct target: suppressed by TUBB loss (MAPK4) — check real expression"
             ),
         },
     }
@@ -312,11 +312,17 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
             colors.append("#4C72B0")   # blue = down
 
     # Arrow annotations — label differs by target type
+    # "overexpressed" qualifier only added if real mean expression is substantial
+    _OVEREXPR_THRESH = 0.3   # log-normalised mean expression threshold
     annotations = []
     for gene, val in zip(top20["gene"].tolist(), top20["log2fc"].tolist()):
         if gene in all_targets:
             if gene in direct_targets:
-                label = "◀ direct target (overexpressed)"
+                _re = real_expr_means.get(gene, 0.0) if real_expr_means else 0.0
+                if _re >= _OVEREXPR_THRESH:
+                    label = "◀ direct target (overexpressed)"
+                else:
+                    label = "◀ direct target (low expr in data)"
                 ax_offset = -30
             else:
                 label = "co-target ▶" if val >= 0 else "◀ co-target"
