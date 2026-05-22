@@ -181,6 +181,21 @@ def load_perturbation(grn_key="mki67"):
 
 
 @st.cache_resource
+def load_real_expr_means():
+    """Load pre-computed per-gene mean expression (~158KB CSV, not the full 225MB matrix)."""
+    import os
+    local = os.path.join(LOCAL_DIR, "expr_gene_means.csv")
+    if os.path.exists(local):
+        df = pd.read_csv(local)
+    else:
+        token = st.secrets.get("HF_TOKEN", None)
+        path  = hf_hub_download(repo_id=REPO_ID, filename="expr_gene_means.csv",
+                                repo_type="dataset", token=token)
+        df = pd.read_csv(path)
+    return dict(zip(df["gene"].tolist(), df["mean_expr"].tolist()))
+
+
+@st.cache_resource
 def load_umap_expr():
     """Load per-cell WT vs KO expression on UMAP (v2: includes expr_real)."""
     import os
@@ -251,7 +266,7 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     return fig
 
 
-def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
+def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_means=None):
     """Build two figures: top-20 barplot + gene dynamics WT vs KO."""
     times = sorted(pert_df["time"].unique())
     last_t = times[-1]
@@ -319,12 +334,67 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
                 xanchor="left" if val >= 0 else "right",
             ))
 
-    bar_fig = go.Figure(go.Bar(
+    # Real expression values for top-20 genes (if available)
+    _real_vals = []
+    if real_expr_means:
+        for g in top20["gene"]:
+            _real_vals.append(real_expr_means.get(g, 0.0))
+    else:
+        _real_vals = [0.0] * len(top20)
+    _real_arr = np.array(_real_vals, dtype=float)
+    _real_max = float(_real_arr.max()) if _real_arr.max() > 0 else 1.0
+
+    # Hover text: log2FC + real expression
+    _hover = [
+        f"<b>{g}</b><br>log₂FC: {lfc:.3f}<br>Real mean expr: {re:.3f}"
+        for g, lfc, re in zip(top20["gene"], top20["log2fc"], _real_arr)
+    ]
+
+    bar_fig = go.Figure()
+
+    # ── Bar trace (log2FC, primary x-axis) ──────────────────────────
+    bar_fig.add_trace(go.Bar(
         x=top20["log2fc"], y=top20["gene"],
         orientation="h",
         marker_color=colors,
-        hovertemplate="%{y}: %{x:.3f}<extra></extra>"
+        customdata=_real_arr,
+        hovertext=_hover,
+        hoverinfo="text",
+        name="log₂FC",
+        showlegend=False,
     ))
+
+    # ── Dot overlay (real expression, secondary x-axis on top) ──────
+    if real_expr_means:
+        # Normalise dot size: 6–20 px
+        _dot_sizes = 6 + 14 * (_real_arr / (_real_max + 1e-9))
+        bar_fig.add_trace(go.Scatter(
+            x=_real_arr, y=top20["gene"].tolist(),
+            mode="markers",
+            xaxis="x2",
+            marker=dict(
+                size=_dot_sizes.tolist(),
+                color=_real_arr.tolist(),
+                colorscale="YlOrRd",
+                cmin=0, cmax=_real_max,
+                showscale=True,
+                colorbar=dict(
+                    title=dict(text="Real expr", side="right"),
+                    thickness=10, len=0.6, x=1.04,
+                    tickfont=dict(size=9),
+                ),
+                line=dict(width=0.5, color="white"),
+                opacity=0.85,
+            ),
+            hovertext=[
+                f"<b>{g}</b><br>Real mean expr: {re:.3f}"
+                for g, re in zip(top20["gene"], _real_arr)
+            ],
+            hoverinfo="text",
+            name="Real expr",
+            showlegend=False,
+        ))
+
     bar_fig.update_layout(
         title=dict(
             text=(
@@ -333,10 +403,20 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5"):
             ),
             font=dict(size=14),
         ),
-        xaxis_title="log₂FC (KO / WT)",
-        height=520, margin=dict(l=80, r=80, t=80, b=40),
+        xaxis=dict(
+            title="log₂FC (KO / WT)",
+            zeroline=True, zerolinecolor="#aaa",
+        ),
+        xaxis2=dict(
+            title="Mean expression (real data)",
+            overlaying="x", side="top",
+            range=[0, _real_max * 1.25],
+            showgrid=False,
+            tickfont=dict(size=9, color="#999"),
+            titlefont=dict(size=10, color="#999"),
+        ) if real_expr_means else {},
+        height=540, margin=dict(l=80, r=100, t=100, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(zeroline=True, zerolinecolor="#aaa"),
         annotations=annotations
     )
 
@@ -596,7 +676,7 @@ st.markdown(f"""
         vertical-align:middle;'>BETA</span>
     </div>
     <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#888; margin-top:2px;'>
-      <b>8,442</b> embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
+      <b>14,581</b> генных эмбеддингов &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
     </div>
   </div>
 </div>
@@ -861,9 +941,10 @@ grn_hops = col_grn_slider.slider(
     key=f"grn_slider_{dataset_key}"
 )
 
-# Pre-load both perturbation datasets into cache
+# Pre-load both perturbation datasets and real expression means into cache
 load_perturbation("mki67")
 load_perturbation("tubb")
+load_real_expr_means()
 
 if f"messages_{dataset_key}" not in st.session_state:
     st.session_state[f"messages_{dataset_key}"] = []
@@ -876,30 +957,28 @@ if f"default_run_{dataset_key}" not in st.session_state:
 
 messages = st.session_state[f"messages_{dataset_key}"]
 
-for msg in messages:
-    with st.chat_message(msg["role"]):
-        st.write(msg["content"])
-        if "df" in msg:
-            st.dataframe(msg["df"], use_container_width=True)
-            if "cluster_id" in msg:
-                summary = summaries.get(msg["cluster_id"], "")
-                if summary:
-                    with st.popover("Cluster annotation details"):
-                        st.markdown(summary)
-        msg_id = id(msg)
-        # Expression UMAP — full width, taller
-        if msg.get("fig") is not None:
-            fig_expr = msg["fig"]
-            fig_expr.update_layout(height=CHART_H)
-            st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-        # Time + Cell type UMAPs — side by side, smaller
-        side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_celltype"] if msg.get(k) is not None]
-        if side_figs:
-            cols = st.columns(1 if is_mobile else len(side_figs))
-            for col, (k, f) in zip(cols, side_figs):
-                f.update_layout(height=CHART_H_SMALL)
-                col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
-        if "grn_fig" in msg and msg["grn_fig"] is not None:
+def _render_msg_figures(msg, msg_id):
+    """Render all figures for a single message."""
+    if "df" in msg:
+        st.dataframe(msg["df"], use_container_width=True)
+        if "cluster_id" in msg:
+            summary = summaries.get(msg["cluster_id"], "")
+            if summary:
+                with st.popover("Cluster annotation details"):
+                    st.markdown(summary)
+    # Expression UMAP — full width, taller
+    if msg.get("fig") is not None:
+        fig_expr = msg["fig"]
+        fig_expr.update_layout(height=CHART_H)
+        st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
+    # Time + Cell type UMAPs — side by side, smaller
+    side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_celltype"] if msg.get(k) is not None]
+    if side_figs:
+        cols = st.columns(1 if is_mobile else len(side_figs))
+        for col, (k, f) in zip(cols, side_figs):
+            f.update_layout(height=CHART_H_SMALL)
+            col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+    if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb")
             _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB"}.get(_msg_grn_model, "")
@@ -972,14 +1051,35 @@ for msg in messages:
                     try:
                         pert_df = load_perturbation(_msg_grn_model)
                         q_gene  = msg.get("query_gene", "MKI67")
+                        _real_means = load_real_expr_means()
                         bar_fig, line_fig = build_perturbation_figures(
-                            pert_df, q_gene, ko_gene=_ko_gene_label)
+                            pert_df, q_gene, ko_gene=_ko_gene_label,
+                            real_expr_means=_real_means)
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
                         _prog = "TUBB program" if _msg_grn_model == "tubb" else "MKI67 program"
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} (201 genes) · {_ko_gene_label} knocked out")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
+
+# ── Message rendering loop ───────────────────────────────────────
+# Only the LAST assistant message is fully expanded.
+# All older messages are collapsed in expanders (no Plotly rendered = fast).
+_asst_indices = [i for i, m in enumerate(messages) if m["role"] == "assistant"]
+_last_asst_idx = _asst_indices[-1] if _asst_indices else -1
+
+for _mi, msg in enumerate(messages):
+    with st.chat_message(msg["role"]):
+        st.write(msg["content"])
+        if msg["role"] == "assistant" and "fig" in msg:
+            if _mi == _last_asst_idx:
+                # Latest result — render everything
+                _render_msg_figures(msg, id(msg))
+            else:
+                # Older result — collapsed, no heavy rendering
+                gene_label = msg.get("query_gene", "")
+                with st.expander(f"📊 Show results for {gene_label}", expanded=False):
+                    _render_msg_figures(msg, id(msg))
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
@@ -1031,20 +1131,30 @@ if query_gene:
         query_cluster = int(clusters[idx])
         query_annotation = annotations.get(query_cluster, "")
 
+        # Downsample UMAP to max 4000 cells for fast SVG rendering
+        _UMAP_MAX = 4000
+        _n_cells = len(umap_df)
+        if _n_cells > _UMAP_MAX:
+            _sample_idx = np.random.default_rng(42).choice(_n_cells, _UMAP_MAX, replace=False)
+            _sample_idx = np.sort(_sample_idx)
+            umap_plot = umap_df.iloc[_sample_idx].copy()
+        else:
+            _sample_idx = np.arange(_n_cells)
+            umap_plot = umap_df.copy()
+
         fig = None
         fig_time = None
         fig_celltype = None
         if query_gene in gene_names:
             gene_idx = gene_names.index(query_gene)
-            expr_vals = expr[:, gene_idx].astype(float)
-            plot_df = umap_df.copy()
-            plot_df["expression"] = expr_vals
+            expr_vals = expr[_sample_idx, gene_idx].astype(float)
+            umap_plot["expression"] = expr_vals
 
             fig = px.scatter(
-                plot_df, x="x", y="y",
+                umap_plot, x="x", y="y",
                 color="expression",
                 color_continuous_scale="Viridis",
-                title=f"{query_gene} — Expression",
+                title=f"{query_gene} — Expression ({len(umap_plot):,} cells shown)",
                 labels={"x": "UMAP 1", "y": "UMAP 2"},
                 opacity=0.6, height=450,
                 render_mode="svg"
@@ -1055,8 +1165,8 @@ if query_gene:
 
         if "time" in umap_df.columns:
             fig_time = px.scatter(
-                umap_df, x="x", y="y",
-                color=umap_df["time"].astype(str),
+                umap_plot, x="x", y="y",
+                color=umap_plot["time"].astype(str),
                 title="Time",
                 labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
                 opacity=0.6, height=450,
@@ -1068,7 +1178,7 @@ if query_gene:
 
         if "cell_type" in umap_df.columns:
             fig_celltype = px.scatter(
-                umap_df, x="x", y="y",
+                umap_plot, x="x", y="y",
                 color="cell_type",
                 title="Cell Type",
                 labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Cell Type"},
