@@ -1682,10 +1682,8 @@ if query_gene:
             if _forced_valid:
                 _grn_model_q = _forced_key
                 _grn_mat_q, _grn_genes_q = load_grn(_forced_key)
-                # Also update the selector so the radio stays in sync
-                _fox_label = next((k for k, (v, _) in _ALL_MODELS.items() if v == _forced_key), None)
-                if _fox_label:
-                    st.session_state[_grn_state_key] = _fox_label
+                # Note: cannot set _grn_state_key here — widget already rendered this rerun.
+                # The correct model is stored in the message; selector syncs on next rerun.
             else:
                 _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
                 _grn_model_q = grn_key if grn_mat is not None else None
