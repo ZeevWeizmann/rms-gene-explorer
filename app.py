@@ -254,11 +254,11 @@ def load_mki67_sim_umap_proj():
     """Simulation cells (mki67 model) projected onto real UMAP via UMAP transform.
     Columns: x_wt, y_wt, x_ko, y_ko, time."""
     import os
-    local = os.path.join(LOCAL_DIR, "mki67_sim_umap_proj_v2.csv")
+    local = os.path.join(LOCAL_DIR, "mki67_sim_umap_proj_v3.csv")
     if os.path.exists(local):
         return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename="mki67_sim_umap_proj_v2.csv",
+    path = hf_hub_download(repo_id=REPO_ID, filename="mki67_sim_umap_proj_v3.csv",
                            repo_type="dataset", token=token)
     return pd.read_csv(path)
 
