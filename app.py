@@ -250,6 +250,34 @@ def load_foxm1_sim_umap_proj():
 
 
 @st.cache_resource
+def load_mki67_sim_umap_proj():
+    """Simulation cells (mki67 model) projected onto real UMAP via UMAP transform.
+    Columns: x_wt, y_wt, x_ko, y_ko, time."""
+    import os
+    local = os.path.join(LOCAL_DIR, "mki67_sim_umap_proj_v2.csv")
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename="mki67_sim_umap_proj_v2.csv",
+                           repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_tubb_sim_umap_proj():
+    """Simulation cells (tubb model) projected onto real UMAP via UMAP transform.
+    Columns: x_wt, y_wt, x_ko, y_ko, time."""
+    import os
+    local = os.path.join(LOCAL_DIR, "tubb_sim_umap_proj_v2.csv")
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename="tubb_sim_umap_proj_v2.csv",
+                           repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_real_timecourse():
     """Real data mean expression per gene per timepoint (93 KB, 1188 rows)."""
     import os
@@ -1713,10 +1741,15 @@ if query_gene:
         # Simulation time UMAP — foxm1 only
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
+        _sim_proj_loaders = {
+            "foxm1": load_foxm1_sim_umap_proj,
+            "mki67": load_mki67_sim_umap_proj,
+            "tubb":  load_tubb_sim_umap_proj,
+        }
         fig_sim_time = None
-        if _grn_model_q == "foxm1":
+        if _grn_model_q in _sim_proj_loaders:
             try:
-                _proj = load_foxm1_sim_umap_proj()
+                _proj = _sim_proj_loaders[_grn_model_q]()
                 _xcol = "x_wt" if "x_wt" in _proj.columns else "x"
                 _ycol = "y_wt" if "y_wt" in _proj.columns else "y"
                 _tcol = "time"  if "time"  in _proj.columns else "time_sim"
