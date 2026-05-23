@@ -1339,7 +1339,9 @@ _components.html("""<script>
     const uploaders = [...pd.querySelectorAll('[data-testid="stFileUploader"]')];
     const fu = uploaders.find(u => anchor.compareDocumentPosition(u) & 4);
     if (!fu) return;
-    const hide = 'display:none!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
+    // opacity+height:0 keeps element interactive (.click() works), just invisible
+    const hide = 'opacity:0!important;height:0!important;overflow:hidden!important;'
+               + 'margin:0!important;padding:0!important;border:none!important;';
     fu.style.cssText = hide;
     if (fu.parentElement) fu.parentElement.style.cssText = hide;
   }}
