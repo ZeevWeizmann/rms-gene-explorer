@@ -1909,9 +1909,10 @@ if query_gene:
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
-        if _grn_model_q in ("foxm1", "tubb", "mki67", "original"):
+        # Population sim — original GRN has no cell-cycle genes → skip
+        if _grn_model_q in ("foxm1", "tubb", "mki67"):
             try:
-                if _grn_model_q in ("foxm1", "original"):
+                if _grn_model_q == "foxm1":
                     _ps = load_foxm1_pop_sim()
                 elif _grn_model_q == "tubb":
                     _ps = load_tubb_pop_sim()
