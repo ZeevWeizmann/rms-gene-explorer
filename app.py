@@ -1218,7 +1218,7 @@ st.markdown(f"""
       </div>
       <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
                   margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
-        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>462</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
+        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
       </div>
     </div>
   </div>
@@ -1246,6 +1246,7 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
+- **FOXM1 program** — 198 genes (top-200 GNN neighbors of FOXM1), FOXM1 KO perturbation simulated via CARDAMOM mechanistic model
 - **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
 - **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
 
