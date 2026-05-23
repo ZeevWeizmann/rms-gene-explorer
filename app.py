@@ -207,6 +207,19 @@ def load_real_expr_means():
 
 
 @st.cache_resource
+def load_foxm1_umap_populations():
+    """Per-cell UMAP coords + cell type + WT/KO scores (4000 cells, 310KB)."""
+    import os
+    f = "foxm1_umap_populations.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_celltype_gene_means():
     """Per-gene per-cell-type mean expression WT vs KO (FOXM1 model, 45KB)."""
     import os
@@ -233,6 +246,82 @@ def load_umap_expr():
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset",
                            token=token, force_download=True)
     return pd.read_csv(path)
+
+
+def build_foxm1_population_umap(pop_df):
+    """Side-by-side UMAP: left = cell type labels, right = Δ proliferative score after FOXM1 KO."""
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#AAAAAA", "proliferative": "#D45F5F"}
+    CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
+
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=[
+            "Cell populations (real labels)",
+            "Δ Proliferative score after FOXM1 KO",
+        ],
+        horizontal_spacing=0.08,
+    )
+
+    # ── Left panel: cell type coloring ───────────────────────────
+    for ct in CT_ORDER:
+        sub = pop_df[pop_df["cell_type"] == ct]
+        fig.add_trace(go.Scatter(
+            x=sub["x"], y=sub["y"],
+            mode="markers",
+            marker=dict(size=3, color=CT_COLORS[ct], opacity=0.65),
+            name=ct.capitalize(),
+            legendgroup=ct,
+            hovertemplate=f"<b>{ct}</b><br>UMAP: (%{{x:.2f}}, %{{y:.2f}})<extra></extra>",
+        ), row=1, col=1)
+
+    # ── Right panel: Δ prolif score (diverging, blue=↓prolif=→quiescent) ──
+    # Clip to 5th–95th percentile for color scale
+    delta = pop_df["delta_prolif"].values
+    vmax  = float(np.percentile(np.abs(delta), 95))
+    vmax  = max(vmax, 0.05)
+
+    fig.add_trace(go.Scatter(
+        x=pop_df["x"], y=pop_df["y"],
+        mode="markers",
+        marker=dict(
+            size=3,
+            color=delta,
+            colorscale="RdBu_r",   # red=increase(prolif), blue=decrease(quiescent)
+            cmin=-vmax, cmax=vmax,
+            opacity=0.75,
+            colorbar=dict(
+                title=dict(text="Δ score<br>(KO−WT)", side="right", font=dict(size=11)),
+                thickness=14, len=0.7,
+                tickfont=dict(size=10),
+                x=1.02,
+            ),
+        ),
+        text=[f"Type: {ct}<br>Δ: {d:+.3f}" for ct, d in zip(pop_df["cell_type"], delta)],
+        hoverinfo="text",
+        name="Δ prolif score",
+        showlegend=False,
+    ), row=1, col=2)
+
+    fig.update_layout(
+        height=400,
+        margin=dict(t=50, b=20, l=20, r=80),
+        plot_bgcolor="white", paper_bgcolor="white",
+        legend=dict(
+            orientation="v", x=-0.02, y=0.5, xanchor="right",
+            font=dict(size=11),
+            itemsizing="constant",
+        ),
+    )
+    for col in [1, 2]:
+        fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False,
+                         title_text="UMAP 1", row=1, col=col)
+        fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False,
+                         title_text="UMAP 2", row=1, col=col)
+
+    return fig
 
 
 def build_celltype_shift_figure(celltype_df):
@@ -1284,6 +1373,19 @@ def _render_msg_figures(msg, msg_id):
                         bar_fig, line_fig = build_perturbation_figures(
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
+                        # Population UMAP (FOXM1 model only) — shown first
+                        if _msg_grn_model == "foxm1":
+                            try:
+                                pop_df  = load_foxm1_umap_populations()
+                                pop_fig = build_foxm1_population_umap(pop_df)
+                                st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
+                                st.caption(
+                                    "Left: real cell type labels (quiescent / intermediate / proliferative). "
+                                    "Right: change in proliferative program score per cell after FOXM1 KO "
+                                    "(blue = decrease → shift toward quiescence; red = increase)."
+                                )
+                            except Exception as _e:
+                                st.info(f"Population UMAP unavailable: {_e}")
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
                         # Cell type shift chart — only for FOXM1 model
