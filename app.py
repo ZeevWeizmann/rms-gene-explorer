@@ -1426,7 +1426,7 @@ This reveals not just which genes change in expression, but **how the tumour's c
 - CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
     """)
 
-    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 465" style="font-family:Arial,sans-serif">
+    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
     @keyframes arrowPulse {
@@ -1447,16 +1447,30 @@ This reveals not just which genes change in expression, but **how the tumour's c
   <marker id="ahRed" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto">
     <path d="M0,0 L0,8 L10,4 z" fill="#C0392B"/>
   </marker>
+  <marker id="ahBlue" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L0,7 L8,3.5 z" fill="#5B9BD5"/>
+  </marker>
 </defs>
 
 <!-- ═══ ROW 1 TITLE ═══ -->
-<text x="460" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">RAG Gene Program Retrieval</text>
+<text x="380" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Data-driven Gene Program Retrieval</text>
 
-<!-- ── Box 1: Query Gene (blue) ── -->
+<!-- ── Query Gene: input arrow into box 5 from above ── -->
+<rect x="718" y="-34" width="154" height="24" rx="5" fill="#EBF4FC" stroke="#5B9BD5" stroke-width="1.5"/>
+<text x="795" y="-17" text-anchor="middle" font-size="12" font-weight="bold" fill="#5B9BD5">🔍 Query Gene</text>
+<line x1="795" y1="-10" x2="795" y2="31" stroke="#5B9BD5" stroke-width="1.8" stroke-dasharray="4,3" marker-end="url(#ahBlue)"/>
+
+<!-- ── Box 1: scRNA-seq Data (blue) ── -->
 <rect x="12" y="34" width="158" height="170" rx="8" fill="#EBF4FC" stroke="#5B9BD5" stroke-width="2"/>
-<text x="91" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#5B9BD5">Query Gene</text>
-<circle cx="91" cy="118" r="20" fill="#5B9BD5" opacity="0.85"/>
-<text x="91" y="163" text-anchor="middle" font-size="11" fill="#777">e.g. MKI67</text>
+<text x="91" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#5B9BD5">scRNA-seq</text>
+<text x="91" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B9BD5">Data</text>
+<rect x="56" y="84" width="70" height="72" rx="3" fill="none" stroke="#5B9BD5" stroke-width="1.5" opacity="0.7"/>
+<line x1="56" y1="102" x2="126" y2="102" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="56" y1="120" x2="126" y2="120" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="56" y1="138" x2="126" y2="138" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="79" y1="84" x2="79" y2="156" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="102" y1="84" x2="102" y2="156" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<text x="91" y="175" text-anchor="middle" font-size="11" fill="#777">cells × genes × time</text>
 
 <!-- ── Box 2: WGCNA Co-expression (purple) ── -->
 <rect x="188" y="34" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
@@ -1514,7 +1528,8 @@ This reveals not just which genes change in expression, but **how the tumour's c
 <circle cx="772" cy="122" r="5" fill="#16A085"/>
 <circle cx="823" cy="96" r="5" fill="#16A085" opacity="0.7"/>
 <circle cx="763" cy="100" r="4" fill="#16A085" opacity="0.6"/>
-<text x="795" y="175" text-anchor="middle" font-size="11" fill="#777">co-expression neighbors</text>
+<text x="795" y="167" text-anchor="middle" font-size="11" fill="#777">co-expression neighbors</text>
+<text x="795" y="182" text-anchor="middle" font-size="10" font-style="italic" fill="#16A085">(context-driven)</text>
 
 <!-- ═══ ROW 1 ARROWS ═══ -->
 <line x1="170" y1="119" x2="185" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
@@ -1611,7 +1626,7 @@ This reveals not just which genes change in expression, but **how the tumour's c
 </svg>"""
     _components.html(
         f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
-        height=475, scrolling=False
+        height=510, scrolling=False
     )
 
 # ================================================================
