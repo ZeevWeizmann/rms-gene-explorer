@@ -622,26 +622,27 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
             y=ko_pct[pop] + 0.8,
             text=f"{sign}{delta:.1f}%",
             showarrow=False,
-            font=dict(size=9, color=POP_COLORS[pop]),
+            font=dict(size=11, color=POP_COLORS[pop]),
             xanchor="center",
         ))
 
     fig.update_layout(
-        height=340,
-        margin=dict(t=55, b=10, l=55, r=15),
+        height=360,
+        margin=dict(t=60, b=10, l=65, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
         title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation",
-                   font=dict(size=13), x=0.5),
+                   font=dict(size=15), x=0.5),
         yaxis=dict(
-            title=dict(text="% of cells", font=dict(size=11)),
+            title=dict(text="% of cells", font=dict(size=13)),
+            tickfont=dict(size=12),
             gridcolor="#eeeeee", gridwidth=1,
             zeroline=True, zerolinecolor="#cccccc",
             rangemode="tozero",
         ),
-        xaxis=dict(showgrid=False, tickfont=dict(size=12)),
+        xaxis=dict(showgrid=False, tickfont=dict(size=14)),
         legend=dict(orientation="h", yanchor="top", y=-0.06,
-                    xanchor="center", x=0.5, font=dict(size=11)),
+                    xanchor="center", x=0.5, font=dict(size=13)),
         annotations=annotations,
     )
     return fig
@@ -673,17 +674,18 @@ def build_population_delta_figure(sim_df, ko_label="FOXM1 KO"):
         hovertemplate="<b>%{y}</b><br>Δ = %{x:+.1f}%<extra></extra>",
     ))
     fig.update_layout(
-        height=240,
-        margin=dict(t=55, b=20, l=120, r=60),
+        height=260,
+        margin=dict(t=60, b=20, l=130, r=70),
         plot_bgcolor="white", paper_bgcolor="white",
         title=dict(text=f"Population shift after {ko_label} (Δ%)",
-                   font=dict(size=13), x=0.5),
+                   font=dict(size=15), x=0.5),
         xaxis=dict(
-            title="Δ% (KO − WT)",
+            title=dict(text="Δ% (KO − WT)", font=dict(size=13)),
+            tickfont=dict(size=12),
             zeroline=True, zerolinecolor="#aaa", zerolinewidth=2,
             gridcolor="#eeeeee",
         ),
-        yaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=False, tickfont=dict(size=13)),
     )
     return fig
 
@@ -880,7 +882,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
                 colorbar=dict(
                     title=dict(text="Real expr", side="right"),
                     thickness=10, len=0.6, x=1.04,
-                    tickfont=dict(size=9),
+                    tickfont=dict(size=11),
                 ),
                 line=dict(width=0.5, color="white"),
                 opacity=0.85,
@@ -900,20 +902,24 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
                 f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})<br>"
                 f"<sup style='color:#FF8C00'>{subtitle}</sup>"
             ),
-            font=dict(size=14),
+            font=dict(size=16),
         ),
         xaxis=dict(
-            title="log₂FC (KO / WT)",
+            title=dict(text="log₂FC (KO / WT)", font=dict(size=13)),
+            tickfont=dict(size=12),
             zeroline=True, zerolinecolor="#aaa",
         ),
+        yaxis=dict(
+            tickfont=dict(size=13),
+        ),
         xaxis2=dict(
-            title=dict(text="Mean expression (real data)", font=dict(size=10, color="#999")),
+            title=dict(text="Mean expression (real data)", font=dict(size=12, color="#999")),
             overlaying="x", side="top",
             range=[0, _real_max * 1.25],
             showgrid=False,
-            tickfont=dict(size=9, color="#999"),
+            tickfont=dict(size=11, color="#999"),
         ) if real_expr_means else {},
-        height=540, margin=dict(l=80, r=100, t=100, b=40),
+        height=560, margin=dict(l=100, r=100, t=110, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
         annotations=annotations
     )
