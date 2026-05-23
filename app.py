@@ -1420,7 +1420,7 @@ When querying a gene from the **Full program** (e.g. HSPA1B), the app runs a ful
 RMS tumours contain three co-existing cell states — **Proliferative**, **Quiescent**, and **Intermediate** — that are in dynamic equilibrium.
 Each state is scored from the scRNA-seq data using gene signatures (e.g. a 100-gene proliferation score, DNAJB1 z-score for quiescence).
 After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
-This reveals not just which genes change in expression, but **how the tumour's cellular ecology reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
+This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
 
 **References:**
 - CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
