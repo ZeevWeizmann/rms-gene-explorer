@@ -1872,7 +1872,7 @@ if query_gene:
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q in ("foxm1", "original"):
+        if _grn_model_q in ("foxm1", "original", "tubb", "mki67"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
