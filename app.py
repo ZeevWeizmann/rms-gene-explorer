@@ -208,12 +208,17 @@ def load_real_expr_means():
 
 @st.cache_resource
 def load_foxm1_umap_populations():
-    """Per-cell UMAP coords + cell type + WT/KO scores (4000 cells, 310KB)."""
+    """Per-cell UMAP coords + cell type + FOXM1/NUSAP1/PABPN1 expression WT vs KO."""
     import os
-    f = "foxm1_umap_populations.csv"
-    local = os.path.join(LOCAL_DIR, f)
-    if os.path.exists(local):
-        return pd.read_csv(local)
+    f = "foxm1_umap_pop_v2.csv"
+    local_v2 = os.path.join(LOCAL_DIR, f)
+    local_v1 = os.path.join(LOCAL_DIR, "foxm1_umap_populations.csv")
+    if os.path.exists(local_v2):
+        return pd.read_csv(local_v2)
+    if os.path.exists(local_v1):
+        df = pd.read_csv(local_v1)
+        if "FOXM1_wt" in df.columns:
+            return df
     token = st.secrets.get("HF_TOKEN", None)
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
     return pd.read_csv(path)
