@@ -1525,15 +1525,7 @@ def _render_msg_figures(msg, msg_id):
         for col, (k, f) in zip(cols, _row1):
             f.update_layout(height=CHART_H_SMALL)
             col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
-    # Row 2: Population panels — only for "original" GRN (foxm1/tubb/mki67 show them in perturbation tab)
-    if msg.get("grn_model") == "original":
-        _row2_keys = ["fig_pop_real", "fig_pop_sim"]
-        _row2 = [(k, msg.get(k)) for k in _row2_keys if msg.get(k) is not None]
-        if _row2:
-            cols2 = st.columns(1 if is_mobile else len(_row2))
-            for col, (k, f) in zip(cols2, _row2):
-                f.update_layout(height=CHART_H_SMALL)
-                col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+    # Population panels for foxm1/tubb/mki67 are shown inside perturbation tab
     if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1")
@@ -1892,7 +1884,7 @@ if query_gene:
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q in ("foxm1", "original", "tubb", "mki67"):
+        if _grn_model_q in ("foxm1", "tubb", "mki67"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
