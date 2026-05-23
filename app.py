@@ -1234,6 +1234,31 @@ st.markdown(f"""
   75%  {{ left:46%; top:57%; }}
   100% {{ left:42%; top:54%; }}
 }}
+@keyframes betaRay {{
+  0%, 100% {{ opacity:0.12; transform:scaleY(0.55); }}
+  50%       {{ opacity:1;    transform:scaleY(1);    }}
+}}
+.bsun {{ position:absolute; top:7px; right:22px; width:54px; height:54px; z-index:3; }}
+.bsun-circle {{
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(135deg,#FDD835,#E8A020);
+  box-shadow:0 0 12px 3px rgba(253,216,53,0.55);
+  display:flex; align-items:center; justify-content:center;
+  color:white; font-size:0.42rem; font-weight:800; letter-spacing:0.8px;
+  z-index:2;
+}}
+.brw {{
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  display:flex; align-items:flex-start; justify-content:center;
+}}
+.br {{
+  display:block; width:3px; height:8px; margin-top:2px;
+  background:#FDD835; border-radius:2px;
+  animation:betaRay 1.8s ease-in-out infinite;
+  transform-origin:center bottom;
+}}
 </style>
 <div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
   <img src='data:image/svg+xml;base64,{_cal_b64}'
@@ -1243,6 +1268,18 @@ st.markdown(f"""
        style='position:absolute;width:5.5%;min-width:36px;
               animation:boatSail 10s ease-in-out infinite;
               pointer-events:none;'/>
+  <!-- BETA sun in the sky -->
+  <div class='bsun'>
+    <div class='brw' style='transform:rotate(0deg)'><span   class='br' style='animation-delay:0s'></span></div>
+    <div class='brw' style='transform:rotate(45deg)'><span  class='br' style='animation-delay:0.225s'></span></div>
+    <div class='brw' style='transform:rotate(90deg)'><span  class='br' style='animation-delay:0.45s'></span></div>
+    <div class='brw' style='transform:rotate(135deg)'><span class='br' style='animation-delay:0.675s'></span></div>
+    <div class='brw' style='transform:rotate(180deg)'><span class='br' style='animation-delay:0.9s'></span></div>
+    <div class='brw' style='transform:rotate(225deg)'><span class='br' style='animation-delay:1.125s'></span></div>
+    <div class='brw' style='transform:rotate(270deg)'><span class='br' style='animation-delay:1.35s'></span></div>
+    <div class='brw' style='transform:rotate(315deg)'><span class='br' style='animation-delay:1.575s'></span></div>
+    <div class='bsun-circle'>BETA</div>
+  </div>
   <div style='position:relative; z-index:1;
               display:flex; align-items:center; gap:12px;
               padding:18px 20px 14px 20px; flex-wrap:nowrap;'>
@@ -1255,8 +1292,6 @@ st.markdown(f"""
                      color:#FFFFFF; text-shadow:0 1px 4px rgba(0,0,0,0.4);'> Program </span>
         <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
                      color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Explorer</span>
-        <span style='background:#E8A838; color:white; font-size:0.6rem; font-weight:700;
-          padding:2px 7px; border-radius:10px; margin-left:8px; vertical-align:middle;'>BETA</span>
       </div>
       <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
                   margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
