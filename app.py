@@ -120,7 +120,7 @@ def load_data(dataset="v1"):
 
 @st.cache_resource
 def load_grn(grn_key="original"):
-    """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), 'tubb' (201 genes), 'foxm1' (198 genes)."""
+    """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), 'tubb' (201 genes), 'foxm1' (198 genes), 'full' (200 genes)."""
     import os
     if grn_key == "mki67":
         mat_file  = "grn_matrix_mki67.npy"
@@ -133,6 +133,10 @@ def load_grn(grn_key="original"):
     elif grn_key == "foxm1":
         mat_file  = "grn_matrix_foxm1.npy"
         gene_file = "grn_genes_foxm1.csv"
+        gene_col  = "gene"
+    elif grn_key == "full":
+        mat_file  = "grn_matrix_full.npy"
+        gene_file = "grn_genes_full.csv"
         gene_col  = "gene"
     else:
         mat_file  = "grn_matrix.npy"
@@ -163,6 +167,8 @@ def load_grn_gene_list(grn_key="original"):
         gene_file, gene_col = "grn_genes_tubb.csv", "gene"
     elif grn_key == "foxm1":
         gene_file, gene_col = "grn_genes_foxm1.csv", "gene"
+    elif grn_key == "full":
+        gene_file, gene_col = "grn_genes_full.csv", "gene"
     else:
         gene_file, gene_col = "grn_genes.csv", "0"
     local = os.path.join(LOCAL_DIR, gene_file)
@@ -181,6 +187,8 @@ def load_perturbation(grn_key="mki67"):
         f = "tubb_ko_perturbation.csv"
     elif grn_key == "foxm1":
         f = "foxm1_ko_perturbation.csv"
+    elif grn_key == "full":
+        f = "full_ko_perturbation.csv"
     else:
         f = "birc5_ko_perturbation.csv"
     local = os.path.join(LOCAL_DIR, f)
@@ -342,6 +350,32 @@ def load_mki67_pop_sim():
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
         return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_full_sim_umap_proj():
+    """Full program (200 genes) WT+KO simulation projected onto real UMAP.
+    Columns: x_wt, y_wt, x_ko, y_ko, time."""
+    import os
+    f = "full_sim_umap_proj.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local): return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_full_pop_sim():
+    """Full program (200 genes) sim cells scored by population (WT+KO).
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "full_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
     return pd.read_csv(path)
@@ -1218,7 +1252,7 @@ st.markdown(f"""
       </div>
       <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
                   margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
-        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
+        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; HSPA1B KO · BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
       </div>
     </div>
   </div>
@@ -1246,6 +1280,7 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
+- **Full program** — 200 genes (complete quiescent + proliferative gene set), HSPA1B KO perturbation simulated via CARDAMOM mechanistic model
 - **FOXM1 program** — 198 genes (top-200 GNN neighbors of FOXM1), FOXM1 KO perturbation simulated via CARDAMOM mechanistic model
 - **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
 - **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
@@ -1402,13 +1437,15 @@ _orig_gene_set   = load_grn_gene_list("original")
 _mki67_gene_set  = load_grn_gene_list("mki67")
 _tubb_gene_set   = load_grn_gene_list("tubb")
 _foxm1_gene_set  = load_grn_gene_list("foxm1")
+_full_gene_set   = load_grn_gene_list("full")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
-    "FOXM1 program (198 genes, FOXM1 KO)":   ("foxm1",    _foxm1_gene_set),
-    "MKI67 program (201 genes, BIRC5 KO)":   ("mki67",    _mki67_gene_set),
-    "TUBB program (201 genes, TUBB KO)":      ("tubb",     _tubb_gene_set),
-    "Original (159 genes)":                   ("original", _orig_gene_set),
+    "Full program (200 genes, HSPA1B KO)":    ("full",     _full_gene_set),
+    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",    _foxm1_gene_set),
+    "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
+    "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
+    "Original (159 genes)":                    ("original", _orig_gene_set),
 }
 
 # use last queried gene (or most recent search) to decide visibility
@@ -1446,7 +1483,7 @@ else:
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon in search = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set
+grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
 
 # ── Recent searches ───────────────────────────────────────────────
 recent_key = f"recent_{dataset_key}"
@@ -1529,8 +1566,8 @@ def _render_msg_figures(msg, msg_id):
     # Population panels for foxm1/tubb/mki67 are shown inside perturbation tab
     if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
-            _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1")
-            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1"}.get(_msg_grn_model, "")
+            _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
+            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B"}.get(_msg_grn_model, "")
             if _has_pert:
                 _tab_results = st.tabs([f"🧬 {_ko_gene_label} KO Perturbation", "Network graph", "Adjacency matrix"])
                 tab_pert, tab_graph, tab_matrix = _tab_results
@@ -1606,7 +1643,7 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                         # Population proportions + delta + UMAP — foxm1, tubb, mki67
-                        if _msg_grn_model in ("foxm1", "tubb", "mki67"):
+                        if _msg_grn_model in ("foxm1", "tubb", "mki67", "full"):
                             try:
                                 if _msg_grn_model == "foxm1":
                                     _sim_scored = load_foxm1_pop_sim()
@@ -1614,9 +1651,12 @@ def _render_msg_figures(msg, msg_id):
                                 elif _msg_grn_model == "tubb":
                                     _sim_scored = load_tubb_pop_sim()
                                     _ko_label   = "TUBB KO"
-                                else:
+                                elif _msg_grn_model == "mki67":
                                     _sim_scored = load_mki67_pop_sim()
                                     _ko_label   = "BIRC5 KO"
+                                else:
+                                    _sim_scored = load_full_pop_sim()
+                                    _ko_label   = "HSPA1B KO"
                                 _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
                                                "intermediate": "#c8d0d8"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
@@ -1672,7 +1712,7 @@ def _render_msg_figures(msg, msg_id):
                                 _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
-                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)"}
+                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)"}
                         _prog = _prog_map.get(_msg_grn_model, "program")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
                     except Exception as e:
@@ -1852,6 +1892,7 @@ if query_gene:
             "foxm1": load_foxm1_sim_umap_proj,
             "mki67": load_mki67_sim_umap_proj,
             "tubb":  load_tubb_sim_umap_proj,
+            "full":  load_full_sim_umap_proj,
             # original GRN: 159 differentiation genes don't overlap with
             # cell-cycle UMAP space → projection collapses to one point, omitted
         }
@@ -1886,7 +1927,7 @@ if query_gene:
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q in ("foxm1", "tubb", "mki67"):
+        if _grn_model_q in ("foxm1", "tubb", "mki67", "full"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
@@ -1904,14 +1945,16 @@ if query_gene:
             except Exception:
                 pass
         # Population sim — original GRN has no cell-cycle genes → skip
-        if _grn_model_q in ("foxm1", "tubb", "mki67"):
+        if _grn_model_q in ("foxm1", "tubb", "mki67", "full"):
             try:
                 if _grn_model_q == "foxm1":
                     _ps = load_foxm1_pop_sim()
                 elif _grn_model_q == "tubb":
                     _ps = load_tubb_pop_sim()
-                else:
+                elif _grn_model_q == "mki67":
                     _ps = load_mki67_pop_sim()
+                else:
+                    _ps = load_full_pop_sim()
                 fig_pop_sim = px.scatter(
                     _ps, x="x_wt", y="y_wt",
                     color="pop_wt",
