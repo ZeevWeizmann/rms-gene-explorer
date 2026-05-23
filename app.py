@@ -1313,15 +1313,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Hidden file uploader + restore button (triggered by JS in header) ──
-# Anchor so JS can locate the right button via compareDocumentPosition
+# ── Hidden file uploader (triggered by JS camera icon in header) ──
 st.markdown('<div id="cam-fu-anchor" style="display:none"></div>', unsafe_allow_html=True)
-st.markdown("""<style>
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div {
-    visibility:hidden !important; height:0 !important;
-    overflow:hidden !important; margin:0 !important; padding:0 !important;
-}
-</style>""", unsafe_allow_html=True)
 _cam_upload = st.file_uploader(
     "bg", type=["png","jpg","jpeg","webp"],
     key="bg_cam_uploader", label_visibility="collapsed"
@@ -1335,27 +1328,31 @@ if _cam_upload is not None:
         )
         st.rerun()
 
-_has_bg = bool(st.session_state.get("custom_bg_b64"))
-if _has_bg:
-    st.markdown('<div id="cam-rst-anchor" style="display:none"></div>', unsafe_allow_html=True)
-    st.markdown("""<style>
-    div[data-testid="stVerticalBlock"] > div:has(#cam-rst-anchor) + div {
-        visibility:hidden !important; height:0 !important;
-        overflow:hidden !important; margin:0 !important; padding:0 !important;
-    }
-    </style>""", unsafe_allow_html=True)
-    if st.button("rst", key="rst_bg_hidden"):
-        st.session_state.pop("custom_bg_b64", None)
-        st.rerun()
-
-# ── JS: inject camera icon into header; proxy clicks to hidden widgets ──
-_components.html(f"""<script>
+# ── JS: inject camera icon into header; hide file uploader via DOM; proxy click ──
+_components.html("""<script>
 (function() {{
+  function hideFU() {{
+    // Hide the file-uploader widget via DOM traversal from anchor
+    const pd = window.parent.document;
+    const anchor = pd.getElementById('cam-fu-anchor');
+    if (!anchor) return;
+    // Walk up to find the direct child of a VerticalBlock-level parent
+    let el = anchor.closest('[data-testid]') || anchor.parentElement;
+    el = el.parentElement;  // one level up = block wrapper
+    const fuWrapper = el && el.nextElementSibling;
+    if (fuWrapper) {{
+      fuWrapper.style.cssText = 'display:none!important;height:0!important;'
+        + 'overflow:hidden!important;margin:0!important;padding:0!important;';
+    }}
+  }}
+
   function inject() {{
     const pd = window.parent.document;
     const hdr = pd.getElementById('gpe-header');
     if (!hdr) {{ setTimeout(inject, 200); return; }}
-    if (pd.getElementById('gpe-cam-btn')) return;
+    if (pd.getElementById('gpe-cam-btn')) {{ hideFU(); return; }}
+
+    hideFU();
 
     // ── camera button ──
     const cam = pd.createElement('div');
@@ -1368,7 +1365,6 @@ _components.html(f"""<script>
     cam.onmouseover = () => cam.style.background = 'rgba(255,255,255,0.95)';
     cam.onmouseout  = () => cam.style.background = 'rgba(255,255,255,0.68)';
     cam.onclick = () => {{
-      // find hidden Streamlit file-uploader button after #cam-fu-anchor
       const anchor = pd.getElementById('cam-fu-anchor');
       const btns = [...pd.querySelectorAll('[data-testid="stFileUploaderDropzone"] button')];
       const fu = anchor ? btns.find(b => anchor.compareDocumentPosition(b) & 4) : btns[0];
@@ -1376,25 +1372,6 @@ _components.html(f"""<script>
     }};
     hdr.appendChild(cam);
 
-    // ── restore button (only when custom bg active) ──
-    if ({'true' if _has_bg else 'false'}) {{
-      const rst = pd.createElement('div');
-      rst.id = 'gpe-rst-btn'; rst.title = 'Restore Calanques'; rst.textContent = '↩';
-      rst.style.cssText = 'position:absolute;top:10px;right:46px;z-index:500;'
-        + 'display:inline-flex;align-items:center;justify-content:center;'
-        + 'width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:10px;'
-        + 'background:rgba(220,60,60,0.75);border:1px solid rgba(255,255,255,0.5);'
-        + 'color:white;box-shadow:0 1px 4px rgba(0,0,0,0.2);user-select:none;';
-      rst.onmouseover = () => rst.style.background = 'rgba(220,60,60,0.95)';
-      rst.onmouseout  = () => rst.style.background = 'rgba(220,60,60,0.75)';
-      rst.onclick = () => {{
-        const anchor = pd.getElementById('cam-rst-anchor');
-        const btns = [...pd.querySelectorAll('button[kind="secondary"], button[data-testid]')];
-        const rb = anchor ? btns.find(b => anchor.compareDocumentPosition(b) & 4) : null;
-        if (rb) rb.click();
-      }};
-      hdr.appendChild(rst);
-    }}
   }}
 
   setInterval(() => {{
