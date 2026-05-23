@@ -1396,7 +1396,7 @@ This is a **RAG-based gene program retrieval system** applied to single-cell RMS
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
-3. The program is displayed on a cell UMAP and mapped to its **gene regulatory network (GRN)** inferred by CARDAMOM
+3. The program is displayed on a cell UMAP and mapped to its **gene regulatory network (GRN)** inferred by **CardamomOT** (ODE mechanistic model + optimal transport)
 4. In silico **perturbation simulations** (e.g. BIRC5 knockout) reveal which genes change — enabling **network-based target identification**
 
 **Therapeutic target logic (network perturbation approach):**
@@ -1563,7 +1563,8 @@ This reveals not just which genes change in expression, but **how the Waddington
 
 <!-- ── Box 7: CARDAMOM GRN (purple) ── -->
 <rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
-<text x="267" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CARDAMOM GRN</text>
+<text x="267" y="291" text-anchor="middle" font-size="13" font-weight="bold" fill="#9B59B6">CardamomOT GRN</text>
+<text x="267" y="306" text-anchor="middle" font-size="10" fill="#9B59B6">(optimal transport)</text>
 <line x1="267" y1="322" x2="237" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
 <line x1="267" y1="322" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
 <line x1="237" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
@@ -1573,7 +1574,8 @@ This reveals not just which genes change in expression, but **how the Waddington
 <circle cx="237" cy="357" r="6" fill="#9B59B6"/>
 <circle cx="297" cy="357" r="6" fill="#9B59B6"/>
 <circle cx="267" cy="392" r="6" fill="#9B59B6"/>
-<text x="267" y="418" text-anchor="middle" font-size="11" fill="#777">ODE mechanistic model</text>
+<text x="267" y="411" text-anchor="middle" font-size="11" fill="#777">ODE mechanistic model</text>
+<text x="267" y="426" text-anchor="middle" font-size="10" font-style="italic" fill="#777">+ optimal transport</text>
 
 <!-- ── Box 8: Inferred GRN (green+red) ── -->
 <rect x="364" y="276" width="158" height="170" rx="8" fill="#EAFAF1" stroke="#27AE60" stroke-width="2"/>
