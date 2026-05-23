@@ -518,8 +518,8 @@ def build_celltype_shift_figure(pop_df):
             font=dict(size=13), x=0.5,
         ),
         yaxis=dict(
-            title="Mean composite score<br>(FOXM1 · NUSAP1 · PABPN1)",
-            titlefont=dict(size=11),
+            title=dict(text="Mean composite score<br>(FOXM1 · NUSAP1 · PABPN1)",
+                       font=dict(size=11)),
             gridcolor="#eeeeee", gridwidth=1,
             zeroline=True, zerolinecolor="#cccccc",
             rangemode="tozero",
