@@ -235,6 +235,19 @@ def load_celltype_gene_means():
 
 
 @st.cache_resource
+def load_foxm1_sim_umap_proj():
+    """Simulation cells projected onto real UMAP via nearest-neighbor (143 KB)."""
+    import os
+    f = "foxm1_sim_umap_proj.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_real_timecourse():
     """Real data mean expression per gene per timepoint (93 KB, 1188 rows)."""
     import os
@@ -1695,9 +1708,27 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
-        # Simulation time == real data time (CARDAMOM preserves timepoints),
-        # so a separate sim-time UMAP would be identical to fig_time — skip it.
+        # Simulation time UMAP — foxm1 only, using NN-projected sim cells
+        # (CARDAMOM generates synthetic cells via OT; project them onto real UMAP
+        #  by finding the nearest real cell per sim cell in expression space)
         fig_sim_time = None
+        if _grn_model_q == "foxm1":
+            try:
+                _proj = load_foxm1_sim_umap_proj()
+                _t_order = [str(int(t)) for t in sorted(_proj["time_sim"].unique())]
+                fig_sim_time = px.scatter(
+                    _proj, x="x", y="y",
+                    color=_proj["time_sim"].astype(int).astype(str),
+                    title="Time (simulation WT)",
+                    labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                    opacity=0.6, height=450,
+                    render_mode="svg",
+                    category_orders={"color": _t_order},
+                )
+                fig_sim_time.update_traces(marker=dict(size=3))
+                fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            except Exception:
+                pass
 
         messages.append({
             "role": "assistant",
