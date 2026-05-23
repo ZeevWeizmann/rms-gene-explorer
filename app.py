@@ -519,7 +519,7 @@ def build_foxm1_population_umap(pop_df):
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
 
-    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#7a8fa6", "proliferative": "#D45F5F"}
+    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#999999", "proliferative": "#D45F5F"}
     CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
 
     fig = make_subplots(
@@ -586,7 +586,7 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
     POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
                   "intermediate": "Intermediate"}
     POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
-                  "intermediate": "#7a8fa6"}
+                  "intermediate": "#999999"}
 
     n = len(sim_df)
     wt_counts = sim_df["pop_wt"].value_counts()
@@ -655,7 +655,7 @@ def build_population_delta_figure(sim_df, ko_label="FOXM1 KO"):
     POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
                   "intermediate": "Intermediate"}
     POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
-                  "intermediate": "#7a8fa6"}
+                  "intermediate": "#999999"}
 
     n = len(sim_df)
     wt_pct = {p: (sim_df["pop_wt"] == p).sum() / n * 100 for p in POP_ORDER}
@@ -1658,14 +1658,14 @@ def _render_msg_figures(msg, msg_id):
                                     _sim_scored = load_full_pop_sim()
                                     _ko_label   = "HSPA1B KO"
                                 _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
-                                               "intermediate": "#7a8fa6"}
+                                               "intermediate": "#999999"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
                                 _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
                                 st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
                                 st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
                                 # UMAP: Real data | WT simulation | KO simulation
                                 _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
-                                _pt_pop_order = ["intermediate", "proliferative", "quiescent"]
+                                _pt_pop_order = ["quiescent", "proliferative", "intermediate"]  # intermediate on top
                                 _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
                                 # Real data population UMAP
                                 try:
@@ -1922,8 +1922,8 @@ if query_gene:
         # Real data: shown for foxm1 + original models
         # Simulation: foxm1 only (only model with scored sim CSV)
         # Quiescent = DNAJB1 z-score; Proliferative = 100-gene signature score
-        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#7a8fa6"}
-        _POP_ORDER  = ["intermediate", "proliferative", "quiescent"]  # quiescent drawn on top
+        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
+        _POP_ORDER  = ["quiescent", "proliferative", "intermediate"]  # intermediate drawn on top (largest group)
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
