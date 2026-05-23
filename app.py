@@ -1545,11 +1545,6 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_for_ct = load_foxm1_umap_populations()
                                 ct_fig = build_celltype_shift_figure(_pop_for_ct)
                                 st.plotly_chart(ct_fig, use_container_width=True, key=f"{msg_id}_ct_shift")
-                                st.caption(
-                                    "Composite proliferative activity score (mean of FOXM1 · NUSAP1 · PABPN1) "
-                                    "per cell population — WT simulation (solid) vs FOXM1 KO (faded). "
-                                    "Percentage labels show change after KO."
-                                )
                             except Exception as _e:
                                 st.info(f"Cell type shift chart unavailable: {_e}")
                             try:
