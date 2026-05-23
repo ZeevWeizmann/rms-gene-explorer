@@ -1585,7 +1585,12 @@ if st.session_state.get(f"default_run_{dataset_key}"):
     query_gene = "BIRC5" if "BIRC5" in genes else genes[0]
 elif st.session_state.get(f"default_run2_{dataset_key}"):
     st.session_state[f"default_run2_{dataset_key}"] = False
+    # Queue FOXM1 (foxm1 model) as third default
+    st.session_state[f"default_run3_{dataset_key}"] = True
     query_gene = "TUBB" if "TUBB" in genes else None
+elif st.session_state.get(f"default_run3_{dataset_key}"):
+    st.session_state[f"default_run3_{dataset_key}"] = False
+    query_gene = "FOXM1" if "FOXM1" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
 elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
