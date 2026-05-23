@@ -1547,19 +1547,6 @@ def _render_msg_figures(msg, msg_id):
                                 st.plotly_chart(ct_fig, use_container_width=True, key=f"{msg_id}_ct_shift")
                             except Exception as _e:
                                 st.info(f"Cell type shift chart unavailable: {_e}")
-                            try:
-                                real_tc = load_foxm1_real_timecourse()
-                                tc_fig  = build_foxm1_timecourse(pert_df, real_tc)
-                                st.plotly_chart(tc_fig, use_container_width=True, key=f"{msg_id}_tc")
-                                st.caption(
-                                    "**Blue solid** = real data (all cells, mean per timepoint). "
-                                    "**Orange dashed** = CARDAMOM simulation WT. "
-                                    "**Purple dotted** = CARDAMOM simulation FOXM1 KO. "
-                                    "Note: CARDAMOM models regulatory dynamics across the whole trajectory — "
-                                    "scale differences vs real data reflect normalisation in the model."
-                                )
-                            except Exception as _e:
-                                st.info(f"Timecourse comparison unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
                         _prog = _prog_map.get(_msg_grn_model, "MKI67 program (201 genes)")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
