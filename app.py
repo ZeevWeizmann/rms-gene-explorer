@@ -1695,25 +1695,9 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
-        # Simulation time UMAP — available for all GRN models that have simulation data
-        # Sim time == real data time (CARDAMOM preserves timepoints); shown as validation
+        # Simulation time == real data time (CARDAMOM preserves timepoints),
+        # so a separate sim-time UMAP would be identical to fig_time — skip it.
         fig_sim_time = None
-        if _grn_model_q in ("mki67", "tubb", "foxm1") and "time" in umap_plot.columns:
-            try:
-                _time_order = [str(t) for t in sorted(umap_plot["time"].unique())]
-                fig_sim_time = px.scatter(
-                    umap_plot, x="x", y="y",
-                    color=umap_plot["time"].astype(str),
-                    title="Time (simulation)",
-                    labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
-                    opacity=0.6, height=450,
-                    render_mode="svg",
-                    category_orders={"color": _time_order},
-                )
-                fig_sim_time.update_traces(marker=dict(size=3))
-                fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-            except Exception:
-                pass
 
         messages.append({
             "role": "assistant",
