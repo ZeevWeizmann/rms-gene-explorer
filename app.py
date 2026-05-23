@@ -1564,18 +1564,6 @@ def _render_msg_figures(msg, msg_id):
                         bar_fig, line_fig = build_perturbation_figures(
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
-                        # Population UMAP (FOXM1 model only) — shown first
-                        if _msg_grn_model == "foxm1":
-                            try:
-                                pop_df  = load_foxm1_umap_populations()
-                                pop_fig = build_foxm1_population_umap(pop_df)
-                                st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
-                                st.caption(
-                                    "Cell type labels · FOXM1 expression WT simulation · FOXM1 KO simulation "
-                                    "(identical YlOrRd colorscale — KO panel uniformly pale after knockout)."
-                                )
-                            except Exception as _e:
-                                st.info(f"Population UMAP unavailable: {_e}")
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                         # Population proportions + delta — foxm1 only
                         if _msg_grn_model == "foxm1":
