@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as _components
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -1308,114 +1307,107 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Camera icon embedded in header via JS component ───────────────
-# CSS: absolutely position the component iframe over the header top-right
+# ── Camera icon on header: styled st.file_uploader ────────────────
 st.markdown("""
 <style>
-.block-container { position: relative !important; }
-div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) {
+/* Anchor the block-container as positioning context */
+section[data-testid="stMain"] .block-container { position: relative !important; }
+
+/* Collapse the wrapper that holds the camera file uploader */
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) {
     height: 0 !important; overflow: visible !important;
     margin: 0 !important; padding: 0 !important;
 }
-div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) + div {
+/* Absolutely position the file uploader on top of header */
+div[data-testid="stFileUploader"]:has(#cam-fu-anchor ~ *),
+div:has(#cam-fu-anchor) ~ div[data-testid="stFileUploader"] { display: none; }
+
+/* The real target: stFileUploader sibling after anchor */
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div {
     position: absolute !important;
-    top: 14px !important;
+    top: 16px !important;
     right: 16px !important;
-    width: 36px !important;
-    height: 36px !important;
+    width: 34px !important;
     z-index: 300 !important;
     overflow: visible !important;
-    background: transparent !important;
+    margin: 0 !important; padding: 0 !important;
 }
-div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) + div iframe {
-    background: transparent !important;
-    border: none !important;
+/* Hide all dropzone chrome, keep only Browse button */
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div label,
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [data-testid="stFileUploaderDropzoneInstructions"],
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [class*="uploadedFile"],
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div small,
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div span {
+    display: none !important;
+}
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [data-testid="stFileUploaderDropzone"] {
+    border: none !important; background: transparent !important;
+    padding: 0 !important; margin: 0 !important; min-height: 0 !important;
+}
+/* Style Browse button → camera icon */
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button {
+    background: rgba(255,255,255,0.68) !important;
+    border: 1.5px solid rgba(255,255,255,0.55) !important;
+    border-radius: 50% !important;
+    width: 30px !important; min-height: 30px !important;
+    padding: 0 !important; font-size: 0 !important;
+    color: transparent !important; line-height: 1 !important;
+    backdrop-filter: blur(5px) !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.22) !important;
+    cursor: pointer !important;
+}
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button::before {
+    content: "📷"; font-size: 13px; color: #333;
+}
+div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button:hover {
+    background: rgba(255,255,255,0.93) !important;
 }
 </style>
-<div id="cam-anchor"></div>
+<div id="cam-fu-anchor"></div>
 """, unsafe_allow_html=True)
 
-_has_bg = bool(st.session_state.get("custom_bg_b64"))
-_cam_result = _components.html(f"""
-<html>
-<head>
-<style>
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
-  body {{ background:transparent; overflow:hidden; width:36px; height:36px; }}
-  .wrap {{ display:flex; gap:3px; align-items:center; }}
-  label {{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:30px; height:30px; border-radius:50%;
-    background:rgba(255,255,255,0.65);
-    border:1.5px solid rgba(255,255,255,0.5);
-    cursor:pointer; font-size:13px;
-    box-shadow:0 1px 5px rgba(0,0,0,0.22);
-    transition:background 0.15s;
-    user-select:none;
-  }}
-  label:hover {{ background:rgba(255,255,255,0.92); }}
-  input[type=file] {{ display:none; }}
-  button.rst {{
-    display:{'inline-flex' if _has_bg else 'none'};
-    align-items:center; justify-content:center;
-    width:20px; height:20px; border-radius:50%;
-    background:rgba(220,60,60,0.72);
-    border:1px solid rgba(255,255,255,0.5);
-    color:white; font-size:9px; cursor:pointer;
-    box-shadow:0 1px 4px rgba(0,0,0,0.22);
-    transition:background 0.15s;
-  }}
-  button.rst:hover {{ background:rgba(220,60,60,0.95); }}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <label title="Change header background" for="bg-f">📷</label>
-  <input id="bg-f" type="file" accept="image/*">
-  <button class="rst" title="Restore Calanques" id="rst-btn">↩</button>
-</div>
-<script>
-(function() {{
-  function send(v) {{
-    // Try streamlit-component-lib first, fallback to postMessage
-    if (window.Streamlit) {{
-      window.Streamlit.setComponentValue(v);
-    }} else {{
-      window.parent.postMessage({{isStreamlitMessage:true, type:'streamlit:setComponentValue', value:v}}, '*');
-    }}
-  }}
-  // Load streamlit-component-lib
-  var s = document.createElement('script');
-  s.src = 'https://unpkg.com/streamlit-component-lib@2.0.0/dist/index.js';
-  s.onload = function() {{
-    window.Streamlit.setComponentReady();
-    window.Streamlit.setFrameHeight(36);
-  }};
-  document.head.appendChild(s);
-
-  document.getElementById('bg-f').addEventListener('change', function(e) {{
-    var f = e.target.files[0];
-    if (!f) return;
-    var r = new FileReader();
-    r.onload = function(evt) {{ send(evt.target.result); }};
-    r.readAsDataURL(f);
-  }});
-
-  document.getElementById('rst-btn').addEventListener('click', function() {{
-    send('RESET');
-  }});
-}})();
-</script>
-</body>
-</html>
-""", height=36, scrolling=False)
-
-if _cam_result == "RESET":
-    st.session_state.pop("custom_bg_b64", None)
+_cam_upload = st.file_uploader(
+    "bg", type=["png","jpg","jpeg","webp"],
+    key="bg_cam_uploader", label_visibility="collapsed"
+)
+if _cam_upload is not None:
+    _cam_bytes = _cam_upload.read()
+    st.session_state["custom_bg_b64"] = (
+        f"data:{_cam_upload.type};base64," + _b64.b64encode(_cam_bytes).decode()
+    )
     st.rerun()
-elif _cam_result and isinstance(_cam_result, str) and _cam_result.startswith("data:image"):
-    st.session_state["custom_bg_b64"] = _cam_result
-    st.rerun()
+# Restore button — only shown when custom bg is active, small and to the right of camera
+if st.session_state.get("custom_bg_b64"):
+    st.markdown("""
+    <style>
+    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) {
+        height:0 !important; overflow:visible !important;
+        margin:0 !important; padding:0 !important;
+    }
+    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div {
+        position: absolute !important;
+        top: 16px !important; right: 52px !important;
+        width: 26px !important; z-index: 300 !important;
+        overflow: visible !important; margin:0 !important; padding:0 !important;
+    }
+    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div button {
+        background: rgba(220,60,60,0.72) !important;
+        border: 1px solid rgba(255,255,255,0.5) !important;
+        border-radius: 50% !important;
+        width: 22px !important; min-height: 22px !important;
+        padding: 0 !important; font-size: 10px !important;
+        color: white !important; line-height: 1 !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2) !important;
+    }
+    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div button:hover {
+        background: rgba(220,60,60,0.95) !important;
+    }
+    </style>
+    <div id="rst-bg-anchor"></div>
+    """, unsafe_allow_html=True)
+    if st.button("↩", key="rst_bg_btn", help="Restore Calanques"):
+        del st.session_state["custom_bg_b64"]
+        st.rerun()
 
 with st.expander("About this tool"):
     st.markdown("""
