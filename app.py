@@ -320,6 +320,20 @@ def load_tubb_pop_sim():
 
 
 @st.cache_resource
+def load_mki67_pop_sim():
+    """MKI67 sim cells (WT+KO) scored by proliferative program (proxy populations).
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "mki67_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_real_timecourse():
     """Real data mean expression per gene per timepoint (93 KB, 1188 rows)."""
     import os
@@ -1579,11 +1593,18 @@ def _render_msg_figures(msg, msg_id):
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                        # Population proportions + delta + UMAP — foxm1 and tubb
-                        if _msg_grn_model in ("foxm1", "tubb"):
+                        # Population proportions + delta + UMAP — foxm1, tubb, mki67
+                        if _msg_grn_model in ("foxm1", "tubb", "mki67"):
                             try:
-                                _sim_scored = load_foxm1_pop_sim() if _msg_grn_model == "foxm1" else load_tubb_pop_sim()
-                                _ko_label   = "FOXM1 KO" if _msg_grn_model == "foxm1" else "TUBB KO"
+                                if _msg_grn_model == "foxm1":
+                                    _sim_scored = load_foxm1_pop_sim()
+                                    _ko_label   = "FOXM1 KO"
+                                elif _msg_grn_model == "tubb":
+                                    _sim_scored = load_tubb_pop_sim()
+                                    _ko_label   = "TUBB KO"
+                                else:
+                                    _sim_scored = load_mki67_pop_sim()
+                                    _ko_label   = "BIRC5 KO"
                                 _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
                                                "intermediate": "#c8d0d8"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
@@ -1620,8 +1641,8 @@ def _render_msg_figures(msg, msg_id):
                                 _umap_col2.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
-                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
-                        _prog = _prog_map.get(_msg_grn_model, "MKI67 program (201 genes)")
+                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)"}
+                        _prog = _prog_map.get(_msg_grn_model, "program")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
@@ -1849,9 +1870,14 @@ if query_gene:
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
-        if _grn_model_q in ("foxm1", "tubb"):
+        if _grn_model_q in ("foxm1", "tubb", "mki67"):
             try:
-                _ps = load_foxm1_pop_sim() if _grn_model_q == "foxm1" else load_tubb_pop_sim()
+                if _grn_model_q == "foxm1":
+                    _ps = load_foxm1_pop_sim()
+                elif _grn_model_q == "tubb":
+                    _ps = load_tubb_pop_sim()
+                else:
+                    _ps = load_mki67_pop_sim()
                 fig_pop_sim = px.scatter(
                     _ps, x="x_wt", y="y_wt",
                     color="pop_wt",
