@@ -501,105 +501,112 @@ def build_foxm1_population_umap(pop_df):
     return fig
 
 
-def build_celltype_shift_figure(pop_df):
-    """Grouped bar chart: proliferative program activity per cell population, WT vs KO.
-    X = WT / KO condition, groups = cell types.  No per-gene breakdown.
-    pop_df must have columns: cell_type, FOXM1_wt, FOXM1_ko, NUSAP1_wt, NUSAP1_ko,
-    PABPN1_wt, PABPN1_ko."""
+def build_population_proportions_figure(sim_df):
+    """Grouped bar chart: % of cells in each population, WT simulation vs FOXM1 KO.
+    sim_df must have columns: pop_wt, pop_ko  (foxm1_pop_sim_scored.csv)."""
     import plotly.graph_objects as go
 
-    CT_ORDER  = ["quiescent", "intermediate", "proliferative"]
-    CT_LABELS = {"quiescent": "Quiescent", "intermediate": "Intermediate",
-                 "proliferative": "Proliferative"}
-    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#888888", "proliferative": "#D45F5F"}
+    POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
+    POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
+                  "intermediate": "Intermediate"}
+    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
+                  "intermediate": "#adb5bd"}
 
-    # Composite "proliferative activity" score = mean of FOXM1 + NUSAP1 + PABPN1
-    gene_cols_wt = [c for c in ["FOXM1_wt", "NUSAP1_wt", "PABPN1_wt"] if c in pop_df.columns]
-    gene_cols_ko = [c for c in ["FOXM1_ko", "NUSAP1_ko", "PABPN1_ko"] if c in pop_df.columns]
+    n = len(sim_df)
+    wt_counts = sim_df["pop_wt"].value_counts()
+    ko_counts = sim_df["pop_ko"].value_counts()
 
-    df = pop_df.copy()
-    df["score_wt"] = df[gene_cols_wt].mean(axis=1)
-    df["score_ko"] = df[gene_cols_ko].mean(axis=1)
-
-    # Per-cell-type mean + SEM
-    stats = {}
-    for ct in CT_ORDER:
-        sub = df[df["cell_type"] == ct]
-        n = len(sub)
-        stats[ct] = {
-            "wt_mean": float(sub["score_wt"].mean()),
-            "ko_mean": float(sub["score_ko"].mean()),
-            "wt_sem":  float(sub["score_wt"].sem()),
-            "ko_sem":  float(sub["score_ko"].sem()),
-            "n": n,
-        }
+    wt_pct = {p: wt_counts.get(p, 0) / n * 100 for p in POP_ORDER}
+    ko_pct = {p: ko_counts.get(p, 0) / n * 100 for p in POP_ORDER}
 
     fig = go.Figure()
-
-    for ct in CT_ORDER:
-        s = stats[ct]
-        color = CT_COLORS[ct]
-        label = CT_LABELS[ct]
-
+    for pop in POP_ORDER:
+        color = POP_COLORS[pop]
+        label = POP_LABELS[pop]
         fig.add_trace(go.Bar(
             name=label,
-            legendgroup=ct,
             x=["WT simulation", "FOXM1 KO"],
-            y=[s["wt_mean"], s["ko_mean"]],
-            error_y=dict(type="data", array=[s["wt_sem"], s["ko_sem"]], visible=True,
-                         color=color, thickness=1.5, width=4),
+            y=[wt_pct[pop], ko_pct[pop]],
             marker_color=[color, color],
-            marker_opacity=[0.85, 0.45],
+            marker_opacity=[0.9, 0.55],
             marker_line=dict(color=color, width=1.5),
-            width=0.22,
-            hovertemplate=(
-                f"<b>{label}</b><br>"
-                "%{x}<br>"
-                "Score: %{y:.4f}<extra></extra>"
-            ),
+            width=0.25,
+            hovertemplate=f"<b>{label}</b><br>%{{x}}: %{{y:.1f}}%<extra></extra>",
         ))
 
-    # % change annotation per cell type
+    # Δ% annotations above KO bars
     annotations = []
-    x_offsets = {"quiescent": -0.23, "intermediate": 0.0, "proliferative": 0.23}
-    for ct in CT_ORDER:
-        s = stats[ct]
-        if s["wt_mean"] > 1e-9:
-            pct = (s["ko_mean"] - s["wt_mean"]) / s["wt_mean"] * 100
-            sign = "+" if pct >= 0 else ""
-            annotations.append(dict(
-                x=1 + x_offsets[ct],   # KO bar x-position
-                y=s["ko_mean"] + s["ko_sem"] + 0.003,
-                text=f"{sign}{pct:.0f}%",
-                showarrow=False,
-                font=dict(size=9, color=CT_COLORS[ct]),
-                xanchor="center",
-            ))
+    x_offsets = {"proliferative": -0.26, "quiescent": 0.0, "intermediate": 0.26}
+    for pop in POP_ORDER:
+        delta = ko_pct[pop] - wt_pct[pop]
+        sign = "+" if delta >= 0 else ""
+        annotations.append(dict(
+            x=1 + x_offsets[pop],
+            y=ko_pct[pop] + 0.8,
+            text=f"{sign}{delta:.1f}%",
+            showarrow=False,
+            font=dict(size=9, color=POP_COLORS[pop]),
+            xanchor="center",
+        ))
 
     fig.update_layout(
         height=340,
         margin=dict(t=55, b=10, l=55, r=15),
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        barmode="group",
-        bargroupgap=0.18,
-        title=dict(
-            text="Proliferative gene program activity per cell population",
-            font=dict(size=13), x=0.5,
-        ),
+        plot_bgcolor="white", paper_bgcolor="white",
+        barmode="group", bargroupgap=0.18,
+        title=dict(text="Cell population proportions: WT vs FOXM1 KO simulation",
+                   font=dict(size=13), x=0.5),
         yaxis=dict(
-            title=dict(text="Mean composite score<br>(FOXM1 · NUSAP1 · PABPN1)",
-                       font=dict(size=11)),
+            title=dict(text="% of cells", font=dict(size=11)),
             gridcolor="#eeeeee", gridwidth=1,
             zeroline=True, zerolinecolor="#cccccc",
             rangemode="tozero",
         ),
         xaxis=dict(showgrid=False, tickfont=dict(size=12)),
-        legend=dict(
-            orientation="h", yanchor="top", y=-0.06,
-            xanchor="center", x=0.5, font=dict(size=11),
-        ),
+        legend=dict(orientation="h", yanchor="top", y=-0.06,
+                    xanchor="center", x=0.5, font=dict(size=11)),
         annotations=annotations,
+    )
+    return fig
+
+
+def build_population_delta_figure(sim_df):
+    """Horizontal bar chart: Δ% change in each population after FOXM1 KO.
+    sim_df must have columns: pop_wt, pop_ko."""
+    import plotly.graph_objects as go
+
+    POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
+    POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
+                  "intermediate": "Intermediate"}
+    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
+                  "intermediate": "#adb5bd"}
+
+    n = len(sim_df)
+    wt_pct = {p: (sim_df["pop_wt"] == p).sum() / n * 100 for p in POP_ORDER}
+    ko_pct = {p: (sim_df["pop_ko"] == p).sum() / n * 100 for p in POP_ORDER}
+    deltas = {p: ko_pct[p] - wt_pct[p] for p in POP_ORDER}
+
+    fig = go.Figure(go.Bar(
+        x=[deltas[p] for p in POP_ORDER],
+        y=[POP_LABELS[p] for p in POP_ORDER],
+        orientation="h",
+        marker_color=[POP_COLORS[p] for p in POP_ORDER],
+        text=[f"{deltas[p]:+.1f}%" for p in POP_ORDER],
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>Δ = %{x:+.1f}%<extra></extra>",
+    ))
+    fig.update_layout(
+        height=240,
+        margin=dict(t=55, b=20, l=120, r=60),
+        plot_bgcolor="white", paper_bgcolor="white",
+        title=dict(text="Population shift after FOXM1 KO (Δ%)",
+                   font=dict(size=13), x=0.5),
+        xaxis=dict(
+            title="Δ% (KO − WT)",
+            zeroline=True, zerolinecolor="#aaa", zerolinewidth=2,
+            gridcolor="#eeeeee",
+        ),
+        yaxis=dict(showgrid=False),
     )
     return fig
 
@@ -1569,16 +1576,17 @@ def _render_msg_figures(msg, msg_id):
                                 )
                             except Exception as _e:
                                 st.info(f"Population UMAP unavailable: {_e}")
-                        st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
-                        # Cell type shift chart + timecourse — only for FOXM1 model
+                        st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                        # Population proportions + delta — foxm1 only
                         if _msg_grn_model == "foxm1":
                             try:
-                                _pop_for_ct = load_foxm1_umap_populations()
-                                ct_fig = build_celltype_shift_figure(_pop_for_ct)
-                                st.plotly_chart(ct_fig, use_container_width=True, key=f"{msg_id}_ct_shift")
+                                _sim_scored = load_foxm1_pop_sim()
+                                _prop_fig  = build_population_proportions_figure(_sim_scored)
+                                _delta_fig = build_population_delta_figure(_sim_scored)
+                                st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
+                                st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
                             except Exception as _e:
-                                st.info(f"Cell type shift chart unavailable: {_e}")
+                                st.info(f"Population shift unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
                         _prog = _prog_map.get(_msg_grn_model, "MKI67 program (201 genes)")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
