@@ -310,7 +310,7 @@ def load_tubb_pop_sim():
     """TUBB sim cells (WT+KO) scored by proliferative/quiescent gene programs.
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
-    f = "tubb_pop_sim_scored.csv"
+    f = "tubb_pop_sim_scored_v2.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
         return pd.read_csv(local)
