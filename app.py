@@ -2048,22 +2048,21 @@ for _mi, msg in enumerate(messages):
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
-    # Force full model for HSPA1B
-    st.session_state[f"forced_grn_{dataset_key}"] = "full"
-    # Queue TUBB as second default
+    # First: TUBB (tubb model)
+    st.session_state[f"forced_grn_{dataset_key}"] = "tubb"
     st.session_state[f"default_run2_{dataset_key}"] = True
-    query_gene = "HSPA1B" if "HSPA1B" in genes else genes[0]
+    query_gene = "TUBB" if "TUBB" in genes else genes[0]
 elif st.session_state.get(f"default_run2_{dataset_key}"):
     st.session_state[f"default_run2_{dataset_key}"] = False
-    # Force tubb model for TUBB; queue BIRC5 as third default
-    st.session_state[f"forced_grn_{dataset_key}"] = "tubb"
+    # Second: BIRC5 (mki67 model)
+    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
     st.session_state[f"default_run3_{dataset_key}"] = True
-    query_gene = "TUBB" if "TUBB" in genes else None
+    query_gene = "BIRC5" if "BIRC5" in genes else None
 elif st.session_state.get(f"default_run3_{dataset_key}"):
     st.session_state[f"default_run3_{dataset_key}"] = False
-    # Force mki67 model for BIRC5
-    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
-    query_gene = "BIRC5" if "BIRC5" in genes else None
+    # Third (last): HSPA1B (full model) — shown last so it stays on top
+    st.session_state[f"forced_grn_{dataset_key}"] = "full"
+    query_gene = "HSPA1B" if "HSPA1B" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
 elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
