@@ -1427,8 +1427,9 @@ def _render_msg_figures(msg, msg_id):
         fig_expr = msg["fig"]
         fig_expr.update_layout(height=CHART_H)
         st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-    # Time + Cell type UMAPs — side by side, smaller
-    side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_celltype"] if msg.get(k) is not None]
+    # Time / Sim-time / Cell type UMAPs — side by side, smaller
+    side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_sim_time", "fig_celltype"]
+                 if msg.get(k) is not None]
     if side_figs:
         cols = st.columns(1 if is_mobile else len(side_figs))
         for col, (k, f) in zip(cols, side_figs):
@@ -1726,6 +1727,26 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
+        # Simulation time UMAP — only for foxm1 model (uses foxm1_umap_pop_v3.csv)
+        fig_sim_time = None
+        if _grn_model_q == "foxm1":
+            try:
+                _pop_sim = load_foxm1_umap_populations()
+                if "time" in _pop_sim.columns:
+                    fig_sim_time = px.scatter(
+                        _pop_sim, x="x", y="y",
+                        color=_pop_sim["time"].astype(str),
+                        title="Time (simulation)",
+                        labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                        opacity=0.6, height=450,
+                        render_mode="svg",
+                        category_orders={"color": [str(int(t)) for t in sorted(_pop_sim["time"].unique())]}
+                    )
+                    fig_sim_time.update_traces(marker=dict(size=3))
+                    fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            except Exception:
+                pass
+
         messages.append({
             "role": "assistant",
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
@@ -1734,6 +1755,7 @@ if query_gene:
             "query_gene": query_gene,
             "fig": fig,
             "fig_time": fig_time,
+            "fig_sim_time": fig_sim_time,
             "fig_celltype": fig_celltype,
             "grn_fig": grn_fig,
             "grn_topo": grn_topo,
