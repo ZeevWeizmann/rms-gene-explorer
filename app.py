@@ -1537,13 +1537,13 @@ This reveals not just which genes change in expression, but **how the Waddington
 <line x1="522" y1="119" x2="537" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 <line x1="698" y1="119" x2="713" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
-<!-- ═══ SPECIAL ARROW: Gene Program (box5) → scRNA-seq+Time (box6) ═══ -->
+<!-- ═══ SPECIAL ARROW: Gene Program (box5) → CardamomOT GRN (box7) ═══ -->
 <g class="blink-arrow">
-  <path d="M 795,206 C 795,248 91,247 91,276"
+  <path d="M 795,206 C 795,250 267,240 267,274"
         stroke="#C0392B" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
         marker-end="url(#ahRed)"/>
-  <rect x="320" y="228" width="280" height="24" rx="5" fill="white" opacity="0.85"/>
-  <text x="460" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → scRNA-seq + Time</text>
+  <rect x="390" y="228" width="260" height="24" rx="5" fill="white" opacity="0.85"/>
+  <text x="520" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → CardamomOT GRN</text>
 </g>
 
 <!-- ═══ ROW 2 TITLE ═══ -->
