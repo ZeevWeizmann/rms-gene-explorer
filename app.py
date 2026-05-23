@@ -1084,7 +1084,7 @@ st.markdown(f"""
   <div style='position:relative; z-index:1;
               display:flex; align-items:center; gap:12px;
               padding:18px 20px 14px 20px; flex-wrap:nowrap;'>
-    {"<img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));'/>" if _logo_b64 else ""}
+    {"<a href='/' target='_self' style='flex-shrink:0; line-height:0;'><img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3)); cursor:pointer;'/></a>" if _logo_b64 else ""}
     <div>
       <div style='white-space:nowrap;'>
         <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
