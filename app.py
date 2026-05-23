@@ -515,9 +515,9 @@ def build_foxm1_population_umap(pop_df):
     return fig
 
 
-def build_population_proportions_figure(sim_df):
-    """Grouped bar chart: % of cells in each population, WT simulation vs FOXM1 KO.
-    sim_df must have columns: pop_wt, pop_ko  (foxm1_pop_sim_scored.csv)."""
+def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
+    """Grouped bar chart: % of cells in each population, WT simulation vs KO.
+    sim_df must have columns: pop_wt, pop_ko."""
     import plotly.graph_objects as go
 
     POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
@@ -539,7 +539,7 @@ def build_population_proportions_figure(sim_df):
         label = POP_LABELS[pop]
         fig.add_trace(go.Bar(
             name=label,
-            x=["WT simulation", "FOXM1 KO"],
+            x=["WT simulation", ko_label],
             y=[wt_pct[pop], ko_pct[pop]],
             marker_color=[color, color],
             marker_opacity=[0.9, 0.55],
@@ -568,7 +568,7 @@ def build_population_proportions_figure(sim_df):
         margin=dict(t=55, b=10, l=55, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
-        title=dict(text="Cell population proportions: WT vs FOXM1 KO simulation",
+        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation",
                    font=dict(size=13), x=0.5),
         yaxis=dict(
             title=dict(text="% of cells", font=dict(size=11)),
@@ -584,8 +584,8 @@ def build_population_proportions_figure(sim_df):
     return fig
 
 
-def build_population_delta_figure(sim_df):
-    """Horizontal bar chart: Δ% change in each population after FOXM1 KO.
+def build_population_delta_figure(sim_df, ko_label="FOXM1 KO"):
+    """Horizontal bar chart: Δ% change in each population after KO.
     sim_df must have columns: pop_wt, pop_ko."""
     import plotly.graph_objects as go
 
@@ -613,7 +613,7 @@ def build_population_delta_figure(sim_df):
         height=240,
         margin=dict(t=55, b=20, l=120, r=60),
         plot_bgcolor="white", paper_bgcolor="white",
-        title=dict(text="Population shift after FOXM1 KO (Δ%)",
+        title=dict(text=f"Population shift after {ko_label} (Δ%)",
                    font=dict(size=13), x=0.5),
         xaxis=dict(
             title="Δ% (KO − WT)",
@@ -1583,11 +1583,11 @@ def _render_msg_figures(msg, msg_id):
                         if _msg_grn_model in ("foxm1", "tubb"):
                             try:
                                 _sim_scored = load_foxm1_pop_sim() if _msg_grn_model == "foxm1" else load_tubb_pop_sim()
-                                _ko_label   = "FOXM1" if _msg_grn_model == "foxm1" else "TUBB"
+                                _ko_label   = "FOXM1 KO" if _msg_grn_model == "foxm1" else "TUBB KO"
                                 _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
                                                "intermediate": "#c8d0d8"}
-                                _prop_fig  = build_population_proportions_figure(_sim_scored)
-                                _delta_fig = build_population_delta_figure(_sim_scored)
+                                _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
+                                _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
                                 st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
                                 st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
                                 # UMAP WT and KO side by side
