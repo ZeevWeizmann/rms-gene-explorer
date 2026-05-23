@@ -1532,11 +1532,6 @@ grn_hops = col_grn_slider.slider(
     key=f"grn_slider_{dataset_key}"
 )
 
-# Pre-load perturbation datasets and real expression means into cache at startup
-load_perturbation("full")    # HSPA1B KO
-load_perturbation("tubb")    # TUBB KO
-load_perturbation("mki67")   # BIRC5 KO
-load_perturbation("foxm1")   # FOXM1 KO
 load_real_expr_means()
 
 if f"messages_{dataset_key}" not in st.session_state:
@@ -1748,21 +1743,22 @@ for _mi, msg in enumerate(messages):
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
-    # Force mki67 (BIRC5 also appears in foxm1 gene set)
-    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
-    # Queue TUBB as second default after BIRC5
+    # Force full model for HSPA1B
+    st.session_state[f"forced_grn_{dataset_key}"] = "full"
+    # Queue TUBB as second default
     st.session_state[f"default_run2_{dataset_key}"] = True
-    query_gene = "BIRC5" if "BIRC5" in genes else genes[0]
+    query_gene = "HSPA1B" if "HSPA1B" in genes else genes[0]
 elif st.session_state.get(f"default_run2_{dataset_key}"):
     st.session_state[f"default_run2_{dataset_key}"] = False
-    # Queue FOXM1 (foxm1 model) as third default
+    # Force tubb model for TUBB; queue BIRC5 as third default
+    st.session_state[f"forced_grn_{dataset_key}"] = "tubb"
     st.session_state[f"default_run3_{dataset_key}"] = True
     query_gene = "TUBB" if "TUBB" in genes else None
 elif st.session_state.get(f"default_run3_{dataset_key}"):
     st.session_state[f"default_run3_{dataset_key}"] = False
-    # Force foxm1 model for this query (FOXM1 appears in multiple gene sets)
-    st.session_state[f"forced_grn_{dataset_key}"] = "foxm1"
-    query_gene = "FOXM1" if "FOXM1" in genes else None
+    # Force mki67 model for BIRC5
+    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
+    query_gene = "BIRC5" if "BIRC5" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
 elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
