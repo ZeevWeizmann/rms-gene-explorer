@@ -375,17 +375,10 @@ def build_foxm1_population_umap(pop_df):
     CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#BBBBBB", "proliferative": "#D45F5F"}
     CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
 
-    # 4 panels if time column available, otherwise 3
-    has_time = "time" in pop_df.columns
-    n_cols = 4 if has_time else 3
-    subtitles = ["Cell types", "Time (simulation WT)", "FOXM1 — WT simulation", "FOXM1 — KO simulation"]
-    if not has_time:
-        subtitles = ["Cell types", "FOXM1 — WT simulation", "FOXM1 — KO simulation"]
-
     fig = make_subplots(
-        rows=1, cols=n_cols,
-        subplot_titles=subtitles,
-        horizontal_spacing=0.04,
+        rows=1, cols=3,
+        subplot_titles=["Cell types", "FOXM1 — WT simulation", "FOXM1 — KO simulation"],
+        horizontal_spacing=0.05,
     )
 
     # ── Panel 1: cell type labels ─────────────────────────────────
@@ -398,37 +391,14 @@ def build_foxm1_population_umap(pop_df):
             hovertemplate=f"<b>{ct}</b><extra></extra>",
         ), row=1, col=1)
 
-    # ── Panel 2: time from simulation (real data timepoints) ──────
-    if has_time:
-        time_vals = pop_df["time"].values
-        fig.add_trace(go.Scatter(
-            x=pop_df["x"], y=pop_df["y"], mode="markers",
-            marker=dict(
-                size=3, opacity=0.8,
-                color=time_vals,
-                colorscale="Plasma",
-                cmin=0, cmax=80,
-                showscale=True,
-                colorbar=dict(
-                    title=dict(text="Time (h)", side="right", font=dict(size=10)),
-                    thickness=12, len=0.65, tickfont=dict(size=9),
-                    tickvals=[0, 16, 32, 48, 64, 80],
-                    x=0.52,
-                ),
-            ),
-            text=[f"t={int(t)}h | {ct}" for t, ct in zip(time_vals, pop_df["cell_type"])],
-            hoverinfo="text", showlegend=False,
-        ), row=1, col=2)
-
-    # ── Panels 3 & 4 (or 2 & 3): FOXM1 expression ────────────────
+    # ── Panels 2 & 3: FOXM1 expression on same colorscale ────────
     wt = pop_df["FOXM1_wt"].values
     ko = pop_df["FOXM1_ko"].values
     vmax = float(np.percentile(wt, 97))
     vmin = 0.0
-    expr_col_start = 3 if has_time else 2
 
     for ci, (expr, label) in enumerate([(wt, "WT"), (ko, "KO")]):
-        col = expr_col_start + ci
+        col = 2 + ci
         is_last = (ci == 1)
         fig.add_trace(go.Scatter(
             x=pop_df["x"], y=pop_df["y"], mode="markers",
@@ -449,12 +419,12 @@ def build_foxm1_population_umap(pop_df):
         ), row=1, col=col)
 
     fig.update_layout(
-        height=360, margin=dict(t=45, b=10, l=5, r=70),
+        height=360, margin=dict(t=45, b=10, l=5, r=65),
         plot_bgcolor="white", paper_bgcolor="white",
         legend=dict(orientation="v", x=-0.01, y=0.5, xanchor="right",
                     font=dict(size=10), itemsizing="constant"),
     )
-    for col in range(1, n_cols + 1):
+    for col in [1, 2, 3]:
         fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
         fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
     return fig
@@ -1519,10 +1489,8 @@ def _render_msg_figures(msg, msg_id):
                                 pop_fig = build_foxm1_population_umap(pop_df)
                                 st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
                                 st.caption(
-                                    "**Panel 1**: cell type labels. "
-                                    "**Panel 2**: timepoint of each cell in the simulation (Plasma colorscale, 0–80 h). "
-                                    "**Panels 3–4**: FOXM1 expression per cell — WT vs KO simulation "
-                                    "(identical YlOrRd colorscale)."
+                                    "Cell type labels · FOXM1 expression WT simulation · FOXM1 KO simulation "
+                                    "(identical YlOrRd colorscale — KO panel uniformly pale after knockout)."
                                 )
                             except Exception as _e:
                                 st.info(f"Population UMAP unavailable: {_e}")
@@ -1581,6 +1549,8 @@ for _mi, msg in enumerate(messages):
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
+    # Force mki67 (BIRC5 also appears in foxm1 gene set)
+    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
     # Queue TUBB as second default after BIRC5
     st.session_state[f"default_run2_{dataset_key}"] = True
     query_gene = "BIRC5" if "BIRC5" in genes else genes[0]
@@ -1727,23 +1697,23 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
-        # Simulation time UMAP — only for foxm1 model (uses foxm1_umap_pop_v3.csv)
+        # Simulation time UMAP — available for all GRN models that have simulation data
+        # Sim time == real data time (CARDAMOM preserves timepoints); shown as validation
         fig_sim_time = None
-        if _grn_model_q == "foxm1":
+        if _grn_model_q in ("mki67", "tubb", "foxm1") and "time" in umap_plot.columns:
             try:
-                _pop_sim = load_foxm1_umap_populations()
-                if "time" in _pop_sim.columns:
-                    fig_sim_time = px.scatter(
-                        _pop_sim, x="x", y="y",
-                        color=_pop_sim["time"].astype(str),
-                        title="Time (simulation)",
-                        labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
-                        opacity=0.6, height=450,
-                        render_mode="svg",
-                        category_orders={"color": [str(int(t)) for t in sorted(_pop_sim["time"].unique())]}
-                    )
-                    fig_sim_time.update_traces(marker=dict(size=3))
-                    fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                _time_order = [str(t) for t in sorted(umap_plot["time"].unique())]
+                fig_sim_time = px.scatter(
+                    umap_plot, x="x", y="y",
+                    color=umap_plot["time"].astype(str),
+                    title="Time (simulation)",
+                    labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                    opacity=0.6, height=450,
+                    render_mode="svg",
+                    category_orders={"color": _time_order},
+                )
+                fig_sim_time.update_traces(marker=dict(size=3))
+                fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
 
