@@ -1511,6 +1511,15 @@ def _render_msg_figures(msg, msg_id):
         for col, (k, f) in zip(cols, _row1):
             f.update_layout(height=CHART_H_SMALL)
             col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+    # Row 2: Population panels — only for "original" GRN (foxm1/tubb/mki67 show them in perturbation tab)
+    if msg.get("grn_model") == "original":
+        _row2_keys = ["fig_pop_real", "fig_pop_sim"]
+        _row2 = [(k, msg.get(k)) for k in _row2_keys if msg.get(k) is not None]
+        if _row2:
+            cols2 = st.columns(1 if is_mobile else len(_row2))
+            for col, (k, f) in zip(cols2, _row2):
+                f.update_layout(height=CHART_H_SMALL)
+                col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
     if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1")
@@ -1833,9 +1842,10 @@ if query_gene:
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
         _sim_proj_loaders = {
-            "foxm1": load_foxm1_sim_umap_proj,
-            "mki67": load_mki67_sim_umap_proj,
-            "tubb":  load_tubb_sim_umap_proj,
+            "foxm1":    load_foxm1_sim_umap_proj,
+            "original": load_foxm1_sim_umap_proj,   # original uses foxm1 sim data
+            "mki67":    load_mki67_sim_umap_proj,
+            "tubb":     load_tubb_sim_umap_proj,
         }
         fig_sim_time = None
         if _grn_model_q in _sim_proj_loaders:
