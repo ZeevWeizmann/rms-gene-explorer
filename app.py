@@ -208,19 +208,16 @@ def load_real_expr_means():
 
 @st.cache_resource
 def load_foxm1_umap_populations():
-    """Per-cell UMAP coords + cell type + FOXM1/NUSAP1/PABPN1 expression WT vs KO."""
+    """Per-cell UMAP coords + cell type + time + FOXM1/NUSAP1/PABPN1 WT vs KO (v3)."""
     import os
-    f = "foxm1_umap_pop_v2.csv"
-    local_v2 = os.path.join(LOCAL_DIR, f)
-    local_v1 = os.path.join(LOCAL_DIR, "foxm1_umap_populations.csv")
-    if os.path.exists(local_v2):
-        return pd.read_csv(local_v2)
-    if os.path.exists(local_v1):
-        df = pd.read_csv(local_v1)
-        if "FOXM1_wt" in df.columns:
-            return df
+    # v3 adds 'time' column from real data
+    for fname in ["foxm1_umap_pop_v3.csv", "foxm1_umap_pop_v2.csv"]:
+        local = os.path.join(LOCAL_DIR, fname)
+        if os.path.exists(local):
+            return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename="foxm1_umap_pop_v3.csv",
+                           repo_type="dataset", token=token)
     return pd.read_csv(path)
 
 
@@ -378,10 +375,17 @@ def build_foxm1_population_umap(pop_df):
     CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#BBBBBB", "proliferative": "#D45F5F"}
     CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
 
+    # 4 panels if time column available, otherwise 3
+    has_time = "time" in pop_df.columns
+    n_cols = 4 if has_time else 3
+    subtitles = ["Cell types", "Time (simulation WT)", "FOXM1 — WT simulation", "FOXM1 — KO simulation"]
+    if not has_time:
+        subtitles = ["Cell types", "FOXM1 — WT simulation", "FOXM1 — KO simulation"]
+
     fig = make_subplots(
-        rows=1, cols=3,
-        subplot_titles=["Cell types (real data)", "FOXM1 — WT simulation", "FOXM1 — KO simulation"],
-        horizontal_spacing=0.05,
+        rows=1, cols=n_cols,
+        subplot_titles=subtitles,
+        horizontal_spacing=0.04,
     )
 
     # ── Panel 1: cell type labels ─────────────────────────────────
@@ -394,13 +398,38 @@ def build_foxm1_population_umap(pop_df):
             hovertemplate=f"<b>{ct}</b><extra></extra>",
         ), row=1, col=1)
 
-    # ── Panels 2 & 3: FOXM1 expression on same colorscale ────────
+    # ── Panel 2: time from simulation (real data timepoints) ──────
+    if has_time:
+        time_vals = pop_df["time"].values
+        fig.add_trace(go.Scatter(
+            x=pop_df["x"], y=pop_df["y"], mode="markers",
+            marker=dict(
+                size=3, opacity=0.8,
+                color=time_vals,
+                colorscale="Plasma",
+                cmin=0, cmax=80,
+                showscale=True,
+                colorbar=dict(
+                    title=dict(text="Time (h)", side="right", font=dict(size=10)),
+                    thickness=12, len=0.65, tickfont=dict(size=9),
+                    tickvals=[0, 16, 32, 48, 64, 80],
+                    x=0.52,
+                ),
+            ),
+            text=[f"t={int(t)}h | {ct}" for t, ct in zip(time_vals, pop_df["cell_type"])],
+            hoverinfo="text", showlegend=False,
+        ), row=1, col=2)
+
+    # ── Panels 3 & 4 (or 2 & 3): FOXM1 expression ────────────────
     wt = pop_df["FOXM1_wt"].values
     ko = pop_df["FOXM1_ko"].values
     vmax = float(np.percentile(wt, 97))
     vmin = 0.0
+    expr_col_start = 3 if has_time else 2
 
-    for col, expr, label in [(2, wt, "WT"), (3, ko, "KO")]:
+    for ci, (expr, label) in enumerate([(wt, "WT"), (ko, "KO")]):
+        col = expr_col_start + ci
+        is_last = (ci == 1)
         fig.add_trace(go.Scatter(
             x=pop_df["x"], y=pop_df["y"], mode="markers",
             marker=dict(
@@ -408,11 +437,11 @@ def build_foxm1_population_umap(pop_df):
                 color=expr,
                 colorscale="YlOrRd",
                 cmin=vmin, cmax=vmax,
-                showscale=(col == 3),
+                showscale=is_last,
                 colorbar=dict(
                     title=dict(text="FOXM1<br>expr", side="right", font=dict(size=10)),
                     thickness=12, len=0.65, tickfont=dict(size=9), x=1.01,
-                ) if col == 3 else None,
+                ) if is_last else None,
             ),
             text=[f"{label} | {ct}<br>FOXM1: {v:.3f}"
                   for ct, v in zip(pop_df["cell_type"], expr)],
@@ -420,12 +449,12 @@ def build_foxm1_population_umap(pop_df):
         ), row=1, col=col)
 
     fig.update_layout(
-        height=360, margin=dict(t=45, b=10, l=5, r=65),
+        height=360, margin=dict(t=45, b=10, l=5, r=70),
         plot_bgcolor="white", paper_bgcolor="white",
         legend=dict(orientation="v", x=-0.01, y=0.5, xanchor="right",
                     font=dict(size=10), itemsizing="constant"),
     )
-    for col in [1, 2, 3]:
+    for col in range(1, n_cols + 1):
         fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
         fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
     return fig
@@ -1489,9 +1518,10 @@ def _render_msg_figures(msg, msg_id):
                                 pop_fig = build_foxm1_population_umap(pop_df)
                                 st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
                                 st.caption(
-                                    "Left: real cell type labels (quiescent / intermediate / proliferative). "
-                                    "Centre & right: FOXM1 expression per cell in WT vs KO simulation "
-                                    "(identical colorscale — KO panel should appear uniformly dark)."
+                                    "**Panel 1**: cell type labels. "
+                                    "**Panel 2**: timepoint of each cell in the simulation (Plasma colorscale, 0–80 h). "
+                                    "**Panels 3–4**: FOXM1 expression per cell — WT vs KO simulation "
+                                    "(identical YlOrRd colorscale)."
                                 )
                             except Exception as _e:
                                 st.info(f"Population UMAP unavailable: {_e}")
