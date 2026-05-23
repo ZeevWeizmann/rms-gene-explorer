@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as _components
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -1265,14 +1266,17 @@ st.markdown(f"""
   transform-origin:center bottom;
 }}
 </style>
-<div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
-  <img src='{_bg_img_src}'
-       style='position:absolute;top:0;left:0;width:100%;height:100%;
-              object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
-  <img src='data:image/svg+xml;base64,{_boat_b64}'
-       style='position:absolute;width:5.5%;min-width:36px;
-              animation:boatSail 10s ease-in-out infinite;
-              pointer-events:none;'/>
+<div id='gpe-header' style='position:relative; border-radius:12px; margin-bottom:8px;'>
+  <!-- inner clip wrapper keeps background + boat rounded, outer div stays overflow:visible for camera btn -->
+  <div style='position:absolute;top:0;left:0;right:0;bottom:0;border-radius:12px;overflow:hidden;z-index:0;'>
+    <img src='{_bg_img_src}'
+         style='position:absolute;top:0;left:0;width:100%;height:100%;
+                object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
+    <img src='data:image/svg+xml;base64,{_boat_b64}'
+         style='position:absolute;width:5.5%;min-width:36px;
+                animation:boatSail 10s ease-in-out infinite;
+                pointer-events:none;'/>
+  </div>
   <!-- BETA sun in the sky -->
   <div class='bsun'>
     <div class='brw' style='transform:rotate(0deg)'><span   class='br' style='animation-delay:0s'></span></div>
@@ -1307,107 +1311,97 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Camera icon on header: styled st.file_uploader ────────────────
-st.markdown("""
-<style>
-/* Anchor the block-container as positioning context */
-section[data-testid="stMain"] .block-container { position: relative !important; }
+# ── Camera icon: JS injects button directly into #gpe-header ──────
+_has_custom_bg = bool(st.session_state.get("custom_bg_b64"))
+_cam_val = _components.html(f"""
+<script>
+(function() {{
+  const STORE = 'gpe_bg_v1';
+  // ── Streamlit component protocol (no CDN needed) ──
+  function _post(type, extra) {{
+    window.parent.postMessage(Object.assign({{isStreamlitMessage:true, type}}, extra), '*');
+  }}
+  _post('streamlit:componentReady', {{apiVersion:1}});
+  _post('streamlit:setFrameHeight', {{height:0}});
+  function returnVal(v) {{ _post('streamlit:setComponentValue', {{value:v, dataType:'json'}}); }}
 
-/* Collapse the wrapper that holds the camera file uploader */
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) {
-    height: 0 !important; overflow: visible !important;
-    margin: 0 !important; padding: 0 !important;
-}
-/* Absolutely position the file uploader on top of header */
-div[data-testid="stFileUploader"]:has(#cam-fu-anchor ~ *),
-div:has(#cam-fu-anchor) ~ div[data-testid="stFileUploader"] { display: none; }
+  // ── Inject camera (and optional restore) button into header ──
+  function inject() {{
+    const pd = window.parent.document;
+    const hdr = pd.getElementById('gpe-header');
+    if (!hdr) {{ setTimeout(inject, 200); return; }}
+    if (pd.getElementById('gpe-cam-btn')) return;  // already injected
 
-/* The real target: stFileUploader sibling after anchor */
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div {
-    position: absolute !important;
-    top: 16px !important;
-    right: 16px !important;
-    width: 34px !important;
-    z-index: 300 !important;
-    overflow: visible !important;
-    margin: 0 !important; padding: 0 !important;
-}
-/* Hide all dropzone chrome, keep only Browse button */
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div label,
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [data-testid="stFileUploaderDropzoneInstructions"],
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [class*="uploadedFile"],
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div small,
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div span {
-    display: none !important;
-}
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div [data-testid="stFileUploaderDropzone"] {
-    border: none !important; background: transparent !important;
-    padding: 0 !important; margin: 0 !important; min-height: 0 !important;
-}
-/* Style Browse button → camera icon */
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button {
-    background: rgba(255,255,255,0.68) !important;
-    border: 1.5px solid rgba(255,255,255,0.55) !important;
-    border-radius: 50% !important;
-    width: 30px !important; min-height: 30px !important;
-    padding: 0 !important; font-size: 0 !important;
-    color: transparent !important; line-height: 1 !important;
-    backdrop-filter: blur(5px) !important;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.22) !important;
-    cursor: pointer !important;
-}
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button::before {
-    content: "📷"; font-size: 13px; color: #333;
-}
-div[data-testid="stVerticalBlock"] > div:has(#cam-fu-anchor) + div button:hover {
-    background: rgba(255,255,255,0.93) !important;
-}
-</style>
-<div id="cam-fu-anchor"></div>
-""", unsafe_allow_html=True)
+    // file input
+    const inp = pd.createElement('input');
+    inp.type='file'; inp.accept='image/*';
+    inp.style.display='none'; inp.id='gpe-bg-inp';
+    inp.onchange = function(e) {{
+      const f = e.target.files[0]; if(!f) return;
+      const r = new FileReader();
+      r.onload = evt => {{ window.parent.sessionStorage.setItem(STORE, evt.target.result); }};
+      r.readAsDataURL(f);
+    }};
 
-_cam_upload = st.file_uploader(
-    "bg", type=["png","jpg","jpeg","webp"],
-    key="bg_cam_uploader", label_visibility="collapsed"
-)
-if _cam_upload is not None:
-    _cam_bytes = _cam_upload.read()
-    st.session_state["custom_bg_b64"] = (
-        f"data:{_cam_upload.type};base64," + _b64.b64encode(_cam_bytes).decode()
-    )
+    // camera button
+    const btn = pd.createElement('div');
+    btn.id = 'gpe-cam-btn';
+    btn.title = 'Change background';
+    btn.textContent = '📷';
+    btn.style.cssText = 'position:absolute;top:10px;right:14px;z-index:500;'
+      + 'display:inline-flex;align-items:center;justify-content:center;'
+      + 'width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;'
+      + 'background:rgba(255,255,255,0.68);border:1.5px solid rgba(255,255,255,0.55);'
+      + 'box-shadow:0 1px 6px rgba(0,0,0,0.25);user-select:none;';
+    btn.onmouseover = () => btn.style.background='rgba(255,255,255,0.95)';
+    btn.onmouseout  = () => btn.style.background='rgba(255,255,255,0.68)';
+    btn.onclick = () => inp.click();
+
+    hdr.appendChild(inp);
+    hdr.appendChild(btn);
+
+    // restore button (only when custom bg active)
+    if ({'true' if _has_custom_bg else 'false'}) {{
+      const rst = pd.createElement('div');
+      rst.id = 'gpe-rst-btn';
+      rst.title = 'Restore Calanques';
+      rst.textContent = '↩';
+      rst.style.cssText = 'position:absolute;top:10px;right:46px;z-index:500;'
+        + 'display:inline-flex;align-items:center;justify-content:center;'
+        + 'width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:10px;'
+        + 'background:rgba(220,60,60,0.75);border:1px solid rgba(255,255,255,0.5);'
+        + 'color:white;box-shadow:0 1px 4px rgba(0,0,0,0.2);user-select:none;';
+      rst.onmouseover = () => rst.style.background='rgba(220,60,60,0.95)';
+      rst.onmouseout  = () => rst.style.background='rgba(220,60,60,0.75)';
+      rst.onclick = () => returnVal('RESET');
+      hdr.appendChild(rst);
+    }}
+  }}
+
+  // ── Poll sessionStorage for new image data ──
+  setInterval(() => {{
+    // re-inject if Streamlit reran and removed buttons
+    const pd = window.parent.document;
+    if (pd.getElementById('gpe-header') && !pd.getElementById('gpe-cam-btn')) inject();
+
+    const v = window.parent.sessionStorage.getItem(STORE);
+    if (v) {{
+      window.parent.sessionStorage.removeItem(STORE);
+      returnVal(v);
+    }}
+  }}, 400);
+
+  inject();
+}})();
+</script>
+""", height=0, scrolling=False)
+
+if _cam_val == 'RESET':
+    st.session_state.pop('custom_bg_b64', None)
     st.rerun()
-# Restore button — only shown when custom bg is active, small and to the right of camera
-if st.session_state.get("custom_bg_b64"):
-    st.markdown("""
-    <style>
-    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) {
-        height:0 !important; overflow:visible !important;
-        margin:0 !important; padding:0 !important;
-    }
-    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div {
-        position: absolute !important;
-        top: 16px !important; right: 52px !important;
-        width: 26px !important; z-index: 300 !important;
-        overflow: visible !important; margin:0 !important; padding:0 !important;
-    }
-    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div button {
-        background: rgba(220,60,60,0.72) !important;
-        border: 1px solid rgba(255,255,255,0.5) !important;
-        border-radius: 50% !important;
-        width: 22px !important; min-height: 22px !important;
-        padding: 0 !important; font-size: 10px !important;
-        color: white !important; line-height: 1 !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.2) !important;
-    }
-    div[data-testid="stVerticalBlock"] > div:has(#rst-bg-anchor) + div button:hover {
-        background: rgba(220,60,60,0.95) !important;
-    }
-    </style>
-    <div id="rst-bg-anchor"></div>
-    """, unsafe_allow_html=True)
-    if st.button("↩", key="rst_bg_btn", help="Restore Calanques"):
-        del st.session_state["custom_bg_b64"]
-        st.rerun()
+elif isinstance(_cam_val, str) and _cam_val.startswith('data:image'):
+    st.session_state['custom_bg_b64'] = _cam_val
+    st.rerun()
 
 with st.expander("About this tool"):
     st.markdown("""
