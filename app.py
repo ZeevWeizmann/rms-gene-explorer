@@ -1307,26 +1307,61 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-with st.expander("🖼️ Header background"):
-    _bg_upload = st.file_uploader(
-        "Upload your own header image (PNG, JPG, WEBP)",
-        type=["png", "jpg", "jpeg", "webp"],
-        key="bg_file_uploader",
-        label_visibility="collapsed",
-    )
-    if _bg_upload is not None:
-        _bg_bytes = _bg_upload.read()
-        st.session_state["custom_bg_b64"] = (
-            f"data:{_bg_upload.type};base64," + _b64.b64encode(_bg_bytes).decode()
+# ── Camera icon overlaid on header (top-right corner) ─────────────
+st.markdown("""
+<style>
+div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker) {
+    height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
+  + div[data-testid="stVerticalBlockBorderWrapper"] {
+    margin-top: -76px !important;
+    position: relative;
+    z-index: 100;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
+  + div[data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPopoverButton"] {
+    background: rgba(255,255,255,0.62) !important;
+    border: 1px solid rgba(255,255,255,0.45) !important;
+    border-radius: 50% !important;
+    width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.18) !important;
+    font-size: 0.85rem !important;
+    line-height: 1 !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
+  + div[data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPopoverButton"]:hover {
+    background: rgba(255,255,255,0.92) !important;
+}
+</style>
+<div id="bg-row-marker"></div>
+""", unsafe_allow_html=True)
+
+_, _bg_icon_col = st.columns([30, 1])
+with _bg_icon_col:
+    with st.popover("📷", use_container_width=False):
+        st.caption("**Header background**")
+        _bg_upload = st.file_uploader(
+            "Upload image (PNG / JPG / WEBP)",
+            type=["png", "jpg", "jpeg", "webp"],
+            key="bg_file_uploader",
+            label_visibility="collapsed",
         )
-        st.rerun()
-    if st.session_state.get("custom_bg_b64"):
-        st.caption("✅ Custom background active")
-        if st.button("↩️ Restore Calanques default"):
-            del st.session_state["custom_bg_b64"]
+        if _bg_upload is not None:
+            _bg_bytes = _bg_upload.read()
+            st.session_state["custom_bg_b64"] = (
+                f"data:{_bg_upload.type};base64," + _b64.b64encode(_bg_bytes).decode()
+            )
             st.rerun()
-    else:
-        st.caption("Using default Calanques de Marseille background")
+        if st.session_state.get("custom_bg_b64"):
+            if st.button("↩️ Restore Calanques", key="restore_bg_btn"):
+                del st.session_state["custom_bg_b64"]
+                st.rerun()
+        else:
+            st.caption("🌊 Calanques de Marseille")
 
 with st.expander("About this tool"):
     st.markdown("""
