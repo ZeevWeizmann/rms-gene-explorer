@@ -1396,8 +1396,10 @@ This is a **RAG-based gene program retrieval system** applied to single-cell RMS
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
-3. The program is displayed on a cell UMAP and mapped to its **gene regulatory network (GRN)** inferred by **CardamomOT** (ODE mechanistic model + optimal transport)
-4. In silico **perturbation simulations** (e.g. BIRC5 knockout) reveal which genes change — enabling **network-based target identification**
+3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
+4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
+
+> 💡 **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
 
 **Therapeutic target logic (network perturbation approach):**
 - **Direct targets** — genes overexpressed in the tumor that are essential nodes in the GRN (e.g. CEP55: drives cytokinesis, supra-expressed in RMS)
