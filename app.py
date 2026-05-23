@@ -1332,18 +1332,16 @@ if _cam_upload is not None:
 _components.html("""<script>
 (function() {{
   function hideFU() {{
-    // Hide the file-uploader widget via DOM traversal from anchor
     const pd = window.parent.document;
     const anchor = pd.getElementById('cam-fu-anchor');
     if (!anchor) return;
-    // Walk up to find the direct child of a VerticalBlock-level parent
-    let el = anchor.closest('[data-testid]') || anchor.parentElement;
-    el = el.parentElement;  // one level up = block wrapper
-    const fuWrapper = el && el.nextElementSibling;
-    if (fuWrapper) {{
-      fuWrapper.style.cssText = 'display:none!important;height:0!important;'
-        + 'overflow:hidden!important;margin:0!important;padding:0!important;';
-    }}
+    // Find stFileUploader that comes after the anchor in document order
+    const uploaders = [...pd.querySelectorAll('[data-testid="stFileUploader"]')];
+    const fu = uploaders.find(u => anchor.compareDocumentPosition(u) & 4);
+    if (!fu) return;
+    const hide = 'display:none!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;';
+    fu.style.cssText = hide;
+    if (fu.parentElement) fu.parentElement.style.cssText = hide;
   }}
 
   function inject() {{
@@ -1377,6 +1375,7 @@ _components.html("""<script>
   setInterval(() => {{
     const pd = window.parent.document;
     if (pd.getElementById('gpe-header') && !pd.getElementById('gpe-cam-btn')) inject();
+    else hideFU();
   }}, 500);
   inject();
 }})();
