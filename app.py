@@ -1225,6 +1225,11 @@ _boat_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -20 76 40">
 _cal_b64  = _b64.b64encode(_calanques_static_svg.encode()).decode()
 _boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
 
+# Custom background: use uploaded image from session_state if available
+_custom_bg  = st.session_state.get("custom_bg_b64", None)
+_bg_img_src = _custom_bg if _custom_bg else f"data:image/svg+xml;base64,{_cal_b64}"
+_bg_opacity = "0.88" if _custom_bg else "0.55"
+
 st.markdown(f"""
 <style>
 @keyframes boatSail {{
@@ -1261,9 +1266,9 @@ st.markdown(f"""
 }}
 </style>
 <div style='position:relative; border-radius:12px; overflow:hidden; margin-bottom:8px;'>
-  <img src='data:image/svg+xml;base64,{_cal_b64}'
+  <img src='{_bg_img_src}'
        style='position:absolute;top:0;left:0;width:100%;height:100%;
-              object-fit:cover;opacity:0.55;pointer-events:none;'/>
+              object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
   <img src='data:image/svg+xml;base64,{_boat_b64}'
        style='position:absolute;width:5.5%;min-width:36px;
               animation:boatSail 10s ease-in-out infinite;
@@ -1301,6 +1306,27 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
+with st.expander("🖼️ Header background"):
+    _bg_upload = st.file_uploader(
+        "Upload your own header image (PNG, JPG, WEBP)",
+        type=["png", "jpg", "jpeg", "webp"],
+        key="bg_file_uploader",
+        label_visibility="collapsed",
+    )
+    if _bg_upload is not None:
+        _bg_bytes = _bg_upload.read()
+        st.session_state["custom_bg_b64"] = (
+            f"data:{_bg_upload.type};base64," + _b64.b64encode(_bg_bytes).decode()
+        )
+        st.rerun()
+    if st.session_state.get("custom_bg_b64"):
+        st.caption("✅ Custom background active")
+        if st.button("↩️ Restore Calanques default"):
+            del st.session_state["custom_bg_b64"]
+            st.rerun()
+    else:
+        st.caption("Using default Calanques de Marseille background")
 
 with st.expander("About this tool"):
     st.markdown("""
