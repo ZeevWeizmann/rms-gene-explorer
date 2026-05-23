@@ -1558,8 +1558,7 @@ This reveals not just which genes change in expression, but **how the Waddington
 <line x1="66" y1="353" x2="116" y2="353" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
 <line x1="82" y1="323" x2="82" y2="381" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
 <line x1="98" y1="323" x2="98" y2="381" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
-<text x="91" y="400" text-anchor="middle" font-size="11" fill="#777">cells × genes × t</text>
-<text x="91" y="416" text-anchor="middle" font-size="11" fill="#16A085" font-weight="bold">+ Gene Program</text>
+<text x="91" y="408" text-anchor="middle" font-size="11" fill="#777">cells × genes × t</text>
 
 <!-- ── Box 7: CARDAMOM GRN (purple) ── -->
 <rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
