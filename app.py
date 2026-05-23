@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as _components
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -1307,61 +1308,114 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Camera icon overlaid on header (top-right corner) ─────────────
+# ── Camera icon embedded in header via JS component ───────────────
+# CSS: absolutely position the component iframe over the header top-right
 st.markdown("""
 <style>
-div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker) {
-    height:0 !important; overflow:visible !important; margin:0 !important; padding:0 !important;
+.block-container { position: relative !important; }
+div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) {
+    height: 0 !important; overflow: visible !important;
+    margin: 0 !important; padding: 0 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
-  + div[data-testid="stVerticalBlockBorderWrapper"] {
-    margin-top: -76px !important;
-    position: relative;
-    z-index: 100;
+div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) + div {
+    position: absolute !important;
+    top: 14px !important;
+    right: 16px !important;
+    width: 36px !important;
+    height: 36px !important;
+    z-index: 300 !important;
+    overflow: visible !important;
+    background: transparent !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
-  + div[data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPopoverButton"] {
-    background: rgba(255,255,255,0.62) !important;
-    border: 1px solid rgba(255,255,255,0.45) !important;
-    border-radius: 50% !important;
-    width: 30px !important;
-    min-height: 30px !important;
-    padding: 0 !important;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 1px 5px rgba(0,0,0,0.18) !important;
-    font-size: 0.85rem !important;
-    line-height: 1 !important;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:has(#bg-row-marker)
-  + div[data-testid="stVerticalBlockBorderWrapper"] button[data-testid="stPopoverButton"]:hover {
-    background: rgba(255,255,255,0.92) !important;
+div[data-testid="stVerticalBlock"] > div:has(#cam-anchor) + div iframe {
+    background: transparent !important;
+    border: none !important;
 }
 </style>
-<div id="bg-row-marker"></div>
+<div id="cam-anchor"></div>
 """, unsafe_allow_html=True)
 
-_, _bg_icon_col = st.columns([30, 1])
-with _bg_icon_col:
-    with st.popover("📷", use_container_width=False):
-        st.caption("**Header background**")
-        _bg_upload = st.file_uploader(
-            "Upload image (PNG / JPG / WEBP)",
-            type=["png", "jpg", "jpeg", "webp"],
-            key="bg_file_uploader",
-            label_visibility="collapsed",
-        )
-        if _bg_upload is not None:
-            _bg_bytes = _bg_upload.read()
-            st.session_state["custom_bg_b64"] = (
-                f"data:{_bg_upload.type};base64," + _b64.b64encode(_bg_bytes).decode()
-            )
-            st.rerun()
-        if st.session_state.get("custom_bg_b64"):
-            if st.button("↩️ Restore Calanques", key="restore_bg_btn"):
-                del st.session_state["custom_bg_b64"]
-                st.rerun()
-        else:
-            st.caption("🌊 Calanques de Marseille")
+_has_bg = bool(st.session_state.get("custom_bg_b64"))
+_cam_result = _components.html(f"""
+<html>
+<head>
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{ background:transparent; overflow:hidden; width:36px; height:36px; }}
+  .wrap {{ display:flex; gap:3px; align-items:center; }}
+  label {{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,0.65);
+    border:1.5px solid rgba(255,255,255,0.5);
+    cursor:pointer; font-size:13px;
+    box-shadow:0 1px 5px rgba(0,0,0,0.22);
+    transition:background 0.15s;
+    user-select:none;
+  }}
+  label:hover {{ background:rgba(255,255,255,0.92); }}
+  input[type=file] {{ display:none; }}
+  button.rst {{
+    display:{'inline-flex' if _has_bg else 'none'};
+    align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:50%;
+    background:rgba(220,60,60,0.72);
+    border:1px solid rgba(255,255,255,0.5);
+    color:white; font-size:9px; cursor:pointer;
+    box-shadow:0 1px 4px rgba(0,0,0,0.22);
+    transition:background 0.15s;
+  }}
+  button.rst:hover {{ background:rgba(220,60,60,0.95); }}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <label title="Change header background" for="bg-f">📷</label>
+  <input id="bg-f" type="file" accept="image/*">
+  <button class="rst" title="Restore Calanques" id="rst-btn">↩</button>
+</div>
+<script>
+(function() {{
+  function send(v) {{
+    // Try streamlit-component-lib first, fallback to postMessage
+    if (window.Streamlit) {{
+      window.Streamlit.setComponentValue(v);
+    }} else {{
+      window.parent.postMessage({{isStreamlitMessage:true, type:'streamlit:setComponentValue', value:v}}, '*');
+    }}
+  }}
+  // Load streamlit-component-lib
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/streamlit-component-lib@2.0.0/dist/index.js';
+  s.onload = function() {{
+    window.Streamlit.setComponentReady();
+    window.Streamlit.setFrameHeight(36);
+  }};
+  document.head.appendChild(s);
+
+  document.getElementById('bg-f').addEventListener('change', function(e) {{
+    var f = e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function(evt) {{ send(evt.target.result); }};
+    r.readAsDataURL(f);
+  }});
+
+  document.getElementById('rst-btn').addEventListener('click', function() {{
+    send('RESET');
+  }});
+}})();
+</script>
+</body>
+</html>
+""", height=36, scrolling=False)
+
+if _cam_result == "RESET":
+    st.session_state.pop("custom_bg_b64", None)
+    st.rerun()
+elif _cam_result and isinstance(_cam_result, str) and _cam_result.startswith("data:image"):
+    st.session_state["custom_bg_b64"] = _cam_result
+    st.rerun()
 
 with st.expander("About this tool"):
     st.markdown("""
