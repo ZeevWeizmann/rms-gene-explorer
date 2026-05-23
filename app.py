@@ -1230,6 +1230,11 @@ _boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
 _custom_bg  = st.session_state.get("custom_bg_b64", None)
 _bg_img_src = _custom_bg if _custom_bg else f"data:image/svg+xml;base64,{_cal_b64}"
 _bg_opacity = "0.88" if _custom_bg else "0.55"
+_boat_html  = "" if _custom_bg else (
+    f"<img src='data:image/svg+xml;base64,{_boat_b64}' "
+    f"style='position:absolute;width:5.5%;min-width:36px;"
+    f"animation:boatSail 10s ease-in-out infinite;pointer-events:none;'/>"
+)
 
 st.markdown(f"""
 <style>
@@ -1272,8 +1277,7 @@ st.markdown(f"""
     <img src='{_bg_img_src}'
          style='position:absolute;top:0;left:0;width:100%;height:100%;
                 object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
-    {"" if _custom_bg else f\"<img src='data:image/svg+xml;base64,{_boat_b64}' style='position:absolute;width:5.5%;min-width:36px;animation:boatSail 10s ease-in-out infinite;pointer-events:none;'/>\"}
-
+    {_boat_html}
   </div>
   <!-- BETA sun in the sky -->
   <div class='bsun'>
