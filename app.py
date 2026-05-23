@@ -207,6 +207,19 @@ def load_real_expr_means():
 
 
 @st.cache_resource
+def load_celltype_gene_means():
+    """Per-gene per-cell-type mean expression WT vs KO (FOXM1 model, 45KB)."""
+    import os
+    f = "foxm1_celltype_gene_means.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_umap_expr():
     """Load per-cell WT vs KO expression on UMAP (v2: includes expr_real)."""
     import os
@@ -220,6 +233,107 @@ def load_umap_expr():
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset",
                            token=token, force_download=True)
     return pd.read_csv(path)
+
+
+def build_celltype_shift_figure(celltype_df):
+    """Two-panel figure: real cell type distribution + per-cell-type KO effect on key genes."""
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    CT_ORDER  = ["quiescent", "intermediate", "proliferative"]
+    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#8C8C8C", "proliferative": "#D45F5F"}
+    CT_LABELS = {"quiescent": "Quiescent", "intermediate": "Intermediate", "proliferative": "Proliferative"}
+
+    # Real cell type counts
+    real_counts = {"quiescent": 4645, "intermediate": 5106, "proliferative": 4217}
+    total = sum(real_counts.values())
+
+    # Key genes to show (most biologically relevant cell-type-specific changes)
+    SHOW_GENES = ["FOXM1", "NUSAP1", "PSRC1", "EIF2A", "HSPA1A", "PABPN1"]
+
+    fig = make_subplots(
+        rows=1, cols=2,
+        column_widths=[0.35, 0.65],
+        subplot_titles=["Cell type distribution (real data)",
+                        "Mean expression WT vs FOXM1 KO (per cell type)"],
+        horizontal_spacing=0.12,
+    )
+
+    # ── Panel 1: cell type distribution bar ──────────────────────
+    for ct in CT_ORDER:
+        fig.add_trace(go.Bar(
+            x=[CT_LABELS[ct]],
+            y=[real_counts[ct]],
+            name=CT_LABELS[ct],
+            marker_color=CT_COLORS[ct],
+            text=[f"{real_counts[ct]:,}<br>({100*real_counts[ct]/total:.0f}%)"],
+            textposition="outside",
+            showlegend=False,
+        ), row=1, col=1)
+
+    # ── Panel 2: per-gene WT vs KO grouped by cell type ──────────
+    # For each cell type, show WT (solid) and KO (lighter) bars per gene
+    gene_positions = {g: i for i, g in enumerate(SHOW_GENES)}
+    n_genes = len(SHOW_GENES)
+    ct_offsets = {"quiescent": -0.27, "intermediate": 0, "proliferative": 0.27}
+    bar_width = 0.22
+
+    _sub = celltype_df[celltype_df["gene"].isin(SHOW_GENES)].copy()
+
+    _legend_added = set()
+    for ct in CT_ORDER:
+        ct_data = _sub[_sub["cell_type"] == ct].set_index("gene")
+        color = CT_COLORS[ct]
+
+        x_wt = [gene_positions[g] + ct_offsets[ct] - bar_width/4 for g in SHOW_GENES if g in ct_data.index]
+        x_ko = [gene_positions[g] + ct_offsets[ct] + bar_width/4 for g in SHOW_GENES if g in ct_data.index]
+        y_wt = [ct_data.loc[g, "mean_wt"] for g in SHOW_GENES if g in ct_data.index]
+        y_ko = [ct_data.loc[g, "mean_ko"] for g in SHOW_GENES if g in ct_data.index]
+        gene_names = [g for g in SHOW_GENES if g in ct_data.index]
+
+        show_leg_wt = CT_LABELS[ct] + " WT" not in _legend_added
+        show_leg_ko = CT_LABELS[ct] + " KO" not in _legend_added
+        if show_leg_wt: _legend_added.add(CT_LABELS[ct] + " WT")
+        if show_leg_ko: _legend_added.add(CT_LABELS[ct] + " KO")
+
+        hover_wt = [f"<b>{g}</b> · {CT_LABELS[ct]}<br>WT: {y:.3f}" for g, y in zip(gene_names, y_wt)]
+        hover_ko = [f"<b>{g}</b> · {CT_LABELS[ct]}<br>KO: {y:.3f}  (WT: {ct_data.loc[g,'mean_wt']:.3f})" for g, y in zip(gene_names, y_ko)]
+
+        fig.add_trace(go.Bar(
+            x=x_wt, y=y_wt, width=bar_width/2,
+            marker_color=color, marker_opacity=0.9,
+            name=f"{CT_LABELS[ct]} WT", legendgroup=f"{ct}_wt",
+            showlegend=show_leg_wt,
+            hovertext=hover_wt, hoverinfo="text",
+        ), row=1, col=2)
+
+        fig.add_trace(go.Bar(
+            x=x_ko, y=y_ko, width=bar_width/2,
+            marker_color=color, marker_opacity=0.45,
+            marker_line=dict(color=color, width=1.5),
+            name=f"{CT_LABELS[ct]} KO", legendgroup=f"{ct}_ko",
+            showlegend=show_leg_ko,
+            hovertext=hover_ko, hoverinfo="text",
+        ), row=1, col=2)
+
+    fig.update_layout(
+        height=360, margin=dict(t=50, b=40, l=50, r=20),
+        plot_bgcolor="white", paper_bgcolor="white",
+        barmode="overlay",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.28, xanchor="right", x=1,
+                    font=dict(size=10)),
+    )
+    fig.update_xaxes(
+        tickvals=list(gene_positions.values()),
+        ticktext=list(gene_positions.keys()),
+        tickfont=dict(size=11), row=1, col=2,
+    )
+    fig.update_yaxes(title_text="Cells", row=1, col=1, gridcolor="#eee")
+    fig.update_yaxes(title_text="Mean expression", row=1, col=2, gridcolor="#eee")
+    fig.update_xaxes(showgrid=False, row=1, col=1)
+    fig.update_xaxes(showgrid=False, row=1, col=2)
+
+    return fig
 
 
 def build_umap_perturbation(umap_expr_df, query_gene):
@@ -1172,6 +1286,20 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
+                        # Cell type shift chart — only for FOXM1 model
+                        if _msg_grn_model == "foxm1":
+                            try:
+                                ct_df = load_celltype_gene_means()
+                                ct_fig = build_celltype_shift_figure(ct_df)
+                                st.plotly_chart(ct_fig, use_container_width=True, key=f"{msg_id}_ct_shift")
+                                st.caption(
+                                    "Cell type distribution (real data) and per-cell-type expression of "
+                                    "key FOXM1 targets. Solid bars = WT simulation, faded bars = FOXM1 KO. "
+                                    "NUSAP1 suppression is strongest in proliferative cells; EIF2A increases "
+                                    "in quiescent/intermediate cells after KO — directional shift toward quiescence."
+                                )
+                            except Exception as _e:
+                                st.info(f"Cell type shift chart unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
                         _prog = _prog_map.get(_msg_grn_model, "MKI67 program (201 genes)")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
