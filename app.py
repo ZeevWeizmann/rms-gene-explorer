@@ -236,14 +236,16 @@ def load_celltype_gene_means():
 
 @st.cache_resource
 def load_foxm1_sim_umap_proj():
-    """Simulation cells projected onto real UMAP via nearest-neighbor (143 KB)."""
+    """Simulation cells projected onto real UMAP via UMAP transform (v2, 177 KB).
+    Columns: x_wt, y_wt, x_ko, y_ko, time."""
     import os
-    f = "foxm1_sim_umap_proj.csv"
-    local = os.path.join(LOCAL_DIR, f)
-    if os.path.exists(local):
-        return pd.read_csv(local)
+    for fname in ["foxm1_sim_umap_proj_v2.csv", "foxm1_sim_umap_proj.csv"]:
+        local = os.path.join(LOCAL_DIR, fname)
+        if os.path.exists(local):
+            return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename="foxm1_sim_umap_proj_v2.csv",
+                           repo_type="dataset", token=token)
     return pd.read_csv(path)
 
 
@@ -1708,19 +1710,22 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
-        # Simulation time UMAP — foxm1 only, using NN-projected sim cells
-        # (CARDAMOM generates synthetic cells via OT; project them onto real UMAP
-        #  by finding the nearest real cell per sim cell in expression space)
+        # Simulation time UMAP — foxm1 only
+        # Sim cells projected via UMAP transform (fit on real data, embedding
+        # replaced with original Scanpy UMAP, then transform applied to sim cells)
         fig_sim_time = None
         if _grn_model_q == "foxm1":
             try:
                 _proj = load_foxm1_sim_umap_proj()
-                _t_order = [str(int(t)) for t in sorted(_proj["time_sim"].unique())]
+                _xcol = "x_wt" if "x_wt" in _proj.columns else "x"
+                _ycol = "y_wt" if "y_wt" in _proj.columns else "y"
+                _tcol = "time"  if "time"  in _proj.columns else "time_sim"
+                _t_order = [str(int(t)) for t in sorted(_proj[_tcol].unique())]
                 fig_sim_time = px.scatter(
-                    _proj, x="x", y="y",
-                    color=_proj["time_sim"].astype(int).astype(str),
+                    _proj, x=_xcol, y=_ycol,
+                    color=_proj[_tcol].astype(int).astype(str),
                     title="Time (simulation WT)",
-                    labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                    labels={_xcol: "UMAP 1", _ycol: "UMAP 2", "color": "Time"},
                     opacity=0.6, height=450,
                     render_mode="svg",
                     category_orders={"color": _t_order},
