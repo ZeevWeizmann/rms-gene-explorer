@@ -509,8 +509,8 @@ def build_population_proportions_figure(sim_df):
     POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
     POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
                   "intermediate": "Intermediate"}
-    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
-                  "intermediate": "#adb5bd"}
+    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
+                  "intermediate": "#c8d0d8"}
 
     n = len(sim_df)
     wt_counts = sim_df["pop_wt"].value_counts()
@@ -578,8 +578,8 @@ def build_population_delta_figure(sim_df):
     POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
     POP_LABELS = {"proliferative": "Proliferative", "quiescent": "Quiescent",
                   "intermediate": "Intermediate"}
-    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
-                  "intermediate": "#adb5bd"}
+    POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
+                  "intermediate": "#c8d0d8"}
 
     n = len(sim_df)
     wt_pct = {p: (sim_df["pop_wt"] == p).sum() / n * 100 for p in POP_ORDER}
@@ -1569,23 +1569,26 @@ def _render_msg_figures(msg, msg_id):
                         if _msg_grn_model == "foxm1":
                             try:
                                 _sim_scored = load_foxm1_pop_sim()
-                                _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
-                                               "intermediate": "#adb5bd"}
+                                _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
+                                               "intermediate": "#c8d0d8"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored)
                                 _delta_fig = build_population_delta_figure(_sim_scored)
                                 st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
                                 st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
                                 # UMAP WT and KO side by side
                                 _umap_col1, _umap_col2 = st.columns(2)
+                                _pt_pop_order = ["intermediate", "proliferative", "quiescent"]
+                                _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
                                     title="Populations — simulation WT (before KO)",
                                     labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
-                                    category_orders={"pop_wt": ["proliferative", "quiescent", "intermediate"]},
+                                    category_orders={"pop_wt": _pt_pop_order},
                                 )
-                                _pop_umap_wt.update_traces(marker=dict(size=3))
+                                for _pp, _ps in _pt_pop_sizes.items():
+                                    _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
@@ -1593,9 +1596,10 @@ def _render_msg_figures(msg, msg_id):
                                     title="Populations — simulation FOXM1 KO (after KO)",
                                     labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
-                                    category_orders={"pop_ko": ["proliferative", "quiescent", "intermediate"]},
+                                    category_orders={"pop_ko": _pt_pop_order},
                                 )
-                                _pop_umap_ko.update_traces(marker=dict(size=3))
+                                for _pp, _ps in _pt_pop_sizes.items():
+                                    _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
                                 _umap_col1.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
                                 _umap_col2.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
@@ -1808,7 +1812,9 @@ if query_gene:
         # Real data: shown for foxm1 + original models
         # Simulation: foxm1 only (only model with scored sim CSV)
         # Quiescent = DNAJB1 z-score; Proliferative = 100-gene signature score
-        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d", "intermediate": "#adb5bd"}
+        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#c8d0d8"}
+        _POP_ORDER  = ["intermediate", "proliferative", "quiescent"]  # quiescent drawn on top
+        _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
         if _grn_model_q in ("foxm1", "original"):
@@ -1820,10 +1826,11 @@ if query_gene:
                     color_discrete_map=_POP_COLORS,
                     title="Population (real data)",
                     labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
-                    opacity=0.5, height=450, render_mode="svg",
-                    category_orders={"population": ["proliferative", "quiescent", "intermediate"]},
+                    opacity=0.6, height=450, render_mode="svg",
+                    category_orders={"population": _POP_ORDER},
                 )
-                fig_pop_real.update_traces(marker=dict(size=2))
+                for _pop, _sz in _POP_SIZES.items():
+                    fig_pop_real.update_traces(marker=dict(size=_sz), selector=dict(name=_pop))
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
@@ -1837,9 +1844,10 @@ if query_gene:
                     title="Population (simulation WT)",
                     labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
                     opacity=0.6, height=450, render_mode="svg",
-                    category_orders={"pop_wt": ["proliferative", "quiescent", "intermediate"]},
+                    category_orders={"pop_wt": _POP_ORDER},
                 )
-                fig_pop_sim.update_traces(marker=dict(size=3))
+                for _pop, _sz in _POP_SIZES.items():
+                    fig_pop_sim.update_traces(marker=dict(size=_sz), selector=dict(name=_pop))
                 fig_pop_sim.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
