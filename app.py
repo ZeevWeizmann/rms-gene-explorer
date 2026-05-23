@@ -1611,10 +1611,28 @@ def _render_msg_figures(msg, msg_id):
                                 _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
                                 st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
                                 st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
-                                # UMAP WT and KO side by side
-                                _umap_col1, _umap_col2 = st.columns(2)
+                                # UMAP: Real data | WT simulation | KO simulation
+                                _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
                                 _pt_pop_order = ["intermediate", "proliferative", "quiescent"]
                                 _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
+                                # Real data population UMAP
+                                try:
+                                    _pr = load_foxm1_pop_real()
+                                    _pop_umap_real = px.scatter(
+                                        _pr, x="x", y="y", color="population",
+                                        color_discrete_map=_POP_COLORS,
+                                        title="Populations — real data",
+                                        labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
+                                        opacity=0.6, height=420, render_mode="svg",
+                                        category_orders={"population": _pt_pop_order},
+                                    )
+                                    for _pp, _ps in _pt_pop_sizes.items():
+                                        _pop_umap_real.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
+                                    _pop_umap_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                                    _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
+                                except Exception:
+                                    pass
+                                # WT simulation UMAP
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
@@ -1626,10 +1644,11 @@ def _render_msg_figures(msg, msg_id):
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                                # KO simulation UMAP
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
-                                    title=f"Populations — simulation {_ko_label} KO (after KO)",
+                                    title=f"Populations — simulation {_ko_label} (after KO)",
                                     labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
@@ -1637,8 +1656,8 @@ def _render_msg_figures(msg, msg_id):
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                                _umap_col1.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
-                                _umap_col2.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
+                                _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                                _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)"}
@@ -1870,9 +1889,9 @@ if query_gene:
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
-        if _grn_model_q in ("foxm1", "tubb", "mki67"):
+        if _grn_model_q in ("foxm1", "tubb", "mki67", "original"):
             try:
-                if _grn_model_q == "foxm1":
+                if _grn_model_q in ("foxm1", "original"):
                     _ps = load_foxm1_pop_sim()
                 elif _grn_model_q == "tubb":
                     _ps = load_tubb_pop_sim()
