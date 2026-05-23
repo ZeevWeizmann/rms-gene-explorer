@@ -1421,6 +1421,19 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 465" style="font-family:Arial,sans-serif">
 <defs>
+  <style>
+    @keyframes arrowPulse {
+      0%, 100% { opacity: 1;    stroke-width: 2.5; }
+      50%       { opacity: 0.1; stroke-width: 1.5; }
+    }
+    @keyframes labelPulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.1; }
+    }
+    .blink-arrow path { animation: arrowPulse 1.4s ease-in-out infinite; }
+    .blink-arrow rect  { animation: labelPulse 1.4s ease-in-out infinite; }
+    .blink-arrow text  { animation: labelPulse 1.4s ease-in-out infinite; }
+  </style>
   <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
     <path d="M0,0 L0,7 L8,3.5 z" fill="#888"/>
   </marker>
@@ -1503,11 +1516,13 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 <line x1="698" y1="119" x2="713" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
 <!-- ═══ SPECIAL ARROW: Gene Program (box5) → scRNA-seq+Time (box6) ═══ -->
-<path d="M 795,206 C 795,248 91,247 91,276"
-      stroke="#C0392B" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
-      marker-end="url(#ahRed)"/>
-<rect x="320" y="228" width="280" height="24" rx="5" fill="white" opacity="0.85"/>
-<text x="460" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → scRNA-seq + Time</text>
+<g class="blink-arrow">
+  <path d="M 795,206 C 795,248 91,247 91,276"
+        stroke="#C0392B" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
+        marker-end="url(#ahRed)"/>
+  <rect x="320" y="228" width="280" height="24" rx="5" fill="white" opacity="0.85"/>
+  <text x="460" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → scRNA-seq + Time</text>
+</g>
 
 <!-- ═══ ROW 2 TITLE ═══ -->
 <text x="460" y="268" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">GRN Inference &amp; Perturbation Simulation</text>
@@ -1587,10 +1602,9 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
 </svg>"""
-    _arch_b64 = _b64.b64encode(_arch_svg.encode()).decode()
-    st.markdown(
-        f"<img src='data:image/svg+xml;base64,{_arch_b64}' style='width:100%;border-radius:8px'/>",
-        unsafe_allow_html=True
+    _components.html(
+        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
+        height=475, scrolling=False
     )
 
 # ================================================================
