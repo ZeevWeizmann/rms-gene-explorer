@@ -268,11 +268,11 @@ def load_tubb_sim_umap_proj():
     """Simulation cells (tubb model) projected onto real UMAP via UMAP transform.
     Columns: x_wt, y_wt, x_ko, y_ko, time."""
     import os
-    local = os.path.join(LOCAL_DIR, "tubb_sim_umap_proj_v3.csv")
+    local = os.path.join(LOCAL_DIR, "tubb_sim_umap_proj_v4.csv")
     if os.path.exists(local):
         return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename="tubb_sim_umap_proj_v3.csv",
+    path = hf_hub_download(repo_id=REPO_ID, filename="tubb_sim_umap_proj_v4.csv",
                            repo_type="dataset", token=token)
     return pd.read_csv(path)
 
@@ -310,7 +310,7 @@ def load_tubb_pop_sim():
     """TUBB sim cells (WT+KO) scored by proliferative/quiescent gene programs.
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
-    f = "tubb_pop_sim_scored_v2.csv"
+    f = "tubb_pop_sim_scored_v3.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
         return pd.read_csv(local)
