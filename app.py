@@ -306,6 +306,20 @@ def load_foxm1_pop_sim():
 
 
 @st.cache_resource
+def load_tubb_pop_sim():
+    """TUBB sim cells (WT+KO) scored by proliferative/quiescent gene programs.
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "tubb_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_real_timecourse():
     """Real data mean expression per gene per timepoint (93 KB, 1188 rows)."""
     import os
@@ -1565,10 +1579,11 @@ def _render_msg_figures(msg, msg_id):
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                        # Population proportions + delta + UMAP — foxm1 only
-                        if _msg_grn_model == "foxm1":
+                        # Population proportions + delta + UMAP — foxm1 and tubb
+                        if _msg_grn_model in ("foxm1", "tubb"):
                             try:
-                                _sim_scored = load_foxm1_pop_sim()
+                                _sim_scored = load_foxm1_pop_sim() if _msg_grn_model == "foxm1" else load_tubb_pop_sim()
+                                _ko_label   = "FOXM1" if _msg_grn_model == "foxm1" else "TUBB"
                                 _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
                                                "intermediate": "#c8d0d8"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored)
@@ -1593,7 +1608,7 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
-                                    title="Populations — simulation FOXM1 KO (after KO)",
+                                    title=f"Populations — simulation {_ko_label} KO (after KO)",
                                     labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
@@ -1834,9 +1849,9 @@ if query_gene:
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
-        if _grn_model_q == "foxm1":
+        if _grn_model_q in ("foxm1", "tubb"):
             try:
-                _ps = load_foxm1_pop_sim()
+                _ps = load_foxm1_pop_sim() if _grn_model_q == "foxm1" else load_tubb_pop_sim()
                 fig_pop_sim = px.scatter(
                     _ps, x="x_wt", y="y_wt",
                     color="pop_wt",
