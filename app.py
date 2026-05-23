@@ -120,7 +120,7 @@ def load_data(dataset="v1"):
 
 @st.cache_resource
 def load_grn(grn_key="original"):
-    """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), or 'tubb' (201 genes)."""
+    """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), 'tubb' (201 genes), 'foxm1' (198 genes)."""
     import os
     if grn_key == "mki67":
         mat_file  = "grn_matrix_mki67.npy"
@@ -129,6 +129,10 @@ def load_grn(grn_key="original"):
     elif grn_key == "tubb":
         mat_file  = "grn_matrix_tubb.npy"
         gene_file = "grn_genes_tubb.csv"
+        gene_col  = "gene"
+    elif grn_key == "foxm1":
+        mat_file  = "grn_matrix_foxm1.npy"
+        gene_file = "grn_genes_foxm1.csv"
         gene_col  = "gene"
     else:
         mat_file  = "grn_matrix.npy"
@@ -157,6 +161,8 @@ def load_grn_gene_list(grn_key="original"):
         gene_file, gene_col = "grn_genes_mki67.csv", "gene"
     elif grn_key == "tubb":
         gene_file, gene_col = "grn_genes_tubb.csv", "gene"
+    elif grn_key == "foxm1":
+        gene_file, gene_col = "grn_genes_foxm1.csv", "gene"
     else:
         gene_file, gene_col = "grn_genes.csv", "0"
     local = os.path.join(LOCAL_DIR, gene_file)
@@ -171,7 +177,12 @@ def load_grn_gene_list(grn_key="original"):
 def load_perturbation(grn_key="mki67"):
     """Load KO perturbation data for the given GRN model."""
     import os
-    f = "tubb_ko_perturbation.csv" if grn_key == "tubb" else "birc5_ko_perturbation.csv"
+    if grn_key == "tubb":
+        f = "tubb_ko_perturbation.csv"
+    elif grn_key == "foxm1":
+        f = "foxm1_ko_perturbation.csv"
+    else:
+        f = "birc5_ko_perturbation.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local):
         return pd.read_csv(local)
@@ -287,6 +298,14 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
             "subtitle": (
                 "🟠 co-target: goes UP after KO — compensatory kinesin (KIFC1) &nbsp;|&nbsp;"
                 " direct target: suppressed by TUBB loss (MAPK4) — check real expression"
+            ),
+        },
+        "FOXM1": {
+            "co_targets":     {"EIF2A", "HSPA1A"},  # go UP — quiescent/stress genes reactivated
+            "direct_targets": {"NUSAP1", "PSRC1"},   # go DOWN — mitotic targets of FOXM1
+            "subtitle": (
+                "🟠 co-target: goes UP after KO — quiescent stress response (EIF2A, HSPA1A) &nbsp;|&nbsp;"
+                " direct target: mitotic gene driven by FOXM1 (NUSAP1, PSRC1)"
             ),
         },
     }
@@ -768,7 +787,7 @@ st.markdown(f"""
       </div>
       <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
                   margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
-        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>523</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO &nbsp;·&nbsp; RMS
+        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>462</b> GRN genes &nbsp;·&nbsp; BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
       </div>
     </div>
   </div>
@@ -947,15 +966,17 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
 col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
 
 # ── GRN selector — hide only if gene is in NO model at all ──────
-_orig_gene_set  = load_grn_gene_list("original")
-_mki67_gene_set = load_grn_gene_list("mki67")
-_tubb_gene_set  = load_grn_gene_list("tubb")
+_orig_gene_set   = load_grn_gene_list("original")
+_mki67_gene_set  = load_grn_gene_list("mki67")
+_tubb_gene_set   = load_grn_gene_list("tubb")
+_foxm1_gene_set  = load_grn_gene_list("foxm1")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
-    "MKI67 program (201 genes, BIRC5 KO)":  ("mki67",    _mki67_gene_set),
-    "TUBB program (201 genes, TUBB KO)":     ("tubb",     _tubb_gene_set),
-    "Original (159 genes)":                  ("original", _orig_gene_set),
+    "FOXM1 program (198 genes, FOXM1 KO)":   ("foxm1",    _foxm1_gene_set),
+    "MKI67 program (201 genes, BIRC5 KO)":   ("mki67",    _mki67_gene_set),
+    "TUBB program (201 genes, TUBB KO)":      ("tubb",     _tubb_gene_set),
+    "Original (159 genes)":                   ("original", _orig_gene_set),
 }
 
 # use last queried gene (or most recent search) to decide visibility
@@ -993,7 +1014,7 @@ else:
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon in search = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set
+grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set
 
 # ── Recent searches ───────────────────────────────────────────────
 recent_key = f"recent_{dataset_key}"
@@ -1037,6 +1058,7 @@ grn_hops = col_grn_slider.slider(
 # Pre-load both perturbation datasets and real expression means into cache
 load_perturbation("mki67")
 load_perturbation("tubb")
+load_perturbation("foxm1")
 load_real_expr_means()
 
 if f"messages_{dataset_key}" not in st.session_state:
@@ -1073,8 +1095,8 @@ def _render_msg_figures(msg, msg_id):
             col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
     if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
-            _has_pert = _msg_grn_model in ("mki67", "tubb")
-            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB"}.get(_msg_grn_model, "")
+            _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1")
+            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1"}.get(_msg_grn_model, "")
             if _has_pert:
                 _tab_results = st.tabs([f"🧬 {_ko_gene_label} KO Perturbation", "Network graph", "Adjacency matrix"])
                 tab_pert, tab_graph, tab_matrix = _tab_results
@@ -1150,8 +1172,9 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         st.plotly_chart(bar_fig,  use_container_width=True, key=f"{msg_id}_pert_bar")
-                        _prog = "TUBB program" if _msg_grn_model == "tubb" else "MKI67 program"
-                        st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} (201 genes) · {_ko_gene_label} knocked out")
+                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
+                        _prog = _prog_map.get(_msg_grn_model, "MKI67 program (201 genes)")
+                        st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
 
