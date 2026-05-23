@@ -1590,7 +1590,8 @@ This reveals not just which genes change in expression, but **how the tumour's c
 
 <!-- ── Box 9: KD Simulation (orange) ── -->
 <rect x="540" y="276" width="158" height="170" rx="8" fill="#FEF5E7" stroke="#E67E22" stroke-width="2"/>
-<text x="619" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#E67E22">KD Simulation</text>
+<text x="619" y="291" text-anchor="middle" font-size="13" font-weight="bold" fill="#E67E22">Perturbation</text>
+<text x="619" y="307" text-anchor="middle" font-size="13" font-weight="bold" fill="#E67E22">Simulation</text>
 <line x1="619" y1="322" x2="591" y2="357" stroke="#E67E22" stroke-width="1.8" stroke-dasharray="3,2"/>
 <line x1="619" y1="322" x2="647" y2="357" stroke="#E67E22" stroke-width="1.8"/>
 <line x1="591" y1="357" x2="619" y2="392" stroke="#E67E22" stroke-width="1.8"/>
