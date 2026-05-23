@@ -278,6 +278,34 @@ def load_tubb_sim_umap_proj():
 
 
 @st.cache_resource
+def load_foxm1_pop_real():
+    """Real cells scored by proliferative/quiescent gene programs (100+100 genes).
+    Columns: x, y, population, score_prolif, score_quies, cell_type, time."""
+    import os
+    f = "foxm1_pop_real_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_foxm1_pop_sim():
+    """Sim cells (WT+KO) scored by proliferative/quiescent gene programs.
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "foxm1_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_real_timecourse():
     """Real data mean expression per gene per timepoint (93 KB, 1188 rows)."""
     import os
@@ -1441,7 +1469,8 @@ def _render_msg_figures(msg, msg_id):
         fig_expr.update_layout(height=CHART_H)
         st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
     # Time / Sim-time / Cell type UMAPs — side by side, smaller
-    side_figs = [(k, msg.get(k)) for k in ["fig_time", "fig_sim_time", "fig_celltype"]
+    side_figs = [(k, msg.get(k)) for k in
+                 ["fig_time", "fig_sim_time", "fig_celltype", "fig_pop_real", "fig_pop_sim"]
                  if msg.get(k) is not None]
     if side_figs:
         cols = st.columns(1 if is_mobile else len(side_figs))
@@ -1720,7 +1749,7 @@ if query_gene:
         grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
         grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
 
-        # Simulation time UMAP — foxm1 only
+        # Simulation time UMAP — all GRN models
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
         _sim_proj_loaders = {
@@ -1750,6 +1779,42 @@ if query_gene:
             except Exception:
                 pass
 
+        # Population panels — real data (panel 4) and simulation (panel 5), foxm1 only
+        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d", "intermediate": "#adb5bd"}
+        fig_pop_real = None
+        fig_pop_sim  = None
+        if _grn_model_q == "foxm1":
+            try:
+                _pr = load_foxm1_pop_real()
+                fig_pop_real = px.scatter(
+                    _pr, x="x", y="y",
+                    color="population",
+                    color_discrete_map=_POP_COLORS,
+                    title="Population (real data)",
+                    labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
+                    opacity=0.5, height=450, render_mode="svg",
+                    category_orders={"population": ["proliferative", "quiescent", "intermediate"]},
+                )
+                fig_pop_real.update_traces(marker=dict(size=2))
+                fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            except Exception:
+                pass
+            try:
+                _ps = load_foxm1_pop_sim()
+                fig_pop_sim = px.scatter(
+                    _ps, x="x_wt", y="y_wt",
+                    color="pop_wt",
+                    color_discrete_map=_POP_COLORS,
+                    title="Population (simulation WT)",
+                    labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
+                    opacity=0.6, height=450, render_mode="svg",
+                    category_orders={"pop_wt": ["proliferative", "quiescent", "intermediate"]},
+                )
+                fig_pop_sim.update_traces(marker=dict(size=3))
+                fig_pop_sim.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            except Exception:
+                pass
+
         messages.append({
             "role": "assistant",
             "content": f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*",
@@ -1760,6 +1825,8 @@ if query_gene:
             "fig_time": fig_time,
             "fig_sim_time": fig_sim_time,
             "fig_celltype": fig_celltype,
+            "fig_pop_real": fig_pop_real,
+            "fig_pop_sim":  fig_pop_sim,
             "grn_fig": grn_fig,
             "grn_topo": grn_topo,
             "grn_adj": grn_adj,
