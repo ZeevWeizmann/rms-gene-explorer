@@ -1782,11 +1782,14 @@ if query_gene:
             except Exception:
                 pass
 
-        # Population panels — real data (panel 4) and simulation (panel 5), foxm1 only
+        # Population panels — real data (panel 4) and simulation (panel 5)
+        # Real data: shown for foxm1 + original models
+        # Simulation: foxm1 only (only model with scored sim CSV)
+        # Quiescent = DNAJB1 z-score; Proliferative = 100-gene signature score
         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d", "intermediate": "#adb5bd"}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q == "foxm1":
+        if _grn_model_q in ("foxm1", "original"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
@@ -1802,6 +1805,7 @@ if query_gene:
                 fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
             except Exception:
                 pass
+        if _grn_model_q == "foxm1":
             try:
                 _ps = load_foxm1_pop_sim()
                 fig_pop_sim = px.scatter(
