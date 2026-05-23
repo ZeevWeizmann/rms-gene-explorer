@@ -1419,17 +1419,179 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 - CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
     """)
 
-    import os
-    arch_path = os.path.join(LOCAL_DIR, "architecture.png")
-    if os.path.exists(arch_path):
-        st.image(arch_path, use_container_width=True)
-    else:
-        try:
-            token = st.secrets.get("HF_TOKEN", None)
-            arch_file = hf_hub_download(repo_id=REPO_ID, filename="architecture.png", repo_type="dataset", token=token)
-            st.image(arch_file, use_container_width=True)
-        except Exception:
-            pass
+    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 465" style="font-family:Arial,sans-serif">
+<defs>
+  <marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L0,7 L8,3.5 z" fill="#888"/>
+  </marker>
+  <marker id="ahRed" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto">
+    <path d="M0,0 L0,8 L10,4 z" fill="#C0392B"/>
+  </marker>
+</defs>
+
+<!-- ═══ ROW 1 TITLE ═══ -->
+<text x="460" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">RAG Gene Program Retrieval</text>
+
+<!-- ── Box 1: Query Gene (blue) ── -->
+<rect x="12" y="34" width="158" height="170" rx="8" fill="#EBF4FC" stroke="#5B9BD5" stroke-width="2"/>
+<text x="91" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#5B9BD5">Query Gene</text>
+<circle cx="91" cy="118" r="20" fill="#5B9BD5" opacity="0.85"/>
+<text x="91" y="163" text-anchor="middle" font-size="11" fill="#777">e.g. MKI67</text>
+
+<!-- ── Box 2: WGCNA Co-expression (purple) ── -->
+<rect x="188" y="34" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
+<text x="267" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">WGCNA</text>
+<text x="267" y="72" text-anchor="middle" font-size="12" fill="#9B59B6">Co-expression</text>
+<line x1="267" y1="88" x2="233" y2="113" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="267" y1="88" x2="301" y2="113" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="233" y1="113" x2="245" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="301" y1="113" x2="289" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="245" y1="148" x2="289" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<circle cx="267" cy="88" r="6" fill="#9B59B6"/>
+<circle cx="233" cy="113" r="6" fill="#9B59B6"/>
+<circle cx="301" cy="113" r="6" fill="#9B59B6"/>
+<circle cx="245" cy="148" r="6" fill="#9B59B6"/>
+<circle cx="289" cy="148" r="6" fill="#9B59B6"/>
+<text x="267" y="175" text-anchor="middle" font-size="11" fill="#777">gene-gene graph</text>
+
+<!-- ── Box 3: GNN Encoder (green) ── -->
+<rect x="364" y="34" width="158" height="170" rx="8" fill="#EAFAF1" stroke="#27AE60" stroke-width="2"/>
+<text x="443" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#27AE60">GNN Encoder</text>
+<line x1="415" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="471" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="125" x2="427" y2="153" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="125" x2="459" y2="153" stroke="#27AE60" stroke-width="1.5"/>
+<circle cx="415" cy="90" r="6" fill="#27AE60"/>
+<circle cx="443" cy="90" r="6" fill="#27AE60"/>
+<circle cx="471" cy="90" r="6" fill="#27AE60"/>
+<circle cx="443" cy="125" r="9" fill="#1A8A40"/>
+<circle cx="427" cy="153" r="6" fill="#27AE60"/>
+<circle cx="459" cy="153" r="6" fill="#27AE60"/>
+<text x="443" y="175" text-anchor="middle" font-size="11" fill="#777">node → embedding</text>
+
+<!-- ── Box 4: Gene Embeddings (orange) ── -->
+<rect x="540" y="34" width="158" height="170" rx="8" fill="#FEF5E7" stroke="#E67E22" stroke-width="2"/>
+<text x="619" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#E67E22">Gene Embeddings</text>
+<circle cx="597" cy="96" r="5" fill="#E67E22" opacity="0.6"/>
+<circle cx="628" cy="86" r="8" fill="#E67E22" opacity="0.9"/>
+<circle cx="648" cy="112" r="5" fill="#E67E22" opacity="0.5"/>
+<circle cx="601" cy="126" r="5" fill="#999" opacity="0.45"/>
+<circle cx="638" cy="136" r="5" fill="#999" opacity="0.4"/>
+<circle cx="617" cy="110" r="9" fill="#E67E22" opacity="0.85"/>
+<circle cx="607" cy="148" r="4" fill="#999" opacity="0.3"/>
+<circle cx="643" cy="95" r="4" fill="#999" opacity="0.35"/>
+<text x="619" y="175" text-anchor="middle" font-size="11" fill="#777">vector DB · cosine sim</text>
+
+<!-- ── Box 5: Gene Program (teal) ── -->
+<rect x="716" y="34" width="158" height="170" rx="8" fill="#E8FAF5" stroke="#16A085" stroke-width="2.5"/>
+<text x="795" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#16A085">Gene Program</text>
+<circle cx="780" cy="105" r="7" fill="#16A085"/>
+<circle cx="802" cy="92" r="6" fill="#16A085"/>
+<circle cx="818" cy="113" r="7" fill="#16A085"/>
+<circle cx="791" cy="126" r="6" fill="#16A085"/>
+<circle cx="811" cy="132" r="5" fill="#16A085"/>
+<circle cx="772" cy="122" r="5" fill="#16A085"/>
+<circle cx="823" cy="96" r="5" fill="#16A085" opacity="0.7"/>
+<circle cx="763" cy="100" r="4" fill="#16A085" opacity="0.6"/>
+<text x="795" y="175" text-anchor="middle" font-size="11" fill="#777">co-expression neighbors</text>
+
+<!-- ═══ ROW 1 ARROWS ═══ -->
+<line x1="170" y1="119" x2="185" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="346" y1="119" x2="361" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="522" y1="119" x2="537" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="698" y1="119" x2="713" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+
+<!-- ═══ SPECIAL ARROW: Gene Program (box5) → scRNA-seq+Time (box6) ═══ -->
+<path d="M 795,206 C 795,248 91,247 91,276"
+      stroke="#C0392B" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
+      marker-end="url(#ahRed)"/>
+<rect x="320" y="228" width="280" height="24" rx="5" fill="white" opacity="0.85"/>
+<text x="460" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → scRNA-seq + Time</text>
+
+<!-- ═══ ROW 2 TITLE ═══ -->
+<text x="460" y="268" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">GRN Inference &amp; Perturbation Simulation</text>
+
+<!-- ── Box 6: scRNA-seq + Time (blue) ── -->
+<rect x="12" y="276" width="158" height="170" rx="8" fill="#EBF4FC" stroke="#5B9BD5" stroke-width="2"/>
+<text x="91" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#5B9BD5">scRNA-seq</text>
+<text x="91" y="314" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B9BD5">+ Time</text>
+<rect x="66" y="323" width="50" height="58" rx="3" fill="none" stroke="#5B9BD5" stroke-width="1.5"/>
+<line x1="66" y1="338" x2="116" y2="338" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
+<line x1="66" y1="353" x2="116" y2="353" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
+<line x1="82" y1="323" x2="82" y2="381" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
+<line x1="98" y1="323" x2="98" y2="381" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
+<text x="91" y="400" text-anchor="middle" font-size="11" fill="#777">cells × genes × t</text>
+<text x="91" y="416" text-anchor="middle" font-size="11" fill="#16A085" font-weight="bold">+ Gene Program</text>
+
+<!-- ── Box 7: CARDAMOM GRN (purple) ── -->
+<rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
+<text x="267" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CARDAMOM GRN</text>
+<line x1="267" y1="322" x2="237" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="267" y1="322" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="237" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="297" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="237" y1="357" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
+<circle cx="267" cy="322" r="6" fill="#9B59B6"/>
+<circle cx="237" cy="357" r="6" fill="#9B59B6"/>
+<circle cx="297" cy="357" r="6" fill="#9B59B6"/>
+<circle cx="267" cy="392" r="6" fill="#9B59B6"/>
+<text x="267" y="418" text-anchor="middle" font-size="11" fill="#777">ODE mechanistic model</text>
+
+<!-- ── Box 8: Inferred GRN (green+red) ── -->
+<rect x="364" y="276" width="158" height="170" rx="8" fill="#EAFAF1" stroke="#27AE60" stroke-width="2"/>
+<text x="443" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#27AE60">Inferred GRN</text>
+<line x1="443" y1="322" x2="415" y2="357" stroke="#27AE60" stroke-width="1.8"/>
+<line x1="443" y1="322" x2="471" y2="357" stroke="#27AE60" stroke-width="1.8"/>
+<line x1="415" y1="357" x2="443" y2="392" stroke="#E74C3C" stroke-width="1.8"/>
+<line x1="471" y1="357" x2="443" y2="392" stroke="#27AE60" stroke-width="1.8"/>
+<circle cx="443" cy="322" r="7" fill="#27AE60"/>
+<circle cx="415" cy="357" r="6" fill="#27AE60"/>
+<circle cx="471" cy="357" r="6" fill="#27AE60"/>
+<circle cx="443" cy="392" r="6" fill="#E74C3C"/>
+<text x="443" y="418" text-anchor="middle" font-size="11" fill="#777">activation / repression</text>
+
+<!-- ── Box 9: KD Simulation (orange) ── -->
+<rect x="540" y="276" width="158" height="170" rx="8" fill="#FEF5E7" stroke="#E67E22" stroke-width="2"/>
+<text x="619" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#E67E22">KD Simulation</text>
+<line x1="619" y1="322" x2="591" y2="357" stroke="#E67E22" stroke-width="1.8" stroke-dasharray="3,2"/>
+<line x1="619" y1="322" x2="647" y2="357" stroke="#E67E22" stroke-width="1.8"/>
+<line x1="591" y1="357" x2="619" y2="392" stroke="#E67E22" stroke-width="1.8"/>
+<line x1="647" y1="357" x2="619" y2="392" stroke="#E67E22" stroke-width="1.8"/>
+<circle cx="619" cy="322" r="8" fill="#E74C3C" opacity="0.75"/>
+<line x1="612" y1="315" x2="626" y2="329" stroke="white" stroke-width="2.2"/>
+<line x1="626" y1="315" x2="612" y2="329" stroke="white" stroke-width="2.2"/>
+<circle cx="591" cy="357" r="6" fill="#E67E22"/>
+<circle cx="647" cy="357" r="6" fill="#E67E22"/>
+<circle cx="619" cy="392" r="6" fill="#E67E22"/>
+<text x="619" y="418" text-anchor="middle" font-size="11" fill="#777">BIRC5 KO · propagate Δ</text>
+
+<!-- ── Box 10: Therapeutic Targets (red) ── -->
+<rect x="716" y="276" width="158" height="170" rx="8" fill="#FDEDEC" stroke="#E74C3C" stroke-width="2"/>
+<text x="795" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#E74C3C">Therapeutic</text>
+<text x="795" y="314" text-anchor="middle" font-size="13" font-weight="bold" fill="#E74C3C">Targets</text>
+<line x1="775" y1="338" x2="815" y2="338" stroke="#E74C3C" stroke-width="1.8"/>
+<line x1="775" y1="338" x2="795" y2="375" stroke="#E67E22" stroke-width="1.8"/>
+<line x1="815" y1="338" x2="795" y2="375" stroke="#E67E22" stroke-width="1.8"/>
+<circle cx="775" cy="338" r="10" fill="#E74C3C"/>
+<circle cx="815" cy="338" r="10" fill="#E67E22"/>
+<circle cx="795" cy="375" r="8" fill="#999"/>
+<text x="775" y="342" text-anchor="middle" font-size="11" fill="white" font-weight="bold">✕</text>
+<text x="815" y="342" text-anchor="middle" font-size="11" fill="white" font-weight="bold">✕</text>
+<text x="795" y="418" text-anchor="middle" font-size="11" fill="#777">co-targets · direct targets</text>
+
+<!-- ═══ ROW 2 ARROWS ═══ -->
+<line x1="170" y1="361" x2="185" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="346" y1="361" x2="361" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="522" y1="361" x2="537" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
+
+</svg>"""
+    _arch_b64 = _b64.b64encode(_arch_svg.encode()).decode()
+    st.markdown(
+        f"<img src='data:image/svg+xml;base64,{_arch_b64}' style='width:100%;border-radius:8px'/>",
+        unsafe_allow_html=True
+    )
 
 # ================================================================
 # DATASET SELECTOR  (must come before upload so `genes` is defined)
