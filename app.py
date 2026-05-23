@@ -1327,10 +1327,13 @@ _cam_upload = st.file_uploader(
     key="bg_cam_uploader", label_visibility="collapsed"
 )
 if _cam_upload is not None:
-    st.session_state["custom_bg_b64"] = (
-        f"data:{_cam_upload.type};base64," + _b64.b64encode(_cam_upload.read()).decode()
-    )
-    st.rerun()
+    _file_id = f"{_cam_upload.name}_{_cam_upload.size}"
+    if st.session_state.get("_bg_last_file") != _file_id:
+        st.session_state["_bg_last_file"] = _file_id
+        st.session_state["custom_bg_b64"] = (
+            f"data:{_cam_upload.type};base64," + _b64.b64encode(_cam_upload.read()).decode()
+        )
+        st.rerun()
 
 _has_bg = bool(st.session_state.get("custom_bg_b64"))
 if _has_bg:
