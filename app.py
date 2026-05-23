@@ -1590,6 +1590,8 @@ elif st.session_state.get(f"default_run2_{dataset_key}"):
     query_gene = "TUBB" if "TUBB" in genes else None
 elif st.session_state.get(f"default_run3_{dataset_key}"):
     st.session_state[f"default_run3_{dataset_key}"] = False
+    # Force foxm1 model for this query (FOXM1 appears in multiple gene sets)
+    st.session_state[f"forced_grn_{dataset_key}"] = "foxm1"
     query_gene = "FOXM1" if "FOXM1" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
@@ -1702,9 +1704,20 @@ if query_gene:
             _grn_mat_q, _grn_genes_q = load_grn(_ALL_MODELS[_grn_model_label][0])
             _grn_model_q = _ALL_MODELS[_grn_model_label][0]
         elif len(_q_models) > 1:
-            # gene in multiple models → respect what the selector shows
-            _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
-            _grn_model_q = grn_key if grn_mat is not None else None
+            # gene in multiple models → check forced flag first, else respect selector
+            _forced_key = st.session_state.pop(f"forced_grn_{dataset_key}", None)
+            _forced_valid = _forced_key and any(
+                _ALL_MODELS[k][0] == _forced_key for k in _q_models)
+            if _forced_valid:
+                _grn_model_q = _forced_key
+                _grn_mat_q, _grn_genes_q = load_grn(_forced_key)
+                # Also update the selector so the radio stays in sync
+                _fox_label = next((k for k, (v, _) in _ALL_MODELS.items() if v == _forced_key), None)
+                if _fox_label:
+                    st.session_state[_grn_state_key] = _fox_label
+            else:
+                _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
+                _grn_model_q = grn_key if grn_mat is not None else None
         else:
             # gene in no model
             _grn_mat_q, _grn_genes_q = None, []
