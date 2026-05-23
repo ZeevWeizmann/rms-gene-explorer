@@ -1238,7 +1238,7 @@ st.markdown(f"""
   0%, 100% {{ opacity:0.12; transform:scaleY(0.55); }}
   50%       {{ opacity:1;    transform:scaleY(1);    }}
 }}
-.bsun {{ position:absolute; top:2px; left:58%; transform:translateX(-50%); width:54px; height:54px; z-index:3; }}
+.bsun {{ position:absolute; top:2px; left:68%; transform:translateX(-50%); width:54px; height:54px; z-index:3; }}
 .bsun-circle {{
   position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%);
