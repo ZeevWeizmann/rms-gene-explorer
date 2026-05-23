@@ -1616,7 +1616,8 @@ This reveals not just which genes change in expression, but **how the tumour's c
 <circle cx="795" cy="375" r="8" fill="#999"/>
 <text x="775" y="342" text-anchor="middle" font-size="11" fill="white" font-weight="bold">✕</text>
 <text x="815" y="342" text-anchor="middle" font-size="11" fill="white" font-weight="bold">✕</text>
-<text x="795" y="418" text-anchor="middle" font-size="11" fill="#777">co-targets · direct targets</text>
+<text x="795" y="411" text-anchor="middle" font-size="11" fill="#777">co-targets · direct targets</text>
+<text x="795" y="426" text-anchor="middle" font-size="10" font-style="italic" fill="#E74C3C">reshape Waddington landscape</text>
 
 <!-- ═══ ROW 2 ARROWS ═══ -->
 <line x1="170" y1="361" x2="185" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
