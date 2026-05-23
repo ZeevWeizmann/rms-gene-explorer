@@ -1272,10 +1272,8 @@ st.markdown(f"""
     <img src='{_bg_img_src}'
          style='position:absolute;top:0;left:0;width:100%;height:100%;
                 object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
-    <img src='data:image/svg+xml;base64,{_boat_b64}'
-         style='position:absolute;width:5.5%;min-width:36px;
-                animation:boatSail 10s ease-in-out infinite;
-                pointer-events:none;'/>
+    {"" if _custom_bg else f\"<img src='data:image/svg+xml;base64,{_boat_b64}' style='position:absolute;width:5.5%;min-width:36px;animation:boatSail 10s ease-in-out infinite;pointer-events:none;'/>\"}
+
   </div>
   <!-- BETA sun in the sky -->
   <div class='bsun'>
