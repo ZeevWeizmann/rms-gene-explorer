@@ -249,7 +249,7 @@ def load_umap_expr():
 
 
 def build_foxm1_population_umap(pop_df):
-    """Side-by-side UMAP: left = cell type labels, right = Δ proliferative score after FOXM1 KO."""
+    """Three-panel UMAP: cell type labels | WT simulation score | KO simulation score."""
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
 
@@ -257,15 +257,16 @@ def build_foxm1_population_umap(pop_df):
     CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
 
     fig = make_subplots(
-        rows=1, cols=2,
+        rows=1, cols=3,
         subplot_titles=[
-            "Cell populations (real labels)",
-            "Δ Proliferative score after FOXM1 KO",
+            "Cell types (real labels)",
+            "WT simulation — proliferative score",
+            "FOXM1 KO — proliferative score",
         ],
-        horizontal_spacing=0.08,
+        horizontal_spacing=0.06,
     )
 
-    # ── Left panel: cell type coloring ───────────────────────────
+    # ── Panel 1: real cell type labels ───────────────────────────
     for ct in CT_ORDER:
         sub = pop_df[pop_df["cell_type"] == ct]
         fig.add_trace(go.Scatter(
@@ -274,53 +275,59 @@ def build_foxm1_population_umap(pop_df):
             marker=dict(size=3, color=CT_COLORS[ct], opacity=0.65),
             name=ct.capitalize(),
             legendgroup=ct,
-            hovertemplate=f"<b>{ct}</b><br>UMAP: (%{{x:.2f}}, %{{y:.2f}})<extra></extra>",
+            hovertemplate=f"<b>{ct}</b><extra></extra>",
         ), row=1, col=1)
 
-    # ── Right panel: Δ prolif score (diverging, blue=↓prolif=→quiescent) ──
-    # Clip to 5th–95th percentile for color scale
-    delta = pop_df["delta_prolif"].values
-    vmax  = float(np.percentile(np.abs(delta), 95))
-    vmax  = max(vmax, 0.05)
+    # ── Panels 2 & 3: WT vs KO on same colorscale ────────────────
+    wt_scores = pop_df["prolif_score_wt"].values
+    ko_scores = pop_df["prolif_score_ko"].values
+    # Shared colorscale range (95th percentile of WT)
+    vmax = float(np.percentile(wt_scores, 97))
+    vmin = float(np.percentile(wt_scores,  3))
 
-    fig.add_trace(go.Scatter(
-        x=pop_df["x"], y=pop_df["y"],
-        mode="markers",
-        marker=dict(
-            size=3,
-            color=delta,
-            colorscale="RdBu_r",   # red=increase(prolif), blue=decrease(quiescent)
-            cmin=-vmax, cmax=vmax,
-            opacity=0.75,
-            colorbar=dict(
-                title=dict(text="Δ score<br>(KO−WT)", side="right", font=dict(size=11)),
-                thickness=14, len=0.7,
-                tickfont=dict(size=10),
-                x=1.02,
+    for col, scores, label in [
+        (2, wt_scores, "WT"),
+        (3, ko_scores, "KO"),
+    ]:
+        show_cb = (col == 3)
+        fig.add_trace(go.Scatter(
+            x=pop_df["x"], y=pop_df["y"],
+            mode="markers",
+            marker=dict(
+                size=3, opacity=0.75,
+                color=scores,
+                colorscale="RdYlBu_r",
+                cmin=vmin, cmax=vmax,
+                colorbar=dict(
+                    title=dict(text="Prolif<br>score", side="right", font=dict(size=10)),
+                    thickness=12, len=0.65,
+                    tickfont=dict(size=9),
+                    x=1.01,
+                ) if show_cb else None,
+                showscale=show_cb,
             ),
-        ),
-        text=[f"Type: {ct}<br>Δ: {d:+.3f}" for ct, d in zip(pop_df["cell_type"], delta)],
-        hoverinfo="text",
-        name="Δ prolif score",
-        showlegend=False,
-    ), row=1, col=2)
+            text=[f"{label} | {ct}<br>score: {s:.3f}"
+                  for ct, s in zip(pop_df["cell_type"], scores)],
+            hoverinfo="text",
+            name=f"{label} score",
+            showlegend=False,
+        ), row=1, col=col)
 
     fig.update_layout(
-        height=400,
-        margin=dict(t=50, b=20, l=20, r=80),
+        height=370,
+        margin=dict(t=45, b=20, l=10, r=70),
         plot_bgcolor="white", paper_bgcolor="white",
         legend=dict(
-            orientation="v", x=-0.02, y=0.5, xanchor="right",
-            font=dict(size=11),
-            itemsizing="constant",
+            orientation="v", x=-0.01, y=0.5, xanchor="right",
+            font=dict(size=10), itemsizing="constant",
         ),
     )
-    for col in [1, 2]:
+    for col in [1, 2, 3]:
         fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False,
-                         title_text="UMAP 1", row=1, col=col)
+                         title_text="UMAP 1", title_font=dict(size=10), row=1, col=col)
         fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False,
-                         title_text="UMAP 2", row=1, col=col)
-
+                         title_text="UMAP 2" if col == 1 else "",
+                         title_font=dict(size=10), row=1, col=col)
     return fig
 
 
@@ -1380,9 +1387,10 @@ def _render_msg_figures(msg, msg_id):
                                 pop_fig = build_foxm1_population_umap(pop_df)
                                 st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
                                 st.caption(
-                                    "Left: real cell type labels (quiescent / intermediate / proliferative). "
-                                    "Right: change in proliferative program score per cell after FOXM1 KO "
-                                    "(blue = decrease → shift toward quiescence; red = increase)."
+                                    "Left: real cell type labels. "
+                                    "Centre: proliferative program score in **WT simulation**. "
+                                    "Right: same score in **FOXM1 KO simulation** (identical colorscale). "
+                                    "A visible darkening in the KO panel = reduction in proliferative program."
                                 )
                             except Exception as _e:
                                 st.info(f"Population UMAP unavailable: {_e}")
