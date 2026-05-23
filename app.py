@@ -278,6 +278,20 @@ def load_tubb_sim_umap_proj():
 
 
 @st.cache_resource
+def load_original_sim_umap_proj():
+    """Original GRN (159 genes) WT simulation projected onto real UMAP.
+    Columns: x, y, time."""
+    import os
+    local = os.path.join(LOCAL_DIR, "original_sim_umap_proj.csv")
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename="original_sim_umap_proj.csv",
+                           repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
 def load_foxm1_pop_real():
     """Real cells scored by proliferative/quiescent gene programs (100+100 genes).
     Columns: x, y, population, score_prolif, score_quies, cell_type, time."""
@@ -1842,9 +1856,10 @@ if query_gene:
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
         _sim_proj_loaders = {
-            "foxm1": load_foxm1_sim_umap_proj,
-            "mki67": load_mki67_sim_umap_proj,
-            "tubb":  load_tubb_sim_umap_proj,
+            "foxm1":    load_foxm1_sim_umap_proj,
+            "original": load_original_sim_umap_proj,
+            "mki67":    load_mki67_sim_umap_proj,
+            "tubb":     load_tubb_sim_umap_proj,
         }
         fig_sim_time = None
         if _grn_model_q in _sim_proj_loaders:
