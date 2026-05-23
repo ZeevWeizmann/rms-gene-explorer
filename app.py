@@ -1848,10 +1848,11 @@ if query_gene:
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
         _sim_proj_loaders = {
-            "foxm1":    load_foxm1_sim_umap_proj,
-            "original": load_original_sim_umap_proj,
-            "mki67":    load_mki67_sim_umap_proj,
-            "tubb":     load_tubb_sim_umap_proj,
+            "foxm1": load_foxm1_sim_umap_proj,
+            "mki67": load_mki67_sim_umap_proj,
+            "tubb":  load_tubb_sim_umap_proj,
+            # original GRN: 159 differentiation genes don't overlap with
+            # cell-cycle UMAP space → projection collapses to one point, omitted
         }
         fig_sim_time = None
         if _grn_model_q in _sim_proj_loaders:
