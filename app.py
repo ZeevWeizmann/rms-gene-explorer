@@ -1503,16 +1503,12 @@ def _render_msg_figures(msg, msg_id):
         fig_expr = msg["fig"]
         fig_expr.update_layout(height=CHART_H)
         st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-    # UMAPs — row 1: Time / Sim-time / Cell type; row 2: Population panels
+    # UMAPs — row 1: Time / Sim-time / Cell type
     _row1_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
-    _row2_keys = ["fig_pop_real", "fig_pop_sim"]
     _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
-    _row2 = [(k, msg.get(k)) for k in _row2_keys if msg.get(k) is not None]
-    for _row in [_row1, _row2]:
-        if not _row:
-            continue
-        cols = st.columns(1 if is_mobile else len(_row))
-        for col, (k, f) in zip(cols, _row):
+    if _row1:
+        cols = st.columns(1 if is_mobile else len(_row1))
+        for col, (k, f) in zip(cols, _row1):
             f.update_layout(height=CHART_H_SMALL)
             col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
     if "grn_fig" in msg and msg["grn_fig"] is not None:
