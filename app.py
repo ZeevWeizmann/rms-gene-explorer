@@ -1563,8 +1563,7 @@ This reveals not just which genes change in expression, but **how the Waddington
 
 <!-- ── Box 7: CARDAMOM GRN (purple) ── -->
 <rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
-<text x="267" y="291" text-anchor="middle" font-size="13" font-weight="bold" fill="#9B59B6">CardamomOT GRN</text>
-<text x="267" y="306" text-anchor="middle" font-size="10" fill="#9B59B6">(optimal transport)</text>
+<text x="267" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CardamomOT GRN</text>
 <line x1="267" y1="322" x2="237" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
 <line x1="267" y1="322" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
 <line x1="237" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
