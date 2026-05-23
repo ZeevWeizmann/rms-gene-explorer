@@ -1565,14 +1565,29 @@ def _render_msg_figures(msg, msg_id):
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                        # Population proportions + delta — foxm1 only
+                        # Population proportions + delta + UMAP — foxm1 only
                         if _msg_grn_model == "foxm1":
                             try:
                                 _sim_scored = load_foxm1_pop_sim()
+                                _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#457b9d",
+                                               "intermediate": "#adb5bd"}
                                 _prop_fig  = build_population_proportions_figure(_sim_scored)
                                 _delta_fig = build_population_delta_figure(_sim_scored)
                                 st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
                                 st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
+                                # UMAP of simulation WT colored by population
+                                _pop_umap_fig = px.scatter(
+                                    _sim_scored, x="x_wt", y="y_wt",
+                                    color="pop_wt",
+                                    color_discrete_map=_POP_COLORS,
+                                    title="Cell populations — simulation WT (before KO)",
+                                    labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
+                                    opacity=0.6, height=450, render_mode="svg",
+                                    category_orders={"pop_wt": ["proliferative", "quiescent", "intermediate"]},
+                                )
+                                _pop_umap_fig.update_traces(marker=dict(size=3))
+                                _pop_umap_fig.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                                st.plotly_chart(_pop_umap_fig, use_container_width=True, key=f"{msg_id}_pop_umap_sim")
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)"}
