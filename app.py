@@ -249,186 +249,123 @@ def load_umap_expr():
 
 
 def build_foxm1_population_umap(pop_df):
-    """Three-panel UMAP: cell type labels | WT simulation score | KO simulation score."""
+    """Three-panel UMAP: cell types | FOXM1 WT | FOXM1 KO (same colorscale)."""
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
 
-    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#AAAAAA", "proliferative": "#D45F5F"}
+    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#BBBBBB", "proliferative": "#D45F5F"}
     CT_ORDER   = ["quiescent", "intermediate", "proliferative"]
 
     fig = make_subplots(
         rows=1, cols=3,
-        subplot_titles=[
-            "Cell types (real labels)",
-            "WT simulation — proliferative score",
-            "FOXM1 KO — proliferative score",
-        ],
-        horizontal_spacing=0.06,
+        subplot_titles=["Cell types (real data)", "FOXM1 — WT simulation", "FOXM1 — KO simulation"],
+        horizontal_spacing=0.05,
     )
 
-    # ── Panel 1: real cell type labels ───────────────────────────
+    # ── Panel 1: cell type labels ─────────────────────────────────
     for ct in CT_ORDER:
         sub = pop_df[pop_df["cell_type"] == ct]
         fig.add_trace(go.Scatter(
-            x=sub["x"], y=sub["y"],
-            mode="markers",
-            marker=dict(size=3, color=CT_COLORS[ct], opacity=0.65),
-            name=ct.capitalize(),
-            legendgroup=ct,
+            x=sub["x"], y=sub["y"], mode="markers",
+            marker=dict(size=3, color=CT_COLORS[ct], opacity=0.7),
+            name=ct.capitalize(), legendgroup=ct,
             hovertemplate=f"<b>{ct}</b><extra></extra>",
         ), row=1, col=1)
 
-    # ── Panels 2 & 3: WT vs KO on same colorscale ────────────────
-    wt_scores = pop_df["prolif_score_wt"].values
-    ko_scores = pop_df["prolif_score_ko"].values
-    # Shared colorscale range (95th percentile of WT)
-    vmax = float(np.percentile(wt_scores, 97))
-    vmin = float(np.percentile(wt_scores,  3))
+    # ── Panels 2 & 3: FOXM1 expression on same colorscale ────────
+    wt = pop_df["FOXM1_wt"].values
+    ko = pop_df["FOXM1_ko"].values
+    vmax = float(np.percentile(wt, 97))
+    vmin = 0.0
 
-    for col, scores, label in [
-        (2, wt_scores, "WT"),
-        (3, ko_scores, "KO"),
-    ]:
-        show_cb = (col == 3)
+    for col, expr, label in [(2, wt, "WT"), (3, ko, "KO")]:
         fig.add_trace(go.Scatter(
-            x=pop_df["x"], y=pop_df["y"],
-            mode="markers",
+            x=pop_df["x"], y=pop_df["y"], mode="markers",
             marker=dict(
-                size=3, opacity=0.75,
-                color=scores,
-                colorscale="RdYlBu_r",
+                size=3, opacity=0.8,
+                color=expr,
+                colorscale="YlOrRd",
                 cmin=vmin, cmax=vmax,
+                showscale=(col == 3),
                 colorbar=dict(
-                    title=dict(text="Prolif<br>score", side="right", font=dict(size=10)),
-                    thickness=12, len=0.65,
-                    tickfont=dict(size=9),
-                    x=1.01,
-                ) if show_cb else None,
-                showscale=show_cb,
+                    title=dict(text="FOXM1<br>expr", side="right", font=dict(size=10)),
+                    thickness=12, len=0.65, tickfont=dict(size=9), x=1.01,
+                ) if col == 3 else None,
             ),
-            text=[f"{label} | {ct}<br>score: {s:.3f}"
-                  for ct, s in zip(pop_df["cell_type"], scores)],
-            hoverinfo="text",
-            name=f"{label} score",
-            showlegend=False,
+            text=[f"{label} | {ct}<br>FOXM1: {v:.3f}"
+                  for ct, v in zip(pop_df["cell_type"], expr)],
+            hoverinfo="text", showlegend=False,
         ), row=1, col=col)
 
     fig.update_layout(
-        height=370,
-        margin=dict(t=45, b=20, l=10, r=70),
+        height=360, margin=dict(t=45, b=10, l=5, r=65),
         plot_bgcolor="white", paper_bgcolor="white",
-        legend=dict(
-            orientation="v", x=-0.01, y=0.5, xanchor="right",
-            font=dict(size=10), itemsizing="constant",
-        ),
+        legend=dict(orientation="v", x=-0.01, y=0.5, xanchor="right",
+                    font=dict(size=10), itemsizing="constant"),
     )
     for col in [1, 2, 3]:
-        fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False,
-                         title_text="UMAP 1", title_font=dict(size=10), row=1, col=col)
-        fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False,
-                         title_text="UMAP 2" if col == 1 else "",
-                         title_font=dict(size=10), row=1, col=col)
+        fig.update_xaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
+        fig.update_yaxes(showticklabels=False, showgrid=False, zeroline=False, row=1, col=col)
     return fig
 
 
 def build_celltype_shift_figure(celltype_df):
-    """Two-panel figure: real cell type distribution + per-cell-type KO effect on key genes."""
+    """Grouped bar chart: mean expression per cell type population, WT vs KO.
+    X = cell type, groups of bars = key genes, solid=WT / hatched=KO."""
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
 
     CT_ORDER  = ["quiescent", "intermediate", "proliferative"]
-    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#8C8C8C", "proliferative": "#D45F5F"}
-    CT_LABELS = {"quiescent": "Quiescent", "intermediate": "Intermediate", "proliferative": "Proliferative"}
+    CT_COLORS = {"quiescent": "#4C72B0", "intermediate": "#888888", "proliferative": "#D45F5F"}
 
-    # Real cell type counts
-    real_counts = {"quiescent": 4645, "intermediate": 5106, "proliferative": 4217}
-    total = sum(real_counts.values())
-
-    # Key genes to show (most biologically relevant cell-type-specific changes)
-    SHOW_GENES = ["FOXM1", "NUSAP1", "PSRC1", "EIF2A", "HSPA1A", "PABPN1"]
-
-    fig = make_subplots(
-        rows=1, cols=2,
-        column_widths=[0.35, 0.65],
-        subplot_titles=["Cell type distribution (real data)",
-                        "Mean expression WT vs FOXM1 KO (per cell type)"],
-        horizontal_spacing=0.12,
-    )
-
-    # ── Panel 1: cell type distribution bar ──────────────────────
-    for ct in CT_ORDER:
-        fig.add_trace(go.Bar(
-            x=[CT_LABELS[ct]],
-            y=[real_counts[ct]],
-            name=CT_LABELS[ct],
-            marker_color=CT_COLORS[ct],
-            text=[f"{real_counts[ct]:,}<br>({100*real_counts[ct]/total:.0f}%)"],
-            textposition="outside",
-            showlegend=False,
-        ), row=1, col=1)
-
-    # ── Panel 2: per-gene WT vs KO grouped by cell type ──────────
-    # For each cell type, show WT (solid) and KO (lighter) bars per gene
-    gene_positions = {g: i for i, g in enumerate(SHOW_GENES)}
-    n_genes = len(SHOW_GENES)
-    ct_offsets = {"quiescent": -0.27, "intermediate": 0, "proliferative": 0.27}
-    bar_width = 0.22
-
+    # Focus on the most changed genes — one clear story per population
+    SHOW_GENES = ["FOXM1", "NUSAP1", "PABPN1", "EIF2A", "HSPA1A"]
     _sub = celltype_df[celltype_df["gene"].isin(SHOW_GENES)].copy()
 
-    _legend_added = set()
-    for ct in CT_ORDER:
-        ct_data = _sub[_sub["cell_type"] == ct].set_index("gene")
-        color = CT_COLORS[ct]
+    fig = make_subplots(
+        rows=1, cols=len(SHOW_GENES),
+        subplot_titles=SHOW_GENES,
+        shared_yaxes=True,
+        horizontal_spacing=0.03,
+    )
 
-        x_wt = [gene_positions[g] + ct_offsets[ct] - bar_width/4 for g in SHOW_GENES if g in ct_data.index]
-        x_ko = [gene_positions[g] + ct_offsets[ct] + bar_width/4 for g in SHOW_GENES if g in ct_data.index]
-        y_wt = [ct_data.loc[g, "mean_wt"] for g in SHOW_GENES if g in ct_data.index]
-        y_ko = [ct_data.loc[g, "mean_ko"] for g in SHOW_GENES if g in ct_data.index]
-        gene_names = [g for g in SHOW_GENES if g in ct_data.index]
-
-        show_leg_wt = CT_LABELS[ct] + " WT" not in _legend_added
-        show_leg_ko = CT_LABELS[ct] + " KO" not in _legend_added
-        if show_leg_wt: _legend_added.add(CT_LABELS[ct] + " WT")
-        if show_leg_ko: _legend_added.add(CT_LABELS[ct] + " KO")
-
-        hover_wt = [f"<b>{g}</b> · {CT_LABELS[ct]}<br>WT: {y:.3f}" for g, y in zip(gene_names, y_wt)]
-        hover_ko = [f"<b>{g}</b> · {CT_LABELS[ct]}<br>KO: {y:.3f}  (WT: {ct_data.loc[g,'mean_wt']:.3f})" for g, y in zip(gene_names, y_ko)]
-
-        fig.add_trace(go.Bar(
-            x=x_wt, y=y_wt, width=bar_width/2,
-            marker_color=color, marker_opacity=0.9,
-            name=f"{CT_LABELS[ct]} WT", legendgroup=f"{ct}_wt",
-            showlegend=show_leg_wt,
-            hovertext=hover_wt, hoverinfo="text",
-        ), row=1, col=2)
-
-        fig.add_trace(go.Bar(
-            x=x_ko, y=y_ko, width=bar_width/2,
-            marker_color=color, marker_opacity=0.45,
-            marker_line=dict(color=color, width=1.5),
-            name=f"{CT_LABELS[ct]} KO", legendgroup=f"{ct}_ko",
-            showlegend=show_leg_ko,
-            hovertext=hover_ko, hoverinfo="text",
-        ), row=1, col=2)
+    for gi, gene in enumerate(SHOW_GENES, start=1):
+        gdata = _sub[_sub["gene"] == gene]
+        for ct in CT_ORDER:
+            row = gdata[gdata["cell_type"] == ct]
+            if row.empty:
+                continue
+            wt = float(row["mean_wt"].values[0])
+            ko = float(row["mean_ko"].values[0])
+            color = CT_COLORS[ct]
+            show_leg = (gi == 1)
+            fig.add_trace(go.Bar(
+                x=["WT", "KO"], y=[wt, ko],
+                name=ct.capitalize(),
+                legendgroup=ct,
+                showlegend=show_leg,
+                marker_color=[color, color],
+                marker_opacity=[0.9, 0.45],
+                marker_line=dict(color=color, width=1.2),
+                width=0.35,
+                hovertemplate=f"<b>{gene}</b> · {ct}<br>%{{x}}: %{{y:.3f}}<extra></extra>",
+            ), row=1, col=gi)
 
     fig.update_layout(
-        height=360, margin=dict(t=50, b=40, l=50, r=20),
+        height=320, margin=dict(t=40, b=10, l=50, r=10),
         plot_bgcolor="white", paper_bgcolor="white",
-        barmode="overlay",
-        legend=dict(orientation="h", yanchor="bottom", y=-0.28, xanchor="right", x=1,
-                    font=dict(size=10)),
+        barmode="group",
+        legend=dict(orientation="h", yanchor="top", y=-0.05, xanchor="center", x=0.5,
+                    font=dict(size=11)),
+        title=dict(text="Mean expression per cell type population — WT vs FOXM1 KO",
+                   font=dict(size=13), x=0.5),
     )
-    fig.update_xaxes(
-        tickvals=list(gene_positions.values()),
-        ticktext=list(gene_positions.keys()),
-        tickfont=dict(size=11), row=1, col=2,
-    )
-    fig.update_yaxes(title_text="Cells", row=1, col=1, gridcolor="#eee")
-    fig.update_yaxes(title_text="Mean expression", row=1, col=2, gridcolor="#eee")
-    fig.update_xaxes(showgrid=False, row=1, col=1)
-    fig.update_xaxes(showgrid=False, row=1, col=2)
-
+    fig.update_yaxes(title_text="Mean expr", col=1, gridcolor="#eee", gridwidth=1)
+    fig.update_xaxes(tickfont=dict(size=10))
+    for col in range(1, len(SHOW_GENES) + 1):
+        fig.update_xaxes(showgrid=False, row=1, col=col)
+        if col > 1:
+            fig.update_yaxes(showgrid=True, gridcolor="#eee", row=1, col=col)
     return fig
 
 
@@ -1387,10 +1324,9 @@ def _render_msg_figures(msg, msg_id):
                                 pop_fig = build_foxm1_population_umap(pop_df)
                                 st.plotly_chart(pop_fig, use_container_width=True, key=f"{msg_id}_pop_umap")
                                 st.caption(
-                                    "Left: real cell type labels. "
-                                    "Centre: proliferative program score in **WT simulation**. "
-                                    "Right: same score in **FOXM1 KO simulation** (identical colorscale). "
-                                    "A visible darkening in the KO panel = reduction in proliferative program."
+                                    "Left: real cell type labels (quiescent / intermediate / proliferative). "
+                                    "Centre & right: FOXM1 expression per cell in WT vs KO simulation "
+                                    "(identical colorscale — KO panel should appear uniformly dark)."
                                 )
                             except Exception as _e:
                                 st.info(f"Population UMAP unavailable: {_e}")
@@ -1403,10 +1339,9 @@ def _render_msg_figures(msg, msg_id):
                                 ct_fig = build_celltype_shift_figure(ct_df)
                                 st.plotly_chart(ct_fig, use_container_width=True, key=f"{msg_id}_ct_shift")
                                 st.caption(
-                                    "Cell type distribution (real data) and per-cell-type expression of "
-                                    "key FOXM1 targets. Solid bars = WT simulation, faded bars = FOXM1 KO. "
-                                    "NUSAP1 suppression is strongest in proliferative cells; EIF2A increases "
-                                    "in quiescent/intermediate cells after KO — directional shift toward quiescence."
+                                    "Mean expression per cell type population — WT (solid) vs FOXM1 KO (faded). "
+                                    "NUSAP1 suppression strongest in proliferative cells; "
+                                    "EIF2A increases in quiescent/intermediate — shift toward quiescence."
                                 )
                             except Exception as _e:
                                 st.info(f"Cell type shift chart unavailable: {_e}")
