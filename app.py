@@ -773,6 +773,14 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
                 " direct target: mitotic gene driven by FOXM1 (NUSAP1, PSRC1)"
             ),
         },
+        "HSPA1B": {
+            "co_targets":     {"HSPA1A", "DNAJB1", "HSPA6"},  # UP — compensatory heat-shock response
+            "direct_targets": {"RACGAP1", "NUSAP1", "FOXM1"},  # DOWN — GRN targets / mitotic suppression
+            "subtitle": (
+                "🟠 co-target: goes UP after KO — compensatory heat-shock response (HSPA1A, DNAJB1, HSPA6) &nbsp;|&nbsp;"
+                " direct target: suppressed by HSPA1B loss — mitotic/cytokinesis genes (RACGAP1, NUSAP1, FOXM1)"
+            ),
+        },
     }
     _def = _TARGET_DEFS.get(ko_gene, {"co_targets": set(), "direct_targets": set(), "subtitle": ""})
     co_targets     = _def["co_targets"]
