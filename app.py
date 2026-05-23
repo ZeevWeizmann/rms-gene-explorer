@@ -1532,10 +1532,11 @@ grn_hops = col_grn_slider.slider(
     key=f"grn_slider_{dataset_key}"
 )
 
-# Pre-load both perturbation datasets and real expression means into cache
-load_perturbation("mki67")
-load_perturbation("tubb")
-load_perturbation("foxm1")
+# Pre-load perturbation datasets and real expression means into cache at startup
+load_perturbation("full")    # HSPA1B KO
+load_perturbation("tubb")    # TUBB KO
+load_perturbation("mki67")   # BIRC5 KO
+load_perturbation("foxm1")   # FOXM1 KO
 load_real_expr_means()
 
 if f"messages_{dataset_key}" not in st.session_state:
