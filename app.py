@@ -1562,18 +1562,23 @@ This reveals not just which genes change in expression, but **how the Waddington
 <line x1="98" y1="323" x2="98" y2="381" stroke="#5B9BD5" stroke-width="0.8" opacity="0.5"/>
 <text x="91" y="408" text-anchor="middle" font-size="11" fill="#777">cells × genes × t</text>
 
-<!-- ── Box 7: CARDAMOM GRN (purple) ── -->
-<rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
-<text x="267" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CardamomOT GRN</text>
-<line x1="267" y1="322" x2="237" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
-<line x1="267" y1="322" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
-<line x1="237" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
-<line x1="297" y1="357" x2="267" y2="392" stroke="#9B59B6" stroke-width="1.5"/>
-<line x1="237" y1="357" x2="297" y2="357" stroke="#9B59B6" stroke-width="1.5"/>
-<circle cx="267" cy="322" r="6" fill="#9B59B6"/>
-<circle cx="237" cy="357" r="6" fill="#9B59B6"/>
-<circle cx="297" cy="357" r="6" fill="#9B59B6"/>
-<circle cx="267" cy="392" r="6" fill="#9B59B6"/>
+<!-- ── Box 7: CARDAMOM GRN (purple, program-augmented) ── -->
+<rect x="188" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2.5"/>
+<!-- teal accent border top to signal gene-program input -->
+<rect x="188" y="276" width="158" height="5" rx="3" fill="#16A085" opacity="0.7"/>
+<text x="267" y="296" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">CardamomOT GRN</text>
+<!-- "program-augmented" badge -->
+<rect x="210" y="302" width="114" height="17" rx="8" fill="#16A085" opacity="0.15" stroke="#16A085" stroke-width="1"/>
+<text x="267" y="314" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#16A085">program-augmented</text>
+<line x1="267" y1="330" x2="237" y2="360" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="267" y1="330" x2="297" y2="360" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="237" y1="360" x2="267" y2="390" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="297" y1="360" x2="267" y2="390" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="237" y1="360" x2="297" y2="360" stroke="#9B59B6" stroke-width="1.5"/>
+<circle cx="267" cy="330" r="6" fill="#9B59B6"/>
+<circle cx="237" cy="360" r="6" fill="#9B59B6"/>
+<circle cx="297" cy="360" r="6" fill="#9B59B6"/>
+<circle cx="267" cy="390" r="6" fill="#9B59B6"/>
 <text x="267" y="411" text-anchor="middle" font-size="11" fill="#777">ODE mechanistic model</text>
 <text x="267" y="426" text-anchor="middle" font-size="10" font-style="italic" fill="#777">+ optimal transport</text>
 
