@@ -826,7 +826,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         "HSPA1B": {
             "co_targets":     {"PBX3", "FAM83G", "HSPA1A", "AC148476.1", "PABPN1", "HBA2",
                                "DNAJB1", "MAPK11", "KLF2", "HSPA6", "FBXO5", "OTUD1", "FAM122B"},
-            "direct_targets": {"RACGAP1", "NUSAP1", "FOXM1"},  # DOWN — GRN targets / mitotic suppression
+            "direct_targets": {"RACGAP1", "NUSAP1", "FOXM1", "TRIM59", "SPC24", "NEK2", "GTSE1", "EIF2A"},  # DOWN
             "subtitle": (
                 "🟠 co-target: goes UP after KO — derepressed or compensatory response &nbsp;|&nbsp;"
                 " direct target: suppressed by HSPA1B loss — mitotic/cytokinesis genes (FOXM1, NUSAP1)"
