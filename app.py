@@ -1492,7 +1492,7 @@ with st.expander("About Gene Trajectory Graph Embeddings"):
     st.markdown("""
 **What are Gene Trajectory Graph Embeddings?**
 
-Each gene receives a vector that encodes **how its co-expression neighbourhood changed** across the 6 RMS time points (t = 0 → 80 h). Two sources of information are combined:
+Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
 
 - **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport. The shift δ and mean position μ across time points form the trajectory embedding.
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
