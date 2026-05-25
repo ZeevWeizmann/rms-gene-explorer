@@ -678,7 +678,7 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
         margin=dict(t=60, b=10, l=65, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
-        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation (DNAJB1 / MKI67-100)",
+        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation *",
                    font=dict(size=15), x=0.5),
         yaxis=dict(
             title=dict(text="% of cells", font=dict(size=13)),
@@ -724,7 +724,7 @@ def build_population_delta_figure(sim_df, ko_label="FOXM1 KO"):
         height=260,
         margin=dict(t=60, b=20, l=130, r=70),
         plot_bgcolor="white", paper_bgcolor="white",
-        title=dict(text=f"Population shift after {ko_label} (Δ%) — DNAJB1 / MKI67-100",
+        title=dict(text=f"Population shift after {ko_label} (Δ%) *",
                    font=dict(size=15), x=0.5),
         xaxis=dict(
             title=dict(text="Δ% (KO − WT)", font=dict(size=13)),
@@ -2200,7 +2200,7 @@ def _render_msg_figures(msg, msg_id):
                                     _pop_umap_real = px.scatter(
                                         _pr, x="x", y="y", color="population",
                                         color_discrete_map=_POP_COLORS,
-                                        title="Real data (DNAJB1 / MKI67-100)",
+                                        title="Real data (populations *)",
                                         labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
                                         opacity=0.6, height=420, render_mode="svg",
                                         category_orders={"population": _pt_pop_order},
@@ -2215,7 +2215,7 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
-                                    title="Simulation WT (DNAJB1 / MKI67-100)",
+                                    title="Simulation WT (populations *)",
                                     labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_wt": _pt_pop_order},
@@ -2227,7 +2227,7 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
-                                    title=f"Simulation {_ko_label} (DNAJB1 / MKI67-100)",
+                                    title=f"Simulation {_ko_label} (populations *)",
                                     labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
@@ -2237,6 +2237,12 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
                                 _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
                                 _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
+                                st.caption(
+                                    "\\* **Populations scored by gene signatures:** "
+                                    "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
+                                    "**Quiescent** — DNAJB1 z-score ≥ 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91) · "
+                                    "**Intermediate** — all remaining cells"
+                                )
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)"}
