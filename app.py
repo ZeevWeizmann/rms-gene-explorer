@@ -1501,7 +1501,7 @@ A gene embedding method that captures how each gene's co-expression context **ch
 
 3. **OT alignment (Sinkhorn)** — since GAT encodes neighborhood structure (not gene identity), genes are partially anonymous across timepoints. Optimal transport finds the optimal mapping between embedding clouds at each timepoint and t=0, without assuming gene i maps to gene i.
 
-4. **PPGN on NEKO prior** (ProgramEncoder) — separately, for a specific gene program (~200 genes), a Provably Powerful GNN (WL-3) is run on the mechanistic NEKO interaction graph. Captures regulatory motifs: feedback loops, triangles, paths of length 2.
+4. **PPGN on OmniPath/NEKO prior** — a Provably Powerful GNN (WL-3) runs on the OmniPath interaction graph (139K known regulatory interactions, accessed via NEKO) filtered to genes present in the dataset. Captures regulatory motifs: feedback loops, triangles, paths of length 2. Applied to all genes with at least one OmniPath edge — independent of any specific program.
 
 5. **Trajectory embedding** = MLP([delta, mean]) where:
    - `delta[i]` = aligned_tN[i] - aligned_t0[i] — how gene i's co-expression context shifted
