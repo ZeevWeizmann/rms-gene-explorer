@@ -1512,9 +1512,6 @@ A gene embedding method that captures how each gene's co-expression context **ch
 CardamomOT uses optimal transport to match cells across timepoints (unknown correspondence).
 Here the same principle applies to gene embedding clouds — GAT captures structural patterns, so two genes with similar neighborhood statistics get similar embeddings regardless of which specific genes are their neighbors. OT resolves this partial anonymity.
 
-**Files:**
-- `trajectory_gene_embeddings.csv` — 3887 genes x 128 dims + cluster
-- `trajectory_cluster_annotations.csv` — K-means cluster labels (LLM annotation pending)
     """)
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
