@@ -1492,36 +1492,15 @@ with st.expander("About Gene Trajectory Graph Embeddings"):
     st.markdown("""
 **What are Gene Trajectory Graph Embeddings?**
 
-Each gene receives a 128-dimensional vector that encodes **how its co-expression neighbourhood changed** across the 6 RMS time points (t = 0, 16, 32, 48, 64, 80 h). The embedding has two components that are trained jointly:
+Each gene receives a vector that encodes **how its co-expression neighbourhood changed** across the 6 RMS time points (t = 0 → 80 h). Two sources of information are combined:
 
----
+- **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport. The shift δ and mean position μ across time points form the trajectory embedding.
+- **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
 
-**Component 1 — Temporal trajectory (all ~3 900 expressed genes)**
-
-1. **WGCNA graph per time point** — a soft-thresholded Pearson co-expression graph (β = 6) is built separately for each time point's cells. The graph structure itself encodes time: no explicit time label is added to the model.
-
-2. **GAT encoder (shared weights)** — a Graph Attention Network with the same weights is applied to each time point's graph. The attention head learns to down-weight noisy co-expression edges. Output: one gene embedding snapshot per time point.
-
-3. **OT alignment (Sinkhorn)** — GAT encodes neighbourhood *structure*, not gene *identity*: two genes with similar local topology get similar embeddings even if their specific neighbours differ. Optimal transport (the same principle CardamomOT uses for cells) resolves this partial anonymity by finding the optimal cloud-to-cloud mapping at each time point back to t = 0.
-
-4. **MLP([δ, μ])** where δᵢ = emb_tN − emb_t0 (how the neighbourhood shifted) and μᵢ = mean across time points (stable context). Output: **trajectory\_emb [N, 128]**.
-
----
-
-**Component 2 — Regulatory structure (OmniPath-covered genes)**
-
-5. **NEKO / OmniPath prior** — 139 000 signed regulatory interactions are downloaded via the NEKO library. Gene symbols are mapped to UniProt IDs; interactions where both partners are expressed in the dataset are kept. This gives a mechanistic graph independent of any specific gene programme.
-
-6. **PPGN — Provably Powerful Graph Network (Maron et al., NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136))** — operates at the WL-3 (3rd-order Weisfeiler–Leman) level of expressiveness, strictly more powerful than message-passing GNNs. Runs on the OmniPath sub-graph. The key operation X\_prod[i,j] = Σₖ X[i,k]·X[k,j] captures paths of length 2, making feedback loops and regulatory triangles distinguishable. Output: **structural\_emb [N\_omni, 128]**.
-
----
-
-**Final embedding**
-
-> `final_emb[i] = trajectory_emb[i] + structural_emb[i]`   *(OmniPath genes)*
-> `final_emb[i] = trajectory_emb[i]`                        *(all other genes)*
-
-Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → close in embedding space; OmniPath pairs → close in embedding space.
+**References:**
+- Maron et al. *Provably Powerful Graph Networks.* NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136)
+- CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
+- OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
     _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 510" style="font-family:Arial,sans-serif;background:#fafafa">
