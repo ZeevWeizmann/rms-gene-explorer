@@ -1077,11 +1077,6 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     # per-node metrics
     in_deg  = dict(G.in_degree())
     out_deg = dict(G.out_degree())
-    try:
-        between = nx.betweenness_centrality(G, normalized=True)
-    except Exception:
-        between = {n: 0.0 for n in G.nodes()}
-
     topo_rows = []
     for n in G.nodes():
         if n == query_gene:
@@ -1100,7 +1095,6 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             "In-degree":  in_deg.get(n, 0),
             "Out-degree": out_deg.get(n, 0),
             "Total degree": in_deg.get(n, 0) + out_deg.get(n, 0),
-            "Betweenness": round(between.get(n, 0), 3),
             "Feedback loop": n in cycle_nodes,
         })
     topo_df = pd.DataFrame(topo_rows).sort_values("Total degree", ascending=False)
@@ -1135,8 +1129,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
         fl = " 🔄" if row["Feedback loop"] else ""
         hover_texts.append(
             f"<b>{n}</b>{fl}<br>Role: {row['Role']}<br>"
-            f"In: {row['In-degree']}  Out: {row['Out-degree']}<br>"
-            f"Betweenness: {row['Betweenness']}"
+            f"In: {row['In-degree']}  Out: {row['Out-degree']}"
         )
 
     fig = go.Figure()
@@ -2249,14 +2242,12 @@ def _render_msg_figures(msg, msg_id):
                                     f"most connected node in this subnetwork")
                         # table
                         show_cols = ["Gene", "Role", "In-degree", "Out-degree",
-                                     "Total degree", "Betweenness", "Feedback loop"]
+                                     "Total degree", "Feedback loop"]
                         st.dataframe(
                             topo[show_cols].reset_index(drop=True),
                             use_container_width=True,
                             hide_index=True,
                             column_config={
-                                "Betweenness": st.column_config.ProgressColumn(
-                                    "Betweenness", min_value=0, max_value=1, format="%.3f"),
                                 "Feedback loop": st.column_config.CheckboxColumn("🔄 Cycle"),
                             }
                         )
