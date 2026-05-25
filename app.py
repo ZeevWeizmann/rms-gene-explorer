@@ -1436,7 +1436,8 @@ _components.html("""<script>
 }})();
 </script>""", height=0, scrolling=False)
 
-with st.expander("About this tool"):
+_about_expander = st.expander("About this tool")
+with _about_expander:
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
 
@@ -1839,6 +1840,9 @@ Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → c
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
 </svg>"""
+
+# Diagram goes into "About this tool" — re-enter stored expander reference
+with _about_expander:
     _components.html(
         f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
         height=510, scrolling=False
