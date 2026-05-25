@@ -1455,8 +1455,7 @@ This is a **RAG-based gene program retrieval system** applied to single-cell RMS
 - This approach is called **network-informed synthetic lethality** — targets are chosen not in isolation but based on their role in the regulatory network under perturbation
 
 **Upload your own data:**
-Upload any `.h5ad` file to compute a UMAP and visualize gene expression in your dataset.
-Genes overlapping with the RMS embedding space can be queried directly in the chat to retrieve co-expression programs and GRN context from the RMS model.
+Upload any `.h5ad` file for query of interest.
 
 **Available GRN models:**
 - **Original** — 159 genes, inferred from full RMS scRNA-seq data
