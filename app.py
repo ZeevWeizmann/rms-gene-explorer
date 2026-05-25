@@ -119,6 +119,53 @@ def load_data(dataset="v1"):
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 
+@st.cache_resource(show_spinner=False)
+def load_data_traj():
+    """Load trajectory GNN embeddings (beta). Falls back gracefully if file missing."""
+    import os
+    local = os.path.join(LOCAL_DIR, "trajectory_gene_embeddings.csv")
+    ann_local = os.path.join(LOCAL_DIR, "trajectory_cluster_annotations.csv")
+    sum_local = os.path.join(LOCAL_DIR, "trajectory_cluster_summaries.csv")
+
+    try:
+        emb_df = pd.read_csv(local, index_col=0) if os.path.exists(local) else pd.read_csv(
+            hf_hub_download(repo_id=REPO_ID, filename="trajectory_gene_embeddings.csv",
+                            repo_type="dataset", token=st.secrets.get("HF_TOKEN", None)), index_col=0)
+        genes = list(emb_df.index)
+        embeddings = emb_df.drop(columns=["cluster"]).values
+        clusters = emb_df["cluster"].values
+
+        try:
+            ann_df = pd.read_csv(ann_local if os.path.exists(ann_local) else
+                hf_hub_download(repo_id=REPO_ID, filename="trajectory_cluster_annotations.csv",
+                                repo_type="dataset", token=st.secrets.get("HF_TOKEN", None)))
+            label_col = "label" if "label" in ann_df.columns else ann_df.columns[-1]
+            annotations = ann_df.set_index("cluster")[label_col].to_dict()
+        except Exception:
+            annotations = {i: f"Cluster {i}" for i in range(int(clusters.max()) + 1)}
+
+        try:
+            sum_df = pd.read_csv(sum_local if os.path.exists(sum_local) else
+                hf_hub_download(repo_id=REPO_ID, filename="trajectory_cluster_summaries.csv",
+                                repo_type="dataset", token=st.secrets.get("HF_TOKEN", None)))
+            sum_col = "summary" if "summary" in sum_df.columns else sum_df.columns[-1]
+            summaries = sum_df.set_index("cluster")[sum_col].to_dict()
+        except Exception:
+            summaries = {i: f"Trajectory cluster {i}" for i in range(int(clusters.max()) + 1)}
+
+        # No UMAP, expr matrix, or GRN for trajectory beta
+        umap_df    = pd.DataFrame({"x": np.zeros(len(genes)), "y": np.zeros(len(genes))},
+                                  index=genes)
+        expr       = np.zeros((len(genes), 1), dtype=np.float16)
+        gene_names = genes
+
+        return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, None, []
+    except Exception as e:
+        st.warning(f"Trajectory embeddings not available yet: {e}. Run trajectory_gnn.ipynb first.")
+        return [], np.zeros((0, 128)), np.zeros(0), {}, {}, \
+               pd.DataFrame({"x": [], "y": []}), np.zeros((0, 1), dtype=np.float16), [], None, []
+
+
 @st.cache_resource
 def load_grn(grn_key="original"):
     """Load GRN by key: 'original' (159 genes), 'mki67' (201 genes), 'tubb' (201 genes), 'foxm1' (198 genes), 'full' (200 genes)."""
@@ -1440,6 +1487,44 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 - Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
+    _components.html(
+        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
+        height=510, scrolling=False
+    )
+
+with st.expander("About Trajectory GNN (beta)"):
+    st.markdown("""
+> **Beta** — trajectory embeddings are computed from untrained model weights (random init).
+> Biological interpretability will improve after supervised fine-tuning.
+
+**What is Trajectory GNN?**
+
+A new gene embedding method that captures how each gene's co-expression context **changes over time** across the 6 RMS timepoints (t=0, 16, 32, 48, 64, 80h).
+
+**Architecture:**
+
+1. **hdWGCNA graph per timepoint** — soft-thresholded Pearson co-expression graph built separately for each timepoint's cells (beta=6). Time is encoded implicitly: each graph reflects the co-expression landscape of that moment.
+
+2. **GAT (Graph Attention Network)** — shared weights applied to each timepoint's graph. Attention mechanism learns to down-weight noisy co-expression edges. Output: gene embedding snapshot per timepoint.
+
+3. **OT alignment (Sinkhorn)** — since GAT encodes neighborhood structure (not gene identity), genes are partially anonymous across timepoints. Optimal transport finds the optimal mapping between embedding clouds at each timepoint and t=0, without assuming gene i maps to gene i.
+
+4. **PPGN on NEKO prior** (ProgramEncoder) — separately, for a specific gene program (~200 genes), a Provably Powerful GNN (WL-3) is run on the mechanistic NEKO interaction graph. Captures regulatory motifs: feedback loops, triangles, paths of length 2.
+
+5. **Trajectory embedding** = MLP([delta, mean]) where:
+   - `delta[i]` = aligned_tN[i] - aligned_t0[i] — how gene i's co-expression context shifted
+   - `mean[i]` = average position across all timepoints — stable neighborhood
+
+**Why OT?**
+
+CardamomOT uses optimal transport to match cells across timepoints (unknown correspondence).
+Here the same principle applies to gene embedding clouds — GAT captures structural patterns, so two genes with similar neighborhood statistics get similar embeddings regardless of which specific genes are their neighbors. OT resolves this partial anonymity.
+
+**Files:**
+- `trajectory_gene_embeddings.csv` — 3887 genes x 128 dims + cluster
+- `trajectory_cluster_annotations.csv` — K-means cluster labels (LLM annotation pending)
+    """)
+
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
@@ -1648,23 +1733,24 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
 </svg>"""
-    _components.html(
-        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
-        height=510, scrolling=False
-    )
 
 # ================================================================
 # DATASET SELECTOR  (must come before upload so `genes` is defined)
 # ================================================================
 dataset_choice = st.radio(
     "Dataset",
-    options=["RMS original", "RMS 2"],
+    options=["RMS original", "RMS 2", "Trajectory GNN (beta)"],
     horizontal=True
 )
-dataset_key = "v1" if dataset_choice == "RMS original" else "v2"
+dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory GNN (beta)" else "v2")
 
 with st.spinner("Loading data..."):
-    genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
+    if dataset_key == "traj":
+        genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data_traj()
+        st.info("Trajectory GNN (beta) — embeddings from GAT + WGCNA per timepoint + OT alignment. "
+                "Model weights are random init; run trajectory_gnn.ipynb to regenerate after training.")
+    else:
+        genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
 # ================================================================
 # UPLOAD YOUR OWN DATA
