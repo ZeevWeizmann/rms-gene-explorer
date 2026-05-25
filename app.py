@@ -525,7 +525,7 @@ def build_foxm1_population_umap(pop_df):
 
     fig = make_subplots(
         rows=1, cols=3,
-        subplot_titles=["Cell types", "FOXM1 — WT simulation", "FOXM1 — KO simulation"],
+        subplot_titles=["Cell types (DNAJB1 / MKI67-100)", "FOXM1 — WT simulation (DNAJB1 / MKI67-100)", "FOXM1 — KO simulation (DNAJB1 / MKI67-100)"],
         horizontal_spacing=0.05,
     )
 
@@ -631,7 +631,7 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
         margin=dict(t=60, b=10, l=65, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
-        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation",
+        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation (DNAJB1 / MKI67-100)",
                    font=dict(size=15), x=0.5),
         yaxis=dict(
             title=dict(text="% of cells", font=dict(size=13)),
@@ -677,7 +677,7 @@ def build_population_delta_figure(sim_df, ko_label="FOXM1 KO"):
         height=260,
         margin=dict(t=60, b=20, l=130, r=70),
         plot_bgcolor="white", paper_bgcolor="white",
-        title=dict(text=f"Population shift after {ko_label} (Δ%)",
+        title=dict(text=f"Population shift after {ko_label} (Δ%) — DNAJB1 / MKI67-100",
                    font=dict(size=15), x=0.5),
         xaxis=dict(
             title=dict(text="Δ% (KO − WT)", font=dict(size=13)),
@@ -1420,7 +1420,7 @@ Genes overlapping with the RMS embedding space can be queried directly in the ch
 **Population dynamics under knockout (Full program):**
 When querying a gene from the **Full program** (e.g. HSPA1B), the app runs a full CARDAMOM mechanistic simulation of HSPA1B knockout and tracks how the cell population composition changes over time.
 RMS tumours contain three co-existing cell states — **Proliferative**, **Quiescent**, and **Intermediate** — that are in dynamic equilibrium.
-Each state is scored from the scRNA-seq data using gene signatures (e.g. a 100-gene proliferation score, DNAJB1 z-score for quiescence).
+Each state is scored from the scRNA-seq data using gene signatures: **DNAJB1 z-score** (top HSPA1B neighbour, sim=0.91) for quiescence; **mean of top-100 MKI67 neighbours** for proliferation. Cells in neither top-30% → intermediate.
 After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
 This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
 
@@ -2006,7 +2006,7 @@ def _render_msg_figures(msg, msg_id):
                                     _pop_umap_real = px.scatter(
                                         _pr, x="x", y="y", color="population",
                                         color_discrete_map=_POP_COLORS,
-                                        title="Populations — real data",
+                                        title="Real data (DNAJB1 / MKI67-100)",
                                         labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
                                         opacity=0.6, height=420, render_mode="svg",
                                         category_orders={"population": _pt_pop_order},
@@ -2021,7 +2021,7 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
-                                    title="Populations — simulation WT (before KO)",
+                                    title="Simulation WT (DNAJB1 / MKI67-100)",
                                     labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_wt": _pt_pop_order},
@@ -2033,7 +2033,7 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
-                                    title=f"Populations — simulation {_ko_label} (after KO)",
+                                    title=f"Simulation {_ko_label} (DNAJB1 / MKI67-100)",
                                     labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
@@ -2254,7 +2254,7 @@ if query_gene:
         # Population panels — real data (panel 4) and simulation (panel 5)
         # Real data: shown for foxm1 + original models
         # Simulation: foxm1 only (only model with scored sim CSV)
-        # Quiescent = DNAJB1 z-score; Proliferative = 100-gene signature score
+        # Quiescent = DNAJB1 z-score (top HSPA1B neighbour); Proliferative = mean(top-100 MKI67 neighbours)
         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
         _POP_ORDER  = ["quiescent", "proliferative", "intermediate"]  # intermediate drawn on top (largest group)
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
@@ -2267,7 +2267,7 @@ if query_gene:
                     _pr, x="x", y="y",
                     color="population",
                     color_discrete_map=_POP_COLORS,
-                    title="Population (real data)",
+                    title="Population — real data (DNAJB1 / MKI67-100)",
                     labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
                     opacity=0.6, height=450, render_mode="svg",
                     category_orders={"population": _POP_ORDER},
@@ -2292,7 +2292,7 @@ if query_gene:
                     _ps, x="x_wt", y="y_wt",
                     color="pop_wt",
                     color_discrete_map=_POP_COLORS,
-                    title="Population (simulation WT)",
+                    title="Population — simulation WT (DNAJB1 / MKI67-100)",
                     labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
                     opacity=0.6, height=450, render_mode="svg",
                     category_orders={"pop_wt": _POP_ORDER},
