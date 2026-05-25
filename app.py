@@ -1487,18 +1487,15 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 - Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
-with st.expander("About Trajectory GNN (beta)"):
+with st.expander("About Gene Trajectory Embeddings"):
     st.markdown("""
-> **Beta** — trajectory embeddings are computed from untrained model weights (random init).
-> Biological interpretability will improve after supervised fine-tuning.
+**What are Gene Trajectory Embeddings?**
 
-**What is Trajectory GNN?**
-
-A new gene embedding method that captures how each gene's co-expression context **changes over time** across the 6 RMS timepoints (t=0, 16, 32, 48, 64, 80h).
+A gene embedding method that captures how each gene's co-expression context **changes over time** across the 6 RMS timepoints (t=0, 16, 32, 48, 64, 80h).
 
 **Architecture:**
 
-1. **hdWGCNA graph per timepoint** — soft-thresholded Pearson co-expression graph built separately for each timepoint's cells (beta=6). Time is encoded implicitly: each graph reflects the co-expression landscape of that moment.
+1. **WGCNA graph per timepoint** — soft-thresholded Pearson co-expression graph built separately for each timepoint's cells (β=6). Time is encoded implicitly: each graph reflects the co-expression landscape of that moment.
 
 2. **GAT (Graph Attention Network)** — shared weights applied to each timepoint's graph. Attention mechanism learns to down-weight noisy co-expression edges. Output: gene embedding snapshot per timepoint.
 
@@ -1738,16 +1735,16 @@ Here the same principle applies to gene embedding clouds — GAT captures struct
 # ================================================================
 dataset_choice = st.radio(
     "Dataset",
-    options=["RMS original", "RMS 2", "Trajectory GNN (beta)"],
+    options=["RMS original", "RMS 2", "Gene Trajectory Embeddings"],
     horizontal=True
 )
-dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory GNN (beta)" else "v2")
+dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Gene Trajectory Embeddings" else "v2")
 
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data_traj()
-        st.info("Trajectory GNN (beta) — embeddings from GAT + WGCNA per timepoint + OT alignment. "
-                "Model weights are random init; run trajectory_gnn.ipynb to regenerate after training.")
+        st.info("Gene Trajectory Embeddings — GAT + WGCNA per timepoint + OT alignment. "
+                "Run trajectory_gnn.ipynb to regenerate embeddings after model training.")
     else:
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
