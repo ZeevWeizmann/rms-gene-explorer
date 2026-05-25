@@ -1512,7 +1512,7 @@ Each gene receives a 128-dimensional vector that encodes **how its co-expression
 
 5. **NEKO / OmniPath prior** — 139 000 signed regulatory interactions are downloaded via the NEKO library. Gene symbols are mapped to UniProt IDs; interactions where both partners are expressed in the dataset are kept. This gives a mechanistic graph independent of any specific gene programme.
 
-6. **PPGN (WL-3, 2 layers)** — a Provably Powerful Graph Network runs on the OmniPath sub-graph. The key operation X\_prod[i,j] = Σₖ X[i,k]·X[k,j] captures paths of length 2, making feedback loops and regulatory triangles distinguishable. Output: **structural\_emb [N\_omni, 128]**.
+6. **PPGN — Provably Powerful Graph Network (Maron et al., NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136))** — operates at the WL-3 (3rd-order Weisfeiler–Leman) level of expressiveness, strictly more powerful than message-passing GNNs. Runs on the OmniPath sub-graph. The key operation X\_prod[i,j] = Σₖ X[i,k]·X[k,j] captures paths of length 2, making feedback loops and regulatory triangles distinguishable. Output: **structural\_emb [N\_omni, 128]**.
 
 ---
 
@@ -1597,7 +1597,7 @@ Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → c
 
 <!-- PPGN -->
 <rect x="550" y="188" width="300" height="110" rx="8" fill="#c8b0ff" stroke="#6030b0" stroke-width="1.5"/>
-<text x="700" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#2a0060">PPGN  (WL-3,  2 layers)</text>
+<text x="700" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#2a0060">PPGN  ·  WL-3  ·  2 layers  (Maron et al. 2019)</text>
 <text x="700" y="228" text-anchor="middle" font-size="10.5" fill="#3a1080">X_prod[i,j] = Σₖ X[i,k] · X[k,j]</text>
 <text x="700" y="246" text-anchor="middle" font-size="10" fill="#4a2090">captures paths of length 2:</text>
 <text x="700" y="262" text-anchor="middle" font-size="10" fill="#4a2090">feedback loops  ·  regulatory triangles</text>
