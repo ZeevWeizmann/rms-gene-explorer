@@ -1424,8 +1424,20 @@ Each state is scored from the scRNA-seq data using gene signatures: **DNAJB1 z-s
 After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
 This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
 
+**Gene program annotation (LLM):**
+Each retrieved gene program is automatically annotated by **Llama 3.1-8B** (via Nebius AI Studio) — the model receives the top co-expressed genes and generates a concise biological label (e.g. *"Mitotic Cell Proliferation"*, *"Cytoskeletal remodelling"*). This enables rapid biological interpretation of each program without manual curation.
+
+**Cell population scoring (DNAJB1 / MKI67-100):**
+Three co-existing RMS cell states are defined by gene expression thresholds applied uniformly to real data and all simulations:
+- **Proliferative** (red) — mean expression of top-100 MKI67 co-expression neighbours >= 70th percentile
+- **Quiescent** (blue) — DNAJB1 z-score >= 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91)
+- **Intermediate** (grey) — all remaining cells
+
+DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregulation marks cells exiting the cell cycle. The same scoring rule is applied to real data, WT simulation, and KO simulation — making population shifts directly comparable.
+
 **References:**
 - CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
+- Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
@@ -1522,16 +1534,19 @@ This reveals not just which genes change in expression, but **how the Waddington
 <!-- ── Box 5: Gene Program (teal) ── -->
 <rect x="716" y="34" width="158" height="170" rx="8" fill="#E8FAF5" stroke="#16A085" stroke-width="2.5"/>
 <text x="795" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#16A085">Gene Program</text>
-<circle cx="780" cy="105" r="7" fill="#16A085"/>
-<circle cx="802" cy="92" r="6" fill="#16A085"/>
-<circle cx="818" cy="113" r="7" fill="#16A085"/>
-<circle cx="791" cy="126" r="6" fill="#16A085"/>
-<circle cx="811" cy="132" r="5" fill="#16A085"/>
-<circle cx="772" cy="122" r="5" fill="#16A085"/>
-<circle cx="823" cy="96" r="5" fill="#16A085" opacity="0.7"/>
-<circle cx="763" cy="100" r="4" fill="#16A085" opacity="0.6"/>
-<text x="795" y="167" text-anchor="middle" font-size="11" fill="#777">co-expression neighbors</text>
-<text x="795" y="182" text-anchor="middle" font-size="10" font-style="italic" fill="#16A085">(context-driven)</text>
+<!-- "LLM-annotated" badge -->
+<rect x="738" y="62" width="114" height="17" rx="8" fill="#8E44AD" opacity="0.12" stroke="#8E44AD" stroke-width="1"/>
+<text x="795" y="74" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#8E44AD">LLM · Llama 3.1</text>
+<circle cx="780" cy="112" r="7" fill="#16A085"/>
+<circle cx="802" cy="99" r="6" fill="#16A085"/>
+<circle cx="818" cy="120" r="7" fill="#16A085"/>
+<circle cx="791" cy="133" r="6" fill="#16A085"/>
+<circle cx="811" cy="139" r="5" fill="#16A085"/>
+<circle cx="772" cy="129" r="5" fill="#16A085"/>
+<circle cx="823" cy="103" r="5" fill="#16A085" opacity="0.7"/>
+<circle cx="763" cy="107" r="4" fill="#16A085" opacity="0.6"/>
+<text x="795" y="170" text-anchor="middle" font-size="11" fill="#777">co-expression neighbors</text>
+<text x="795" y="185" text-anchor="middle" font-size="10" font-style="italic" fill="#16A085">(context-driven)</text>
 
 <!-- ═══ ROW 1 ARROWS ═══ -->
 <line x1="170" y1="119" x2="185" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
