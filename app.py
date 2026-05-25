@@ -1487,9 +1487,9 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 - Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
-with st.expander("About Gene Trajectory Embeddings"):
+with st.expander("About Gene Trajectory Graph Embeddings"):
     st.markdown("""
-**What are Gene Trajectory Embeddings?**
+**What are Gene Trajectory Graph Embeddings?**
 
 Each gene receives a 128-dimensional vector that encodes **how its co-expression neighbourhood changed** across the 6 RMS time points (t = 0, 16, 32, 48, 64, 80 h). The embedding has two components that are trained jointly:
 
@@ -1531,7 +1531,7 @@ Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → c
 </defs>
 
 <!-- title -->
-<text x="460" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">Gene Trajectory Embeddings — Architecture</text>
+<text x="460" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">Gene Trajectory Graph Embeddings — Architecture</text>
 
 <!-- ══ LEFT COLUMN: Temporal pipeline ══════════════════════════ -->
 <!-- col center x=225, box w=310 -->
@@ -1849,15 +1849,15 @@ Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → c
 # ================================================================
 dataset_choice = st.radio(
     "Dataset",
-    options=["RMS original", "RMS 2", "Gene Trajectory Embeddings"],
+    options=["RMS original", "RMS 2", "Gene Trajectory Graph Embeddings"],
     horizontal=True
 )
-dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Gene Trajectory Embeddings" else "v2")
+dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Gene Trajectory Graph Embeddings" else "v2")
 
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data_traj()
-        st.info("Gene Trajectory Embeddings — GAT + WGCNA per timepoint + OT alignment. "
+        st.info("Gene Trajectory Graph Embeddings — GAT + WGCNA per timepoint + OT alignment. "
                 "Run trajectory_gnn.ipynb to regenerate embeddings after model training.")
     else:
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
