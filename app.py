@@ -1972,7 +1972,7 @@ with st.spinner("Loading data..."):
 # ================================================================
 # UPLOAD YOUR OWN DATA
 # ================================================================
-with st.expander("📂 Upload any .h5ad file for query of interest", expanded=False):
+with st.expander("📂 Upload your own .h5ad file for query of interest", expanded=False):
     st.caption("Your file is processed in memory only — not stored anywhere. Max recommended: ~50k cells.")
     uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
 
