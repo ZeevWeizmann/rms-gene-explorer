@@ -1491,28 +1491,145 @@ with st.expander("About Gene Trajectory Embeddings"):
     st.markdown("""
 **What are Gene Trajectory Embeddings?**
 
-A gene embedding method that captures how each gene's co-expression context **changes over time** across the 6 RMS timepoints (t=0, 16, 32, 48, 64, 80h).
+Each gene receives a 128-dimensional vector that encodes **how its co-expression neighbourhood changed** across the 6 RMS time points (t = 0, 16, 32, 48, 64, 80 h). The embedding has two components that are trained jointly:
 
-**Architecture:**
+---
 
-1. **WGCNA graph per timepoint** — soft-thresholded Pearson co-expression graph built separately for each timepoint's cells (β=6). Time is encoded implicitly: each graph reflects the co-expression landscape of that moment.
+**Component 1 — Temporal trajectory (all ~3 900 expressed genes)**
 
-2. **GAT (Graph Attention Network)** — shared weights applied to each timepoint's graph. Attention mechanism learns to down-weight noisy co-expression edges. Output: gene embedding snapshot per timepoint.
+1. **WGCNA graph per time point** — a soft-thresholded Pearson co-expression graph (β = 6) is built separately for each time point's cells. The graph structure itself encodes time: no explicit time label is added to the model.
 
-3. **OT alignment (Sinkhorn)** — since GAT encodes neighborhood structure (not gene identity), genes are partially anonymous across timepoints. Optimal transport finds the optimal mapping between embedding clouds at each timepoint and t=0, without assuming gene i maps to gene i.
+2. **GAT encoder (shared weights)** — a Graph Attention Network with the same weights is applied to each time point's graph. The attention head learns to down-weight noisy co-expression edges. Output: one gene embedding snapshot per time point.
 
-4. **PPGN on OmniPath/NEKO prior** — a Provably Powerful GNN (WL-3) runs on the OmniPath interaction graph (139K known regulatory interactions, accessed via NEKO) filtered to genes present in the dataset. Captures regulatory motifs: feedback loops, triangles, paths of length 2. Applied to all genes with at least one OmniPath edge — independent of any specific program.
+3. **OT alignment (Sinkhorn)** — GAT encodes neighbourhood *structure*, not gene *identity*: two genes with similar local topology get similar embeddings even if their specific neighbours differ. Optimal transport (the same principle CardamomOT uses for cells) resolves this partial anonymity by finding the optimal cloud-to-cloud mapping at each time point back to t = 0.
 
-5. **Trajectory embedding** = MLP([delta, mean]) where:
-   - `delta[i]` = aligned_tN[i] - aligned_t0[i] — how gene i's co-expression context shifted
-   - `mean[i]` = average position across all timepoints — stable neighborhood
+4. **MLP([δ, μ])** where δᵢ = emb_tN − emb_t0 (how the neighbourhood shifted) and μᵢ = mean across time points (stable context). Output: **trajectory\_emb [N, 128]**.
 
-**Why OT?**
+---
 
-CardamomOT uses optimal transport to match cells across timepoints (unknown correspondence).
-Here the same principle applies to gene embedding clouds — GAT captures structural patterns, so two genes with similar neighborhood statistics get similar embeddings regardless of which specific genes are their neighbors. OT resolves this partial anonymity.
+**Component 2 — Regulatory structure (OmniPath-covered genes)**
 
+5. **NEKO / OmniPath prior** — 139 000 signed regulatory interactions are downloaded via the NEKO library. Gene symbols are mapped to UniProt IDs; interactions where both partners are expressed in the dataset are kept. This gives a mechanistic graph independent of any specific gene programme.
+
+6. **PPGN (WL-3, 2 layers)** — a Provably Powerful Graph Network runs on the OmniPath sub-graph. The key operation X\_prod[i,j] = Σₖ X[i,k]·X[k,j] captures paths of length 2, making feedback loops and regulatory triangles distinguishable. Output: **structural\_emb [N\_omni, 128]**.
+
+---
+
+**Final embedding**
+
+> `final_emb[i] = trajectory_emb[i] + structural_emb[i]`   *(OmniPath genes)*
+> `final_emb[i] = trajectory_emb[i]`                        *(all other genes)*
+
+Both components are trained jointly with an InfoNCE loss: WGCNA neighbours → close in embedding space; OmniPath pairs → close in embedding space.
     """)
+
+    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 510" style="font-family:Arial,sans-serif;background:#fafafa">
+<defs>
+  <marker id="th" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L0,7 L8,3.5 z" fill="#666"/>
+  </marker>
+</defs>
+
+<!-- title -->
+<text x="460" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">Gene Trajectory Embeddings — Architecture</text>
+
+<!-- ══ LEFT COLUMN: Temporal pipeline ══════════════════════════ -->
+<!-- col center x=225, box w=310 -->
+
+<!-- WGCNA -->
+<rect x="70" y="44" width="310" height="56" rx="8" fill="#d4eaff" stroke="#7ab4e8" stroke-width="1.5"/>
+<text x="225" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a4a7a">WGCNA graph × 6 time points</text>
+<text x="225" y="82" text-anchor="middle" font-size="10.5" fill="#2a5a9a">soft-threshold Pearson  β = 6  |  separate graph per t</text>
+<text x="225" y="95" text-anchor="middle" font-size="10" fill="#555">time encoded implicitly in graph structure</text>
+
+<!-- arrow -->
+<line x1="225" y1="100" x2="225" y2="120" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- GAT -->
+<rect x="70" y="122" width="310" height="52" rx="8" fill="#c8f0c8" stroke="#5aad5a" stroke-width="1.5"/>
+<text x="225" y="143" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a5a1a">GAT Encoder  (shared weights)</text>
+<text x="225" y="160" text-anchor="middle" font-size="10.5" fill="#2a7a2a">attention down-weights noisy edges  →  snapshot emb_t  per timepoint</text>
+
+<!-- arrow -->
+<line x1="225" y1="174" x2="225" y2="194" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- OT -->
+<rect x="70" y="196" width="310" height="52" rx="8" fill="#ffe8c0" stroke="#e8a040" stroke-width="1.5"/>
+<text x="225" y="217" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a4000">OT Sinkhorn alignment  →  t = 0</text>
+<text x="225" y="234" text-anchor="middle" font-size="10.5" fill="#9a5000">GAT = structural encoder  →  partial gene anonymity  →  OT resolves</text>
+
+<!-- arrow -->
+<line x1="225" y1="248" x2="225" y2="268" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- delta + mean -->
+<rect x="70" y="270" width="310" height="52" rx="8" fill="#fff6a0" stroke="#c8b800" stroke-width="1.5"/>
+<text x="225" y="291" text-anchor="middle" font-size="12" font-weight="bold" fill="#5a4800">δᵢ = aligned_tN − aligned_t0</text>
+<text x="225" y="308" text-anchor="middle" font-size="10.5" fill="#7a6000">μᵢ = mean(aligned_t*)  ·  δ = shift,  μ = stable context</text>
+
+<!-- arrow -->
+<line x1="225" y1="322" x2="225" y2="342" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- MLP -->
+<rect x="70" y="344" width="310" height="52" rx="8" fill="#ffd0d0" stroke="#d05050" stroke-width="1.5"/>
+<text x="225" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a1a1a">MLP( [ δ,  μ ] )</text>
+<text x="225" y="382" text-anchor="middle" font-size="10.5" fill="#9a2a2a">trajectory_emb  [N, 128]</text>
+
+<!-- ══ RIGHT COLUMN: PPGN branch ═══════════════════════════════ -->
+<!-- col center x=695, box w=290 -->
+
+<!-- OmniPath -->
+<rect x="550" y="44" width="300" height="56" rx="8" fill="#ede0ff" stroke="#9060d0" stroke-width="1.5"/>
+<text x="700" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">OmniPath  ·  139 000 interactions</text>
+<text x="700" y="82" text-anchor="middle" font-size="10.5" fill="#6030a0">signed PPI + signalling + regulatory edges</text>
+<text x="700" y="95" text-anchor="middle" font-size="10" fill="#555">accessed via NEKO  ·  gene symbol → UniProt</text>
+
+<!-- arrow -->
+<line x1="700" y1="100" x2="700" y2="120" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- NEKO filter -->
+<rect x="550" y="122" width="300" height="44" rx="8" fill="#ddd0ff" stroke="#8050c0" stroke-width="1.5"/>
+<text x="700" y="141" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">NEKO filter</text>
+<text x="700" y="157" text-anchor="middle" font-size="10.5" fill="#6030a0">keep edges where both genes expressed in dataset</text>
+
+<!-- arrow -->
+<line x1="700" y1="166" x2="700" y2="186" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- PPGN -->
+<rect x="550" y="188" width="300" height="110" rx="8" fill="#c8b0ff" stroke="#6030b0" stroke-width="1.5"/>
+<text x="700" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#2a0060">PPGN  (WL-3,  2 layers)</text>
+<text x="700" y="228" text-anchor="middle" font-size="10.5" fill="#3a1080">X_prod[i,j] = Σₖ X[i,k] · X[k,j]</text>
+<text x="700" y="246" text-anchor="middle" font-size="10" fill="#4a2090">captures paths of length 2:</text>
+<text x="700" y="262" text-anchor="middle" font-size="10" fill="#4a2090">feedback loops  ·  regulatory triangles</text>
+<text x="700" y="280" text-anchor="middle" font-size="10" fill="#5a3090">node readout: diagonal  X[i,i]  →  structural_emb</text>
+
+<!-- arrow -->
+<line x1="700" y1="298" x2="700" y2="344" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+
+<!-- structural_emb -->
+<rect x="550" y="344" width="300" height="52" rx="8" fill="#e0d0ff" stroke="#8050c0" stroke-width="1.5"/>
+<text x="700" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">structural_emb  [N_omni, 128]</text>
+<text x="700" y="382" text-anchor="middle" font-size="10.5" fill="#6030a0">regulatory motif fingerprint per gene</text>
+
+<!-- ══ MERGE ══════════════════════════════════════════════════ -->
+
+<!-- arrow from MLP down -->
+<line x1="225" y1="396" x2="225" y2="445" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- arrow from struct_emb to merge -->
+<path d="M550,370 Q480,370 460,445" stroke="#6030b0" stroke-width="1.8" fill="none" marker-end="url(#th)"/>
+<!-- "+" label -->
+<circle cx="460" cy="438" r="11" fill="#fff" stroke="#888" stroke-width="1.5"/>
+<text x="460" y="443" text-anchor="middle" font-size="14" fill="#444">+</text>
+<text x="510" y="432" font-size="10" fill="#888">(OmniPath genes only)</text>
+
+<!-- final_emb -->
+<rect x="175" y="456" width="570" height="48" rx="10" fill="#b0f0c0" stroke="#30a050" stroke-width="2"/>
+<text x="460" y="477" text-anchor="middle" font-size="13" font-weight="bold" fill="#105a28">final_emb  [N, 128]  —  used for RAG retrieval</text>
+<text x="460" y="495" text-anchor="middle" font-size="10.5" fill="#1a7a38">trajectory_emb  +  structural_emb  (for OmniPath genes)   |   trajectory_emb  (all others)</text>
+</svg>"""
+    _components.html(
+        f"<div style='width:100%;overflow:hidden'>{_traj_svg}</div>",
+        height=520, scrolling=False
+    )
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
