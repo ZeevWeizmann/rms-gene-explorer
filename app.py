@@ -1487,11 +1487,6 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 - Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
-    _components.html(
-        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
-        height=510, scrolling=False
-    )
-
 with st.expander("About Trajectory GNN (beta)"):
     st.markdown("""
 > **Beta** — trajectory embeddings are computed from untrained model weights (random init).
@@ -1733,6 +1728,10 @@ Here the same principle applies to gene embedding clouds — GAT captures struct
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
 </svg>"""
+    _components.html(
+        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
+        height=510, scrolling=False
+    )
 
 # ================================================================
 # DATASET SELECTOR  (must come before upload so `genes` is defined)
