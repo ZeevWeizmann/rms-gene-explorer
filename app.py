@@ -1967,8 +1967,6 @@ dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_c
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data_traj()
-        st.info("Gene Trajectory Graph Embeddings — GAT + WGCNA per timepoint + OT alignment. "
-                "Run trajectory_gnn.ipynb to regenerate embeddings after model training.")
     else:
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
