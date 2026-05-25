@@ -119,9 +119,9 @@ def load_data(dataset="v1"):
     return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def load_data_traj():
-    """Load trajectory GNN embeddings (beta). Falls back gracefully if file missing."""
+    """Load trajectory GNN embeddings. Falls back gracefully if file missing."""
     import os
     local = os.path.join(LOCAL_DIR, "trajectory_gene_embeddings.csv")
     ann_local = os.path.join(LOCAL_DIR, "trajectory_cluster_annotations.csv")
@@ -1503,112 +1503,239 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 - OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
-    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 510" style="font-family:Arial,sans-serif;background:#fafafa">
+    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
+  <style>
+    @keyframes tPulse {
+      0%, 100% { opacity: 1;    stroke-width: 2.5; }
+      50%       { opacity: 0.1; stroke-width: 1.5; }
+    }
+    @keyframes tLabelPulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.1; }
+    }
+    .tblink path { animation: tPulse 1.4s ease-in-out infinite; }
+    .tblink rect  { animation: tLabelPulse 1.4s ease-in-out infinite; }
+    .tblink text  { animation: tLabelPulse 1.4s ease-in-out infinite; }
+  </style>
   <marker id="th" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
-    <path d="M0,0 L0,7 L8,3.5 z" fill="#666"/>
+    <path d="M0,0 L0,7 L8,3.5 z" fill="#888"/>
+  </marker>
+  <marker id="thG" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L0,7 L8,3.5 z" fill="#16A085"/>
   </marker>
 </defs>
 
-<!-- title -->
-<text x="460" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">Gene Trajectory Graph Embeddings — Architecture</text>
+<!-- ═══ ROW 1 TITLE ═══ -->
+<text x="380" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Temporal Co-expression Trajectory</text>
 
-<!-- ══ LEFT COLUMN: Temporal pipeline ══════════════════════════ -->
-<!-- col center x=225, box w=310 -->
+<!-- ── Box 1: scRNA-seq × T (blue) ── -->
+<rect x="12" y="34" width="158" height="170" rx="8" fill="#EBF4FC" stroke="#5B9BD5" stroke-width="2"/>
+<text x="91" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#5B9BD5">scRNA-seq</text>
+<text x="91" y="72" text-anchor="middle" font-size="13" font-weight="bold" fill="#5B9BD5">× T</text>
+<rect x="38" y="84" width="106" height="78" rx="3" fill="none" stroke="#5B9BD5" stroke-width="1.5" opacity="0.7"/>
+<line x1="38" y1="104" x2="144" y2="104" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="38" y1="124" x2="144" y2="124" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="38" y1="144" x2="144" y2="144" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="73" y1="84" x2="73" y2="162" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<line x1="108" y1="84" x2="108" y2="162" stroke="#5B9BD5" stroke-width="0.8" opacity="0.4"/>
+<text x="91" y="178" text-anchor="middle" font-size="11" fill="#777">cells × genes</text>
+<text x="91" y="191" text-anchor="middle" font-size="11" fill="#777">× 6 time points</text>
 
-<!-- WGCNA -->
-<rect x="70" y="44" width="310" height="56" rx="8" fill="#d4eaff" stroke="#7ab4e8" stroke-width="1.5"/>
-<text x="225" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a4a7a">WGCNA graph × 6 time points</text>
-<text x="225" y="82" text-anchor="middle" font-size="10.5" fill="#2a5a9a">soft-threshold Pearson  β = 6  |  separate graph per t</text>
-<text x="225" y="95" text-anchor="middle" font-size="10" fill="#555">time encoded implicitly in graph structure</text>
+<!-- ── Box 2: WGCNA × T (purple) ── -->
+<rect x="188" y="34" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
+<text x="267" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">WGCNA</text>
+<text x="267" y="72" text-anchor="middle" font-size="12" fill="#9B59B6">per timepoint</text>
+<line x1="267" y1="88" x2="233" y2="113" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="267" y1="88" x2="301" y2="113" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="233" y1="113" x2="245" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="301" y1="113" x2="289" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<line x1="245" y1="148" x2="289" y2="148" stroke="#9B59B6" stroke-width="1.5"/>
+<circle cx="267" cy="88" r="6" fill="#9B59B6"/>
+<circle cx="233" cy="113" r="6" fill="#9B59B6"/>
+<circle cx="301" cy="113" r="6" fill="#9B59B6"/>
+<circle cx="245" cy="148" r="6" fill="#9B59B6"/>
+<circle cx="289" cy="148" r="6" fill="#9B59B6"/>
+<rect x="291" y="83" width="30" height="14" rx="4" fill="#9B59B6" opacity="0.15" stroke="#9B59B6" stroke-width="0.8"/>
+<text x="306" y="93" text-anchor="middle" font-size="9" font-weight="bold" fill="#9B59B6">× 6</text>
+<text x="267" y="175" text-anchor="middle" font-size="11" fill="#777">gene-gene graph</text>
+<text x="267" y="188" text-anchor="middle" font-size="11" fill="#777">soft-threshold β=6</text>
 
-<!-- arrow -->
-<line x1="225" y1="100" x2="225" y2="120" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- ── Box 3: GAT Encoder (green) ── -->
+<rect x="364" y="34" width="158" height="170" rx="8" fill="#EAFAF1" stroke="#27AE60" stroke-width="2"/>
+<text x="443" y="56" text-anchor="middle" font-size="14" font-weight="bold" fill="#27AE60">GAT Encoder</text>
+<text x="443" y="72" text-anchor="middle" font-size="11" fill="#27AE60">shared weights</text>
+<line x1="415" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="471" y1="90" x2="443" y2="125" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="125" x2="427" y2="153" stroke="#27AE60" stroke-width="1.5"/>
+<line x1="443" y1="125" x2="459" y2="153" stroke="#27AE60" stroke-width="1.5"/>
+<circle cx="415" cy="90" r="6" fill="#27AE60"/>
+<circle cx="443" cy="90" r="6" fill="#27AE60"/>
+<circle cx="471" cy="90" r="6" fill="#27AE60"/>
+<circle cx="443" cy="125" r="9" fill="#1A8A40"/>
+<circle cx="427" cy="153" r="6" fill="#27AE60"/>
+<circle cx="459" cy="153" r="6" fill="#27AE60"/>
+<text x="443" y="175" text-anchor="middle" font-size="11" fill="#777">snapshot emb_t</text>
+<text x="443" y="188" text-anchor="middle" font-size="11" fill="#777">per timepoint</text>
 
-<!-- GAT -->
-<rect x="70" y="122" width="310" height="52" rx="8" fill="#c8f0c8" stroke="#5aad5a" stroke-width="1.5"/>
-<text x="225" y="143" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a5a1a">GAT Encoder  (shared weights)</text>
-<text x="225" y="160" text-anchor="middle" font-size="10.5" fill="#2a7a2a">attention down-weights noisy edges  →  snapshot emb_t  per timepoint</text>
+<!-- ── Box 4: OT Alignment (orange) ── -->
+<rect x="540" y="34" width="158" height="170" rx="8" fill="#FEF5E7" stroke="#E67E22" stroke-width="2"/>
+<text x="619" y="56" text-anchor="middle" font-size="13" font-weight="bold" fill="#E67E22">OT Alignment</text>
+<text x="619" y="72" text-anchor="middle" font-size="11" fill="#E67E22">Sinkhorn</text>
+<circle cx="563" cy="100" r="5" fill="#E67E22" opacity="0.7"/>
+<circle cx="563" cy="118" r="5" fill="#E67E22" opacity="0.6"/>
+<circle cx="563" cy="136" r="5" fill="#E67E22" opacity="0.8"/>
+<circle cx="563" cy="154" r="5" fill="#E67E22" opacity="0.5"/>
+<line x1="570" y1="100" x2="666" y2="97" stroke="#E67E22" stroke-width="1" stroke-dasharray="3,2" opacity="0.55"/>
+<line x1="570" y1="118" x2="666" y2="121" stroke="#E67E22" stroke-width="1" stroke-dasharray="3,2" opacity="0.55"/>
+<line x1="570" y1="136" x2="666" y2="130" stroke="#E67E22" stroke-width="1" stroke-dasharray="3,2" opacity="0.55"/>
+<line x1="570" y1="154" x2="666" y2="151" stroke="#E67E22" stroke-width="1" stroke-dasharray="3,2" opacity="0.45"/>
+<circle cx="671" cy="97" r="5" fill="#E67E22"/>
+<circle cx="671" cy="121" r="5" fill="#E67E22"/>
+<circle cx="671" cy="130" r="5" fill="#E67E22"/>
+<circle cx="671" cy="151" r="5" fill="#E67E22" opacity="0.75"/>
+<text x="619" y="175" text-anchor="middle" font-size="11" fill="#777">align snapshots</text>
+<text x="619" y="188" text-anchor="middle" font-size="11" fill="#777">to common frame</text>
 
-<!-- arrow -->
-<line x1="225" y1="174" x2="225" y2="194" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- ── Box 5: trajectory_emb (gold) ── -->
+<rect x="716" y="34" width="158" height="170" rx="8" fill="#FEFDE7" stroke="#D4AC0D" stroke-width="2.5"/>
+<text x="795" y="56" text-anchor="middle" font-size="13" font-weight="bold" fill="#B8860B">trajectory_emb</text>
+<text x="795" y="72" text-anchor="middle" font-size="10" fill="#B8860B">δ + μ → MLP</text>
+<circle cx="767" cy="100" r="5" fill="#D4AC0D" opacity="0.8"/>
+<circle cx="787" cy="88" r="8" fill="#D4AC0D"/>
+<circle cx="812" cy="103" r="5" fill="#D4AC0D" opacity="0.7"/>
+<circle cx="773" cy="120" r="4" fill="#888" opacity="0.4"/>
+<circle cx="820" cy="114" r="5" fill="#888" opacity="0.4"/>
+<circle cx="800" cy="130" r="8" fill="#D4AC0D" opacity="0.9"/>
+<circle cx="760" cy="134" r="4" fill="#888" opacity="0.3"/>
+<circle cx="827" cy="92" r="4" fill="#888" opacity="0.3"/>
+<circle cx="777" cy="148" r="5" fill="#D4AC0D" opacity="0.65"/>
+<circle cx="813" cy="145" r="4" fill="#888" opacity="0.35"/>
+<text x="795" y="175" text-anchor="middle" font-size="11" fill="#777">gene shift + stable</text>
+<text x="795" y="188" text-anchor="middle" font-size="10" font-style="italic" fill="#B8860B">[N, 128]</text>
 
-<!-- OT -->
-<rect x="70" y="196" width="310" height="52" rx="8" fill="#ffe8c0" stroke="#e8a040" stroke-width="1.5"/>
-<text x="225" y="217" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a4000">OT Sinkhorn alignment  →  t = 0</text>
-<text x="225" y="234" text-anchor="middle" font-size="10.5" fill="#9a5000">GAT = structural encoder  →  partial gene anonymity  →  OT resolves</text>
+<!-- ═══ ROW 1 ARROWS ═══ -->
+<line x1="170" y1="119" x2="185" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="346" y1="119" x2="361" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="522" y1="119" x2="537" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="698" y1="119" x2="713" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
 
-<!-- arrow -->
-<line x1="225" y1="248" x2="225" y2="268" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- ═══ SPECIAL BLINK ARROW: trajectory_emb → final_emb ═══ -->
+<g class="tblink">
+  <path d="M 795,206 L 795,274"
+        stroke="#16A085" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
+        marker-end="url(#thG)"/>
+  <rect x="702" y="228" width="186" height="24" rx="5" fill="white" opacity="0.88"/>
+  <text x="795" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#16A085">+ OmniPath structure</text>
+</g>
 
-<!-- delta + mean -->
-<rect x="70" y="270" width="310" height="52" rx="8" fill="#fff6a0" stroke="#c8b800" stroke-width="1.5"/>
-<text x="225" y="291" text-anchor="middle" font-size="12" font-weight="bold" fill="#5a4800">δᵢ = aligned_tN − aligned_t0</text>
-<text x="225" y="308" text-anchor="middle" font-size="10.5" fill="#7a6000">μᵢ = mean(aligned_t*)  ·  δ = shift,  μ = stable context</text>
+<!-- ═══ ROW 2 TITLE ═══ -->
+<text x="460" y="268" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Regulatory Structure  (OmniPath + PPGN)</text>
 
-<!-- arrow -->
-<line x1="225" y1="322" x2="225" y2="342" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- ── Box 6: OmniPath (deep purple) ── -->
+<rect x="12" y="276" width="158" height="170" rx="8" fill="#F0EBFF" stroke="#7D3C98" stroke-width="2"/>
+<text x="91" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#7D3C98">OmniPath</text>
+<circle cx="55" cy="332" r="5" fill="#7D3C98"/>
+<circle cx="91" cy="320" r="5" fill="#7D3C98"/>
+<circle cx="127" cy="332" r="5" fill="#7D3C98"/>
+<circle cx="68" cy="358" r="5" fill="#7D3C98"/>
+<circle cx="114" cy="358" r="5" fill="#7D3C98"/>
+<circle cx="91" cy="378" r="5" fill="#7D3C98"/>
+<line x1="55" y1="332" x2="91" y2="320" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="91" y1="320" x2="127" y2="332" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="55" y1="332" x2="68" y2="358" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="127" y1="332" x2="114" y2="358" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="68" y1="358" x2="91" y2="378" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="114" y1="358" x2="91" y2="378" stroke="#7D3C98" stroke-width="1" opacity="0.6"/>
+<line x1="55" y1="332" x2="127" y2="332" stroke="#7D3C98" stroke-width="1" opacity="0.35"/>
+<line x1="91" y1="320" x2="68" y2="358" stroke="#7D3C98" stroke-width="1" opacity="0.25"/>
+<line x1="91" y1="320" x2="114" y2="358" stroke="#7D3C98" stroke-width="1" opacity="0.25"/>
+<text x="91" y="408" text-anchor="middle" font-size="11" fill="#777">139K interactions</text>
+<text x="91" y="421" text-anchor="middle" font-size="10" font-style="italic" fill="#777">PPI · signalling · regulatory</text>
 
-<!-- MLP -->
-<rect x="70" y="344" width="310" height="52" rx="8" fill="#ffd0d0" stroke="#d05050" stroke-width="1.5"/>
-<text x="225" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a1a1a">MLP( [ δ,  μ ] )</text>
-<text x="225" y="382" text-anchor="middle" font-size="10.5" fill="#9a2a2a">trajectory_emb  [N, 128]</text>
+<!-- ── Box 7: NEKO filter (teal) ── -->
+<rect x="188" y="276" width="158" height="170" rx="8" fill="#E8FAF5" stroke="#16A085" stroke-width="2"/>
+<text x="267" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#16A085">NEKO</text>
+<text x="267" y="314" text-anchor="middle" font-size="12" fill="#16A085">filter</text>
+<circle cx="216" cy="332" r="3.5" fill="#7D3C98" opacity="0.5"/>
+<circle cx="216" cy="347" r="3.5" fill="#7D3C98" opacity="0.5"/>
+<circle cx="216" cy="362" r="3.5" fill="#7D3C98" opacity="0.5"/>
+<circle cx="216" cy="377" r="3.5" fill="#888" opacity="0.3"/>
+<circle cx="216" cy="392" r="3.5" fill="#888" opacity="0.3"/>
+<line x1="221" y1="332" x2="304" y2="338" stroke="#16A085" stroke-width="1" opacity="0.6"/>
+<line x1="221" y1="347" x2="304" y2="351" stroke="#16A085" stroke-width="1" opacity="0.6"/>
+<line x1="221" y1="362" x2="304" y2="364" stroke="#16A085" stroke-width="1" opacity="0.5"/>
+<circle cx="309" cy="338" r="5" fill="#16A085"/>
+<circle cx="309" cy="351" r="5" fill="#16A085"/>
+<circle cx="309" cy="364" r="5" fill="#16A085"/>
+<text x="267" y="408" text-anchor="middle" font-size="11" fill="#777">expressed genes only</text>
+<text x="267" y="421" text-anchor="middle" font-size="10" font-style="italic" fill="#777">gene symbol → UniProt</text>
 
-<!-- ══ RIGHT COLUMN: PPGN branch ═══════════════════════════════ -->
-<!-- col center x=695, box w=290 -->
+<!-- ── Box 8: PPGN WL-3 (purple) ── -->
+<rect x="364" y="276" width="158" height="170" rx="8" fill="#F5EFF9" stroke="#9B59B6" stroke-width="2"/>
+<text x="443" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#9B59B6">PPGN</text>
+<rect x="390" y="304" width="106" height="17" rx="8" fill="#8E44AD" opacity="0.12" stroke="#8E44AD" stroke-width="1"/>
+<text x="443" y="316" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#8E44AD">WL-3 · Maron et al. 2019</text>
+<rect x="399" y="328" width="88" height="88" rx="2" fill="none" stroke="#9B59B6" stroke-width="1.2" opacity="0.5"/>
+<rect x="399" y="328" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.7"/>
+<rect x="443" y="328" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.3"/>
+<rect x="421" y="350" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.55"/>
+<rect x="465" y="350" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.7"/>
+<rect x="399" y="372" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.3"/>
+<rect x="443" y="372" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.65"/>
+<rect x="421" y="394" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.7"/>
+<rect x="465" y="394" width="22" height="22" rx="1" fill="#9B59B6" opacity="0.35"/>
+<line x1="399" y1="350" x2="487" y2="350" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<line x1="399" y1="372" x2="487" y2="372" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<line x1="399" y1="394" x2="487" y2="394" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<line x1="421" y1="328" x2="421" y2="416" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<line x1="443" y1="328" x2="443" y2="416" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<line x1="465" y1="328" x2="465" y2="416" stroke="#9B59B6" stroke-width="0.7" opacity="0.35"/>
+<text x="443" y="432" text-anchor="middle" font-size="11" fill="#777">feedback loops · triangles</text>
 
-<!-- OmniPath -->
-<rect x="550" y="44" width="300" height="56" rx="8" fill="#ede0ff" stroke="#9060d0" stroke-width="1.5"/>
-<text x="700" y="65" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">OmniPath  ·  139 000 interactions</text>
-<text x="700" y="82" text-anchor="middle" font-size="10.5" fill="#6030a0">signed PPI + signalling + regulatory edges</text>
-<text x="700" y="95" text-anchor="middle" font-size="10" fill="#555">accessed via NEKO  ·  gene symbol → UniProt</text>
+<!-- ── Box 9: structural_emb (red) ── -->
+<rect x="540" y="276" width="158" height="170" rx="8" fill="#FDEDEC" stroke="#E74C3C" stroke-width="2"/>
+<text x="619" y="291" text-anchor="middle" font-size="13" font-weight="bold" fill="#E74C3C">structural_emb</text>
+<circle cx="591" cy="325" r="5" fill="#E74C3C" opacity="0.7"/>
+<circle cx="614" cy="314" r="7" fill="#E74C3C"/>
+<circle cx="643" cy="328" r="5" fill="#E74C3C" opacity="0.6"/>
+<circle cx="598" cy="348" r="4" fill="#888" opacity="0.4"/>
+<circle cx="637" cy="354" r="5" fill="#888" opacity="0.4"/>
+<circle cx="621" cy="367" r="8" fill="#E74C3C" opacity="0.85"/>
+<circle cx="594" cy="378" r="4" fill="#888" opacity="0.3"/>
+<circle cx="647" cy="343" r="4" fill="#888" opacity="0.35"/>
+<circle cx="607" cy="388" r="5" fill="#E74C3C" opacity="0.6"/>
+<circle cx="641" cy="380" r="4" fill="#888" opacity="0.3"/>
+<text x="619" y="411" text-anchor="middle" font-size="11" fill="#777">regulatory motif</text>
+<text x="619" y="424" text-anchor="middle" font-size="11" fill="#777">fingerprint  [N_omni, 128]</text>
 
-<!-- arrow -->
-<line x1="700" y1="100" x2="700" y2="120" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
+<!-- ── Box 10: final_emb (teal) ── -->
+<rect x="716" y="276" width="158" height="170" rx="8" fill="#E8FAF5" stroke="#16A085" stroke-width="2.5"/>
+<text x="795" y="298" text-anchor="middle" font-size="14" font-weight="bold" fill="#16A085">final_emb</text>
+<rect x="737" y="304" width="116" height="17" rx="8" fill="#16A085" opacity="0.1" stroke="#16A085" stroke-width="1"/>
+<text x="795" y="316" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#16A085">traj + structural</text>
+<circle cx="767" cy="345" r="6" fill="#D4AC0D" opacity="0.85"/>
+<circle cx="788" cy="332" r="7" fill="#D4AC0D"/>
+<circle cx="813" cy="346" r="5" fill="#D4AC0D" opacity="0.7"/>
+<circle cx="775" cy="364" r="5" fill="#E74C3C" opacity="0.7"/>
+<circle cx="810" cy="357" r="7" fill="#E74C3C"/>
+<circle cx="795" cy="377" r="8" fill="#16A085" opacity="0.9"/>
+<circle cx="760" cy="358" r="4" fill="#16A085" opacity="0.45"/>
+<circle cx="826" cy="336" r="4" fill="#16A085" opacity="0.4"/>
+<text x="795" y="411" text-anchor="middle" font-size="11" fill="#777">RAG retrieval</text>
+<text x="795" y="424" text-anchor="middle" font-size="10" font-style="italic" fill="#16A085">[N, 128]</text>
 
-<!-- NEKO filter -->
-<rect x="550" y="122" width="300" height="44" rx="8" fill="#ddd0ff" stroke="#8050c0" stroke-width="1.5"/>
-<text x="700" y="141" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">NEKO filter</text>
-<text x="700" y="157" text-anchor="middle" font-size="10.5" fill="#6030a0">keep edges where both genes expressed in dataset</text>
+<!-- ═══ ROW 2 ARROWS ═══ -->
+<line x1="170" y1="361" x2="185" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="346" y1="361" x2="361" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="522" y1="361" x2="537" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
+<line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
 
-<!-- arrow -->
-<line x1="700" y1="166" x2="700" y2="186" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
-
-<!-- PPGN -->
-<rect x="550" y="188" width="300" height="110" rx="8" fill="#c8b0ff" stroke="#6030b0" stroke-width="1.5"/>
-<text x="700" y="210" text-anchor="middle" font-size="12" font-weight="bold" fill="#2a0060">PPGN  ·  WL-3  ·  2 layers  (Maron et al. 2019)</text>
-<text x="700" y="228" text-anchor="middle" font-size="10.5" fill="#3a1080">X_prod[i,j] = Σₖ X[i,k] · X[k,j]</text>
-<text x="700" y="246" text-anchor="middle" font-size="10" fill="#4a2090">captures paths of length 2:</text>
-<text x="700" y="262" text-anchor="middle" font-size="10" fill="#4a2090">feedback loops  ·  regulatory triangles</text>
-<text x="700" y="280" text-anchor="middle" font-size="10" fill="#5a3090">node readout: diagonal  X[i,i]  →  structural_emb</text>
-
-<!-- arrow -->
-<line x1="700" y1="298" x2="700" y2="344" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
-
-<!-- structural_emb -->
-<rect x="550" y="344" width="300" height="52" rx="8" fill="#e0d0ff" stroke="#8050c0" stroke-width="1.5"/>
-<text x="700" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a1a8a">structural_emb  [N_omni, 128]</text>
-<text x="700" y="382" text-anchor="middle" font-size="10.5" fill="#6030a0">regulatory motif fingerprint per gene</text>
-
-<!-- ══ MERGE ══════════════════════════════════════════════════ -->
-
-<!-- arrow from MLP down -->
-<line x1="225" y1="396" x2="225" y2="445" stroke="#666" stroke-width="1.8" marker-end="url(#th)"/>
-<!-- arrow from struct_emb to merge -->
-<path d="M550,370 Q480,370 460,445" stroke="#6030b0" stroke-width="1.8" fill="none" marker-end="url(#th)"/>
-<!-- "+" label -->
-<circle cx="460" cy="438" r="11" fill="#fff" stroke="#888" stroke-width="1.5"/>
-<text x="460" y="443" text-anchor="middle" font-size="14" fill="#444">+</text>
-<text x="510" y="432" font-size="10" fill="#888">(OmniPath genes only)</text>
-
-<!-- final_emb -->
-<rect x="175" y="456" width="570" height="48" rx="10" fill="#b0f0c0" stroke="#30a050" stroke-width="2"/>
-<text x="460" y="477" text-anchor="middle" font-size="13" font-weight="bold" fill="#105a28">final_emb  [N, 128]  —  used for RAG retrieval</text>
-<text x="460" y="495" text-anchor="middle" font-size="10.5" fill="#1a7a38">trajectory_emb  +  structural_emb  (for OmniPath genes)   |   trajectory_emb  (all others)</text>
 </svg>"""
     _components.html(
         f"<div style='width:100%;overflow:hidden'>{_traj_svg}</div>",
-        height=520, scrolling=False
+        height=510, scrolling=False
     )
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
