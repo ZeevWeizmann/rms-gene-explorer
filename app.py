@@ -2470,7 +2470,7 @@ if query_gene:
         fig = None
         fig_time = None
         fig_celltype = None
-        if query_gene in gene_names:
+        if query_gene in gene_names and dataset_key != "traj":
             gene_idx = gene_names.index(query_gene)
             expr_vals = expr[_sample_idx, gene_idx].astype(float)
             umap_plot["expression"] = expr_vals
