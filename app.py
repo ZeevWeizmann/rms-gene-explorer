@@ -2098,8 +2098,6 @@ if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.session_state[f"last_selected_{dataset_key}"] = ""
     st.rerun()
 
-col_search, col_slider, col_grn_slider = st.columns([3, 2, 2])
-
 # ── GRN selector — hide only if gene is in NO model at all ──────
 _orig_gene_set   = load_grn_gene_list("original")
 _mki67_gene_set  = load_grn_gene_list("mki67")
@@ -2123,6 +2121,10 @@ _check_gene  = (_last_q or (_recent_list[0] if _recent_list else "")).strip().up
 
 _gene_in_any_grn = (not _check_gene) or any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
+)
+
+col_search, col_slider, col_grn_slider = st.columns(
+    [3, 2, 2] if _gene_in_any_grn else [3, 2, 0.01]
 )
 
 _grn_state_key = f"grn_choice_{dataset_key}"
@@ -2186,11 +2188,14 @@ program_size = col_slider.slider(
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
 )
-grn_hops = col_grn_slider.slider(
-    "GRN hops (ego-network depth)",
-    min_value=1, max_value=3, value=1, step=1,
-    key=f"grn_slider_{dataset_key}"
-)
+if _gene_in_any_grn:
+    grn_hops = col_grn_slider.slider(
+        "GRN hops (ego-network depth)",
+        min_value=1, max_value=3, value=1, step=1,
+        key=f"grn_slider_{dataset_key}"
+    )
+else:
+    grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
 
 load_real_expr_means()
 
