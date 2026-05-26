@@ -153,11 +153,24 @@ def load_data_traj():
         except Exception:
             summaries = {i: f"Trajectory cluster {i}" for i in range(int(clusters.max()) + 1)}
 
-        # No UMAP, expr matrix, or GRN for trajectory beta
-        umap_df    = pd.DataFrame({"x": np.zeros(len(genes)), "y": np.zeros(len(genes))},
-                                  index=genes)
-        expr       = np.zeros((len(genes), 1), dtype=np.float16)
-        gene_names = genes
+        # Load v1 cell-level data for Expression / Time / Cell Type UMAPs
+        v1_files = [
+            "umap_coords.csv",
+            "gene_names.csv",
+            "expr_matrix_f16.npy",
+        ]
+        v1_paths = {}
+        for f in v1_files:
+            local_path = os.path.join(LOCAL_DIR, f)
+            if os.path.exists(local_path):
+                v1_paths[f] = local_path
+            else:
+                token = st.secrets.get("HF_TOKEN", None)
+                v1_paths[f] = hf_hub_download(repo_id=REPO_ID, filename=f,
+                                               repo_type="dataset", token=token)
+        umap_df    = pd.read_csv(v1_paths["umap_coords.csv"], index_col=0)
+        gene_names = pd.read_csv(v1_paths["gene_names.csv"])["0"].tolist()
+        expr       = np.load(v1_paths["expr_matrix_f16.npy"])
 
         return genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, None, []
     except Exception as e:
@@ -2465,7 +2478,7 @@ if query_gene:
         fig = None
         fig_time = None
         fig_celltype = None
-        if query_gene in gene_names and dataset_key != "traj":
+        if query_gene in gene_names:
             gene_idx = gene_names.index(query_gene)
             expr_vals = expr[_sample_idx, gene_idx].astype(float)
             umap_plot["expression"] = expr_vals
