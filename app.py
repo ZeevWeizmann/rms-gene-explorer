@@ -153,9 +153,17 @@ def load_data_traj():
         except Exception:
             summaries = {i: f"Trajectory cluster {i}" for i in range(int(clusters.max()) + 1)}
 
-        # No UMAP, expr matrix, or GRN for trajectory beta
-        umap_df    = pd.DataFrame({"x": np.zeros(len(genes)), "y": np.zeros(len(genes))},
-                                  index=genes)
+        # Compute gene-level UMAP from trajectory embeddings
+        try:
+            from umap import UMAP
+            from sklearn.preprocessing import normalize as sk_normalize
+            emb_norm = sk_normalize(embeddings)
+            _reducer = UMAP(n_neighbors=15, min_dist=0.3, random_state=42, verbose=False)
+            _coords  = _reducer.fit_transform(emb_norm)
+            umap_df  = pd.DataFrame({"x": _coords[:, 0], "y": _coords[:, 1]}, index=genes)
+        except Exception:
+            umap_df  = pd.DataFrame({"x": np.zeros(len(genes)), "y": np.zeros(len(genes))},
+                                    index=genes)
         expr       = np.zeros((len(genes), 1), dtype=np.float16)
         gene_names = genes
 
@@ -2465,7 +2473,26 @@ if query_gene:
         fig = None
         fig_time = None
         fig_celltype = None
-        if query_gene in gene_names and dataset_key != "traj":
+        if query_gene in gene_names and dataset_key == "traj":
+            gene_idx  = gene_names.index(query_gene)
+            emb_norm  = embeddings / (np.linalg.norm(embeddings, axis=1, keepdims=True) + 1e-8)
+            query_vec = emb_norm[gene_idx]
+            sims      = emb_norm @ query_vec
+            umap_plot["similarity"] = sims[_sample_idx]
+            fig = px.scatter(
+                umap_plot, x="x", y="y",
+                color="similarity",
+                color_continuous_scale="RdBu_r",
+                title=f"{query_gene} — Trajectory embedding similarity ({len(umap_plot):,} genes)",
+                labels={"x": "UMAP 1", "y": "UMAP 2"},
+                opacity=0.7, height=450,
+                render_mode="svg"
+            )
+            fig.update_traces(marker=dict(size=5))
+            fig.update_layout(coloraxis_colorbar=dict(title="Cosine sim"),
+                              plot_bgcolor="white", paper_bgcolor="white")
+
+        elif query_gene in gene_names and dataset_key != "traj":
             gene_idx = gene_names.index(query_gene)
             expr_vals = expr[_sample_idx, gene_idx].astype(float)
             umap_plot["expression"] = expr_vals
