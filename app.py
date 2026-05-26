@@ -2119,7 +2119,7 @@ _last_q      = st.session_state.get(f"last_selected_{dataset_key}", "")
 _recent_list = st.session_state.get(f"recent_{dataset_key}", [])
 _check_gene  = (_last_q or (_recent_list[0] if _recent_list else "")).strip().upper()
 
-_gene_in_any_grn = (not _check_gene) or any(
+_gene_in_any_grn = bool(_check_gene) and any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
