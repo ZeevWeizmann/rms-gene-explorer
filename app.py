@@ -1971,10 +1971,10 @@ with _about_expander:
 # ================================================================
 dataset_choice = st.radio(
     "Dataset",
-    options=["RMS original", "RMS 2", "Gene Trajectory Graph Embeddings"],
+    options=["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"],
     horizontal=True
 )
-dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Gene Trajectory Graph Embeddings" else "v2")
+dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory Embeddings — RMS original (beta)" else "v2")
 
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
