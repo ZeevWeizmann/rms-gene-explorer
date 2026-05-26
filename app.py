@@ -2201,7 +2201,7 @@ if f"last_selected_{dataset_key}" not in st.session_state:
     st.session_state[f"last_selected_{dataset_key}"] = ""
 
 if f"default_run_{dataset_key}" not in st.session_state:
-    st.session_state[f"default_run_{dataset_key}"] = True
+    st.session_state[f"default_run_{dataset_key}"] = False
 
 messages = st.session_state[f"messages_{dataset_key}"]
 
@@ -2387,6 +2387,22 @@ def _render_msg_figures(msg, msg_id):
                         st.info(f"Perturbation data not available. ({e})")
 
 # ── Message rendering loop ───────────────────────────────────────
+# ── Featured genes (lazy — only loads when clicked) ──────────────
+_FEATURED = [
+    ("TUBB",   "tubb",  "💊 Vincristine · FDA-approved"),
+    ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
+    ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
+]
+with st.expander("🧬 Featured genes — click to explore", expanded=False):
+    _fcols = st.columns(len(_FEATURED))
+    for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
+        with _fc:
+            st.caption(_fdrug)
+            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", use_container_width=True):
+                st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
+                st.session_state[f"recent_clicked_{dataset_key}"] = _fg
+                st.rerun()
+
 # Only the LAST assistant message is fully expanded.
 # All older messages are collapsed in expanders (no Plotly rendered = fast).
 _asst_indices = [i for i, m in enumerate(messages) if m["role"] == "assistant"]
