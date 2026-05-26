@@ -1731,6 +1731,12 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         height=510, scrolling=False
     )
 
+    st.image(
+        "https://huggingface.co/datasets/weizmannzeev/rms-gene-programs/resolve/main/ot_explanation.png",
+        caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
+        use_container_width=True,
+    )
+
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
