@@ -2641,7 +2641,7 @@ if query_gene:
         _DRUG_MAP = {
             "TUBB":   "💊 **Vincristine** (FDA-approved, RMS standard of care)",
             "BIRC5":  "💊 **YM155** / Sepantronium (clinical trials)",
-            "HSPA1B": "💊 **Quercetin** / VER-155008 (experimental)",
+            "HSPA1B": "🎯 **Novel target** — HSP70 inhibitor class, no approved RMS drug",
         }
         _drug_line = _DRUG_MAP.get(query_gene.upper(), "")
         _content = f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*"
