@@ -1331,9 +1331,10 @@ st.markdown(f"""
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
 
-# Controls row placeholder — below search
-_ctrl_container = st.container()
-# GRN model placeholder — below controls
+# Advanced settings expander — below search (Vector database, Program size, Upload)
+_advanced_expander = st.expander("Advanced", expanded=False)
+_ctrl_container = _advanced_expander
+# GRN model placeholder — below advanced expander
 _grn_container  = st.container()
 
 
@@ -1358,11 +1359,14 @@ with st.spinner("Loading data..."):
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
 # ================================================================
-# UPLOAD YOUR OWN DATA
+# UPLOAD YOUR OWN DATA  (inside Advanced expander)
 # ================================================================
-with st.expander("Upload your own .h5ad file for a query of interest", expanded=False):
-    st.caption("Your file is processed in memory only — not stored anywhere. Max recommended: ~50k cells.")
-    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
+with _advanced_expander:
+    st.markdown("---")
+    st.markdown("**Upload your own .h5ad file**")
+    st.caption("Processed in memory only — not stored anywhere. Max ~50k cells.")
+    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload",
+                                     label_visibility="collapsed")
 
     if uploaded_file is not None:
         file_id = uploaded_file.name + str(uploaded_file.size)
