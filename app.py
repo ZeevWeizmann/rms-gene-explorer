@@ -1310,11 +1310,15 @@ _grn_container  = st.container()
 # DATASET SELECTOR  — read from session_state so widget can live
 # inside _search_container (rendered visually under the banner).
 # ================================================================
-_ds_options = ["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"]
-dataset_choice = st.session_state.get("dataset_select", "RMS original")
+_ds_options = [
+    "RMS original — 8,442 genes · 13,968 cells · GCN",
+    "RMS 2 — 8,836 genes · 4,706 cells · GCN",
+    "Trajectory (beta) — 3,887 embeddings · 13,968 cells · GNN+OT temporal",
+]
+dataset_choice = st.session_state.get("dataset_select", _ds_options[0])
 if dataset_choice not in _ds_options:
-    dataset_choice = "RMS original"
-dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice.startswith("Trajectory") else "v2")
+    dataset_choice = _ds_options[0]
+dataset_key = "v1" if dataset_choice == _ds_options[0] else ("traj" if dataset_choice == _ds_options[2] else "v2")
 
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
