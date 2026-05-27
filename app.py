@@ -1918,9 +1918,16 @@ if query_gene:
                 _grn_mat_q, _grn_genes_q = load_grn(_forced_key)
                 # Note: cannot set _grn_state_key here — widget already rendered this rerun.
                 # The correct model is stored in the message; selector syncs on next rerun.
-            else:
+            elif grn_mat is not None:
+                # Selector already has a valid model loaded — use it
                 _grn_mat_q, _grn_genes_q = grn_mat, grn_genes
-                _grn_model_q = grn_key if grn_mat is not None else None
+                _grn_model_q = grn_key
+            else:
+                # grn_mat not yet loaded (e.g. last_selected was empty, _gene_in_any_grn=False).
+                # Fall back to the first model that contains this gene so GRN is never silently lost.
+                _fallback_label = _q_models[0]
+                _grn_model_q = _ALL_MODELS[_fallback_label][0]
+                _grn_mat_q, _grn_genes_q = load_grn(_grn_model_q)
         else:
             # gene in no model
             _grn_mat_q, _grn_genes_q = None, []
