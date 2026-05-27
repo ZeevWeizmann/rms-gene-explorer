@@ -2132,7 +2132,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
     """)
 
-    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
+    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" width="100%" style="font-family:Arial,sans-serif;display:block">
 <defs>
   <style>
     @keyframes tPulse {
@@ -2362,9 +2362,9 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
 
 </svg>"""
-    _components.html(
-        f"<div style='width:100%;overflow:hidden'>{_traj_svg}</div>",
-        height=510, scrolling=False
+    st.markdown(
+        f"<div style='width:100%;overflow:hidden;line-height:0'>{_traj_svg}</div>",
+        unsafe_allow_html=True,
     )
 
     _ot_img_local = _os.path.join(LOCAL_DIR, "ot_explanation.png")
@@ -2390,7 +2390,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 - OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
-    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
+    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" width="100%" style="font-family:Arial,sans-serif;display:block">
 <defs>
   <style>
     @keyframes arrowPulse {
@@ -2601,9 +2601,9 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 
 # Arch diagram goes into the slot at the TOP of "About this tool"
 with _arch_diagram_slot:
-    _components.html(
-        f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
-        height=510, scrolling=False
+    st.markdown(
+        f"<div style='width:100%;overflow:hidden;line-height:0'>{_arch_svg}</div>",
+        unsafe_allow_html=True,
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
