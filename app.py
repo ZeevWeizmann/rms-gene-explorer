@@ -2017,10 +2017,9 @@ with st.expander("🧬 Featured genes — click to explore", expanded=False):
 # ── About sections (bottom of page) ────────────────────────────
 _about_expander = st.expander("ℹ️ About this tool", expanded=False)
 with _about_expander:
+    st.markdown("This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.")
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown("""
-This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
-
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
