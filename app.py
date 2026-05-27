@@ -2358,11 +2358,20 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         height=510, scrolling=False
     )
 
-    st.image(
-        "https://huggingface.co/datasets/weizmannzeev/rms-gene-programs/resolve/main/ot_explanation.png",
-        caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
-        use_container_width=True,
-    )
+    _ot_img_local = os.path.join(LOCAL_DIR, "ot_explanation.png")
+    if not os.path.exists(_ot_img_local):
+        try:
+            _token = st.secrets.get("HF_TOKEN", None)
+            _ot_img_local = hf_hub_download(repo_id=REPO_ID, filename="ot_explanation.png",
+                                             repo_type="dataset", token=_token)
+        except Exception:
+            _ot_img_local = None
+    if _ot_img_local:
+        st.image(
+            _ot_img_local,
+            caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
+            use_container_width=True,
+        )
 
     st.markdown("""
 **References:**
