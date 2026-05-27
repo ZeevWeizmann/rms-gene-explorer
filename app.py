@@ -2082,8 +2082,12 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
     """)
 
 
-with st.expander("🧬 About Gene Trajectory Graph Embeddings", expanded=False):
+with _about_expander:
     st.markdown("""
+---
+
+## 🧬 Gene Trajectory Graph Embeddings
+
 **What are Gene Trajectory Graph Embeddings?**
 
 Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
