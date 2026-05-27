@@ -2586,4 +2586,35 @@ with _arch_diagram_slot:
         height=510, scrolling=False
     )
 
+# ── Override styles — injected LAST so they beat emotion CSS ─────
+st.markdown("""
+<style>
+/* Borderless expanders — high-specificity override */
+html body div[data-testid="stExpander"] details {
+    border: 0px solid transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+html body div[data-testid="stExpander"] details summary {
+    background: transparent !important;
+}
+html body div[data-testid="stExpander"] details summary:hover {
+    background: rgba(0,0,0,0.03) !important;
+    color: #000 !important;
+}
+/* Vector database selectbox — borderless */
+html body div[data-testid="column"] div[data-testid="stSelectbox"] > div > div {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    min-height: unset !important;
+    border-radius: 6px !important;
+}
+html body div[data-testid="column"] div[data-testid="stSelectbox"] > div > div:hover {
+    background: #f5f5f5 !important;
+    border-radius: 6px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
