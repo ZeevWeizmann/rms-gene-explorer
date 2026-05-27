@@ -1688,10 +1688,15 @@ _sel_ver_key = f"sel_version_{dataset_key}"
 if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
 
+# Default index: show last queried gene so the bar isn't blank after a search
+_last_q_gene = st.session_state.get(f"last_selected_{dataset_key}", "")
+_default_label = gene_label(_last_q_gene) if _last_q_gene and _last_q_gene in genes else _PLACEHOLDER
+_default_idx = gene_labels_all.index(_default_label) if _default_label in gene_labels_all else 0
+
 selected_label = _search_slot.selectbox(
     "🔍 Search gene",
     options=gene_labels_all,
-    index=0,
+    index=_default_idx,
     label_visibility="collapsed",
     key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
 )
@@ -1951,16 +1956,19 @@ _asst_indices = [i for i, m in enumerate(messages) if m["role"] == "assistant"]
 _last_asst_idx = _asst_indices[-1] if _asst_indices else -1
 
 for _mi, msg in enumerate(messages):
-    with st.chat_message(msg["role"]):
+    if msg["role"] == "user":
+        continue  # gene name is already shown in the assistant message header — no duplication
+    # assistant message — plain container, no chat bubble icons
+    with st.container():
         st.write(msg["content"])
-        if msg["role"] == "assistant" and "fig" in msg:
+        if "fig" in msg:
             if _mi == _last_asst_idx:
                 # Latest result — render everything
                 _render_msg_figures(msg, id(msg))
             else:
-                # Older result — collapsed, no heavy rendering
-                gene_label = msg.get("query_gene", "")
-                with st.expander(f"📊 Show results for {gene_label}", expanded=False):
+                # Older result — collapsed
+                _gene_lbl = msg.get("query_gene", "")
+                with st.expander(f"📊 Show results for {_gene_lbl}", expanded=False):
                     _render_msg_figures(msg, id(msg))
 
 if st.session_state.get(f"default_run_{dataset_key}"):
@@ -1982,9 +1990,9 @@ elif st.session_state.get(f"default_run3_{dataset_key}"):
     query_gene = "HSPA1B" if "HSPA1B" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
-elif selected_gene:
-    # No last_selected guard — the widget resets via version counter after each query,
-    # so the same gene can be re-selected freely (no need to clear history).
+elif selected_gene and selected_gene != _last_q_gene:
+    # Only fire a new query when the user picks a *different* gene
+    # (the bar now keeps the current gene, so same-gene reruns must be ignored)
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
 else:
