@@ -1404,11 +1404,10 @@ _full_gene_set   = load_grn_gene_list("full")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
-    "Full program (200 genes, HSPA1B KO)":    ("full",       _full_gene_set),
-    "Full program (200 genes, FOXM1 KO)":     ("full_foxm1", _full_gene_set),
-    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",      _foxm1_gene_set),
-    "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",      _mki67_gene_set),
-    "TUBB program (201 genes, TUBB KO)":       ("tubb",       _tubb_gene_set),
+    "Full program (200 genes)":               ("full",     _full_gene_set),
+    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",    _foxm1_gene_set),
+    "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
+    "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
     "Original (159 genes)":                    ("original", _orig_gene_set),
 }
 
