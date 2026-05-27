@@ -2096,6 +2096,8 @@ col3.metric("Cells", f"{n_cells:,}")
 if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
     st.session_state[f"messages_{dataset_key}"] = []
     st.session_state[f"last_selected_{dataset_key}"] = ""
+    st.session_state[f"recent_{dataset_key}"] = []
+    st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
     st.rerun()
 
 # ── GRN selector — hide only if gene is in NO model at all ──────
@@ -2171,18 +2173,31 @@ recent_labels   = [gene_label(g, is_recent=True) for g in recent]
 all_labels      = [gene_label(g) for g in sorted(genes) if g not in recent]
 separator       = ["─── Recent ───"] if recent else []
 separator2      = ["─── All genes ───"] if recent else []
-gene_labels_all = [""] + separator + recent_labels + separator2 + all_labels
+_PLACEHOLDER    = "🔍 Select a gene..."
+gene_labels_all = [_PLACEHOLDER] + separator + recent_labels + separator2 + all_labels
+
+# Version counter: incremented after each query so the widget resets,
+# allowing the same gene to be selected again without clearing history.
+_sel_ver_key = f"sel_version_{dataset_key}"
+if _sel_ver_key not in st.session_state:
+    st.session_state[_sel_ver_key] = 0
 
 selected_label = col_search.selectbox(
     "Quick gene search  (🕐 = recent · 🔬 = GRN)",
     options=gene_labels_all,
     index=0,
-    key=f"selectbox_{dataset_key}"
+    key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
 )
 # strip prefixes/suffixes to get clean gene name
+_is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER or selected_label.startswith("─")
 selected_gene = (selected_label
     .replace("🕐 ", "").replace(" 🔬", "").replace("🔬 ", "")
-    .strip()) if selected_label and not selected_label.startswith("─") else ""
+    .strip()) if not _is_placeholder else ""
+
+# Show last-queried gene as a small hint below the dropdown
+_last_q_hint = st.session_state.get(f"last_selected_{dataset_key}", "")
+if _last_q_hint:
+    col_search.caption(f"Last: **{_last_q_hint}**")
 program_size = col_slider.slider(
     "Program size (neighbors)",
     min_value=5, max_value=200, value=20, step=5,
@@ -2445,7 +2460,9 @@ elif st.session_state.get(f"default_run3_{dataset_key}"):
     query_gene = "HSPA1B" if "HSPA1B" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
-elif selected_gene and selected_gene != st.session_state[f"last_selected_{dataset_key}"]:
+elif selected_gene:
+    # No last_selected guard — the widget resets via version counter after each query,
+    # so the same gene can be re-selected freely (no need to clear history).
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
 elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)", key=f"chat_{dataset_key}"):
@@ -2686,4 +2703,6 @@ if query_gene:
             "grn_adj": grn_adj,
             "grn_model": _grn_model_q,
         })
+        # Reset selectbox to placeholder (allows re-selecting the same gene next time)
+        st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
