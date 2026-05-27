@@ -2260,13 +2260,15 @@ if _last_q_hint:
     col_search.caption(f"Last: **{_last_q_hint}**")
 
 # Sliders below the search bar
-_sl1, _sl2, _sl3 = _search_container.columns([2, 2, 3] if _gene_in_any_grn else [2, 5])
+_slider_cols = _search_container.columns([2, 2, 3] if _gene_in_any_grn else [2, 5])
+_sl1 = _slider_cols[0]
+_sl2 = _slider_cols[1] if _gene_in_any_grn else None
 program_size = _sl1.slider(
     "Program size",
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
 )
-if _gene_in_any_grn:
+if _gene_in_any_grn and _sl2 is not None:
     grn_hops = _sl2.slider(
         "GRN hops",
         min_value=1, max_value=3, value=1, step=1,
