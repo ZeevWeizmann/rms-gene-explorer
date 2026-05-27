@@ -48,12 +48,12 @@ div[data-testid="stSelectbox"] > div > div:focus-within {
     box-shadow: 0 2px 12px rgba(32,33,36,0.2) !important;
     border-color: #bdc1c6 !important;
 }
-/* Vector database selector — borderless (targets selectbox inside a column) */
-div[data-testid="column"] div[data-testid="stSelectbox"] > div > div {
+/* Vector database selector — borderless (inside a column) */
+div[data-testid="column"] div[data-testid="stSelectbox"] > div > div,
+div[data-testid="column"] div[data-testid="stSelectbox"] > div > div * {
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
-    font-size: 0.9rem !important;
     min-height: unset !important;
     border-radius: 6px !important;
 }
@@ -94,23 +94,20 @@ div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
 div.block-container { padding-top: 0.5rem !important; }
 
 /* Borderless expanders */
-div[data-testid="stExpander"] {
+div[data-testid="stExpander"],
+div[data-testid="stExpander"] details,
+div[data-testid="stExpander"] details summary {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
     margin-bottom: 2px !important;
+}
+details[data-testid],
+details {
     border: none !important;
     box-shadow: none !important;
 }
-div[data-testid="stExpander"] > details {
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-}
-div[data-testid="stExpander"] > details > summary {
-    border: none !important;
-    background: transparent !important;
-    padding-left: 0 !important;
-    color: #444 !important;
-}
-div[data-testid="stExpander"] > details > summary:hover {
+details > summary:hover {
     color: #000 !important;
     background: transparent !important;
 }
