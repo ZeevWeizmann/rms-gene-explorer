@@ -10,7 +10,8 @@ st.set_page_config(
 
 st.markdown("# 🧬 About Gene Program Explorer")
 
-st.markdown("<a href='/' target='_self' style='font-size:0.9rem;color:#555;text-decoration:none;'>← Back to Explorer</a>", unsafe_allow_html=True)
+if st.button("← Back to Explorer", key="back_link"):
+    st.switch_page("app.py")
 
 st.markdown("---")
 

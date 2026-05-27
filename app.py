@@ -56,7 +56,7 @@ div[data-testid="stSlider"] { padding-top: 4px !important; }
 div[data-testid="stRadio"] label { font-size: 0.82rem !important; }
 div[data-testid="stRadio"] > div { gap: 6px !important; }
 
-/* Clear history — small subtle button */
+/* All buttons — small subtle style */
 div[data-testid="stButton"] > button {
     font-size: 0.78rem !important;
     padding: 2px 10px !important;
@@ -69,6 +69,14 @@ div[data-testid="stButton"] > button:hover {
     color: #333 !important;
     border-color: #aaa !important;
     background: #f5f5f5 !important;
+}
+/* About link button — looks like plain text link */
+button[kind="secondary"][data-testid="stButton"]:has(+ *) {
+    border: none !important;
+    padding: 0 !important;
+    color: #666 !important;
+    text-decoration: underline !important;
+    background: none !important;
 }
 
 /* Reduce gaps between sections */
@@ -1494,7 +1502,8 @@ _components.html("""<script>
 _search_container = st.container()   # search + sliders go here
 
 # Small "About" link — content lives in pages/1_About.py
-st.markdown("<a href='/About' target='_self' style='font-size:0.82rem;color:#666;text-decoration:none;'>ℹ️ About this tool &amp; Gene Trajectory Embeddings</a>", unsafe_allow_html=True)
+if st.button("ℹ️ About this tool & Gene Trajectory Embeddings", key="about_link"):
+    st.switch_page("pages/1_About.py")
 st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
 
 # ================================================================
