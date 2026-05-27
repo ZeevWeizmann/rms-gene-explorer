@@ -2592,34 +2592,42 @@ with _arch_diagram_slot:
 # ── Override styles — injected LAST so they beat emotion CSS ─────
 st.markdown("""
 <style>
-/* Search bar placeholder text — grey */
-html body div[data-testid="stSelectbox"] [class*="placeholder"] {
-    color: #aaa !important;
-}
-/* Borderless expanders — high-specificity override */
-html body div[data-testid="stExpander"] details {
-    border: 0px solid transparent !important;
+/* Placeholder text grey */
+div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
+
+/* Borderless expanders — covers Streamlit 1.3x–1.5x structures */
+div[data-testid="stExpander"] details,
+div[data-testid="stExpander"] > details,
+section.main details {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
     box-shadow: none !important;
     outline: none !important;
-}
-html body div[data-testid="stExpander"] details summary {
     background: transparent !important;
 }
-html body div[data-testid="stExpander"] details summary:hover {
-    background: rgba(0,0,0,0.03) !important;
-    color: #000 !important;
+div[data-testid="stExpander"] details > summary,
+section.main details > summary {
+    background: transparent !important;
+    padding-left: 0.5rem !important;
 }
-/* Vector database selectbox — borderless */
-html body div[data-testid="column"] div[data-testid="stSelectbox"] > div > div {
+div[data-testid="stExpander"] details > summary:hover,
+section.main details > summary:hover {
+    background: rgba(0,0,0,0.03) !important;
+}
+
+/* Vector database selectbox — borderless (stColumn with capital C, Streamlit ≥1.3) */
+div[data-testid="stColumn"] div[data-testid="stSelectbox"] > div > div,
+div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div {
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
     min-height: unset !important;
     border-radius: 6px !important;
 }
-html body div[data-testid="column"] div[data-testid="stSelectbox"] > div > div:hover {
+div[data-testid="stColumn"] div[data-testid="stSelectbox"] > div > div:hover,
+div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
     background: #f5f5f5 !important;
-    border-radius: 6px !important;
 }
 </style>
 """, unsafe_allow_html=True)
