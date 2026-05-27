@@ -1718,7 +1718,11 @@ else:
 
 if query_gene:
     # Scroll to top when a new gene is selected
-    _components.html("<script>window.parent.scrollTo(0, 0);</script>", height=0)
+    _components.html("""<script>
+        window.parent.document.querySelector('[data-testid="stAppViewContainer"]')?.scrollTo(0, 0);
+        window.parent.document.querySelector('section.main')?.scrollTo(0, 0);
+        window.parent.document.querySelector('.main')?.scrollTo(0, 0);
+    </script>""", height=0)
     # Clear previous results — no history, each search is fresh
     st.session_state[f"messages_{dataset_key}"] = []
     messages = st.session_state[f"messages_{dataset_key}"]
