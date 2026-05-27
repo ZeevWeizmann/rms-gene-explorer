@@ -1325,7 +1325,7 @@ with st.spinner("Loading data..."):
 # ================================================================
 # UPLOAD YOUR OWN DATA
 # ================================================================
-with st.expander("📂 Upload your own .h5ad file for a query of interest", expanded=False):
+with st.expander("Upload your own .h5ad file for a query of interest", expanded=False):
     st.caption("Your file is processed in memory only — not stored anywhere. Max recommended: ~50k cells.")
     uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
 
@@ -2010,7 +2010,7 @@ _FEATURED = [
     ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
     ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
 ]
-with st.expander("🧬 Featured genes — click to explore", expanded=False):
+with st.expander("Featured genes — click to explore", expanded=False):
     _fcols = st.columns(len(_FEATURED))
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
         with _fc:
@@ -2021,7 +2021,7 @@ with st.expander("🧬 Featured genes — click to explore", expanded=False):
                 st.rerun()
 
 # ── About sections (bottom of page) ────────────────────────────
-_about_expander = st.expander("ℹ️ About this tool", expanded=False)
+_about_expander = st.expander("About this tool", expanded=False)
 with _about_expander:
     st.markdown("This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.")
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
