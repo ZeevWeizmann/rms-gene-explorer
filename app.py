@@ -25,9 +25,34 @@ st.markdown("""
         flex: 1 1 100% !important;
         min-width: 100% !important;
     }
-    div[data-testid="stChatInput"] { width: 100% !important; }
 }
-section.main > div { max-width: 900px; margin: auto; }
+section.main > div { max-width: 960px; margin: auto; }
+
+/* ── Google-style search selectbox ────────────────────────────── */
+/* Target the first column's selectbox (the search box) */
+div[data-testid="stSelectbox"]:first-of-type > div > div {
+    border-radius: 24px !important;
+    border: 1.5px solid #dfe1e5 !important;
+    box-shadow: 0 1px 6px rgba(32,33,36,0.1) !important;
+    padding: 4px 8px !important;
+    font-size: 1.05rem !important;
+    transition: box-shadow 0.2s;
+}
+div[data-testid="stSelectbox"]:first-of-type > div > div:hover,
+div[data-testid="stSelectbox"]:first-of-type > div > div:focus-within {
+    box-shadow: 0 2px 10px rgba(32,33,36,0.22) !important;
+    border-color: #bdc1c6 !important;
+}
+
+/* Compact sliders — tighter label */
+div[data-testid="stSlider"] label { font-size: 0.78rem !important; }
+
+/* Compact radio (dataset chooser) */
+div[data-testid="stRadio"] label { font-size: 0.82rem !important; }
+div[data-testid="stRadio"] > div { gap: 6px !important; }
+
+/* Reduce top padding on metrics / captions */
+div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
 </style>
 <script>
 (function() {
@@ -1972,7 +1997,8 @@ with _about_expander:
 dataset_choice = st.radio(
     "Dataset",
     options=["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"],
-    horizontal=True
+    horizontal=True,
+    label_visibility="collapsed"
 )
 dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory Embeddings — RMS original (beta)" else "v2")
 
@@ -2083,22 +2109,29 @@ with st.expander("📂 Upload your own .h5ad file for a query of interest", expa
 
 
 # ================================================================
-# STATS
+# STATS (compact inline)
 # ================================================================
 n_genes = len(genes)
 n_clusters = len(set(clusters))
 n_cells = umap_df.shape[0]
 
-col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-col1.metric("Gene embeddings", f"{n_genes:,}")
-col2.metric("Gene programs", f"{n_clusters}")
-col3.metric("Cells", f"{n_cells:,}")
-if col4.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
-    st.session_state[f"messages_{dataset_key}"] = []
-    st.session_state[f"last_selected_{dataset_key}"] = ""
-    st.session_state[f"recent_{dataset_key}"] = []
-    st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
-    st.rerun()
+_clear_col, _stats_col = st.columns([1, 5])
+with _stats_col:
+    st.markdown(
+        f"<div style='color:#666;font-size:0.82rem;padding-top:6px'>"
+        f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
+        f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
+        f"<b>{n_cells:,}</b> cells"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+with _clear_col:
+    if st.button("🗑️ Clear history", key=f"clear_{dataset_key}", use_container_width=True):
+        st.session_state[f"messages_{dataset_key}"] = []
+        st.session_state[f"last_selected_{dataset_key}"] = ""
+        st.session_state[f"recent_{dataset_key}"] = []
+        st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
+        st.rerun()
 
 # ── GRN selector — hide only if gene is in NO model at all ──────
 _orig_gene_set   = load_grn_gene_list("original")
@@ -2126,7 +2159,7 @@ _gene_in_any_grn = bool(_check_gene) and any(
 )
 
 col_search, col_slider, col_grn_slider = st.columns(
-    [3, 2, 2] if _gene_in_any_grn else [3, 2, 0.01]
+    [5, 2, 2] if _gene_in_any_grn else [5, 2, 0.01]
 )
 
 _grn_state_key = f"grn_choice_{dataset_key}"
@@ -2183,7 +2216,7 @@ if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
 
 selected_label = col_search.selectbox(
-    "Quick gene search  (🕐 = recent · 🔬 = GRN)",
+    "🔍  Search gene  (🕐 = recent · 🔬 = GRN)",
     options=gene_labels_all,
     index=0,
     key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
