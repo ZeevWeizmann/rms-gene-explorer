@@ -2015,7 +2015,7 @@ _FEATURED = [
     ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
     ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
 ]
-with st.expander("Featured genes — click to explore", expanded=False):
+with st.expander("Featured genes", expanded=False):
     _fcols = st.columns(len(_FEATURED))
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
         with _fc:
