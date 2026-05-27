@@ -1494,7 +1494,7 @@ _components.html("""<script>
 _search_container = st.container()   # search + sliders go here
 st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
-_about_expander = st.expander("ℹ️ About this tool & Gene Trajectory Embeddings", expanded=False)
+_about_expander = st.expander("ℹ️ About this tool", expanded=False)
 with _about_expander:
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
@@ -1545,7 +1545,7 @@ DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregul
 - Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
     """)
 
-with st.expander("🧬 Gene Trajectory Graph Embeddings", expanded=False):
+with st.expander("🧬 About Gene Trajectory Graph Embeddings", expanded=False):
     st.markdown("""
 **What are Gene Trajectory Graph Embeddings?**
 
