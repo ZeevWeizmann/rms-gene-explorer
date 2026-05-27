@@ -1294,9 +1294,6 @@ with _hdr_l:
             style='font-size:1.55rem;font-weight:800;color:#444;'>&nbsp;Program&nbsp;</span><span
             style='font-size:1.55rem;font-weight:800;color:#ED2939;'>Explorer</span>
     </div>
-    <div style='font-size:0.68rem;color:#999;margin-top:2px;'>
-      14,581 embeddings &nbsp;·&nbsp; 594 GRN genes &nbsp;·&nbsp; RMS
-    </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -1736,22 +1733,6 @@ def _render_msg_figures(msg, msg_id):
                         st.info(f"Perturbation data not available. ({e})")
 
 # ── Message rendering loop ───────────────────────────────────────
-# ── Featured genes (lazy — only loads when clicked) ──────────────
-_FEATURED = [
-    ("TUBB",   "tubb",  "💊 Vincristine · FDA-approved"),
-    ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
-    ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
-]
-with st.expander("🧬 Featured genes — click to explore", expanded=False):
-    _fcols = st.columns(len(_FEATURED))
-    for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
-        with _fc:
-            st.caption(_fdrug)
-            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", use_container_width=True):
-                st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
-                st.session_state[f"recent_clicked_{dataset_key}"] = _fg
-                st.rerun()
-
 # Only the LAST assistant message is fully expanded.
 # All older messages are collapsed in expanders (no Plotly rendered = fast).
 _asst_indices = [i for i, m in enumerate(messages) if m["role"] == "assistant"]
@@ -2032,6 +2013,22 @@ if query_gene:
         # Reset selectbox to placeholder (allows re-selecting the same gene next time)
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
+
+# ── Featured genes — after results, before About ─────────────────
+_FEATURED = [
+    ("TUBB",   "tubb",  "💊 Vincristine · FDA-approved"),
+    ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
+    ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
+]
+with st.expander("🧬 Featured genes — click to explore", expanded=False):
+    _fcols = st.columns(len(_FEATURED))
+    for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
+        with _fc:
+            st.caption(_fdrug)
+            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", use_container_width=True):
+                st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
+                st.session_state[f"recent_clicked_{dataset_key}"] = _fg
+                st.rerun()
 
 # ── About sections (bottom of page) ────────────────────────────
 _about_expander = st.expander("ℹ️ About this tool", expanded=False)
