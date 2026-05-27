@@ -1510,7 +1510,7 @@ def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
     return f"{g}{suffix}"
 
-_PLACEHOLDER    = "🔍 Select a gene..."
+_PLACEHOLDER    = "🔍 Select a gene to explore its program"
 gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
 
 # ── Fill: search bar → right column of header ────────────────────
@@ -1532,8 +1532,6 @@ selected_label = _search_container.selectbox(
 _is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
 selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
 
-if _is_placeholder:
-    _search_container.caption("Select a gene to explore its program")
 
 # ── Fill: controls row → below header ────────────────────────────
 with _ctrl_container:
