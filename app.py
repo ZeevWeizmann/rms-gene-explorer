@@ -1490,6 +1490,10 @@ _components.html("""<script>
 }})();
 </script>""", height=0, scrolling=False)
 
+# ── Placeholders: filled after data loads so search sits under banner ──
+_search_container = st.container()   # search + sliders go here
+st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+
 _about_expander = st.expander("About this tool")
 with _about_expander:
     st.markdown("""
@@ -2137,24 +2141,6 @@ n_genes = len(genes)
 n_clusters = len(set(clusters))
 n_cells = umap_df.shape[0]
 
-st.markdown(
-    f"<div style='display:flex;align-items:center;gap:18px;margin:2px 0 8px 0;'>"
-    f"<span style='color:#555;font-size:0.82rem;'>"
-    f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
-    f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
-    f"<b>{n_cells:,}</b> cells"
-    f"</span>"
-    f"</div>",
-    unsafe_allow_html=True
-)
-_clear_placeholder = st.empty()
-if _clear_placeholder.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
-    st.session_state[f"messages_{dataset_key}"] = []
-    st.session_state[f"last_selected_{dataset_key}"] = ""
-    st.session_state[f"recent_{dataset_key}"] = []
-    st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
-    st.rerun()
-
 # ── GRN selector — hide only if gene is in NO model at all ──────
 _orig_gene_set   = load_grn_gene_list("original")
 _mki67_gene_set  = load_grn_gene_list("mki67")
@@ -2180,8 +2166,26 @@ _gene_in_any_grn = bool(_check_gene) and any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
-col_search = st  # full width
-col_slider_row = st.columns([1, 1, 3] if _gene_in_any_grn else [1, 4])
+# ── Fill the placeholder that sits right under the banner ────────
+with _search_container:
+    _stats_c, _clear_c = st.columns([5, 1])
+    _stats_c.markdown(
+        f"<div style='color:#555;font-size:0.82rem;padding-top:6px'>"
+        f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
+        f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
+        f"<b>{n_cells:,}</b> cells"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+    if _clear_c.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
+        st.session_state[f"messages_{dataset_key}"] = []
+        st.session_state[f"last_selected_{dataset_key}"] = ""
+        st.session_state[f"recent_{dataset_key}"] = []
+        st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
+        st.rerun()
+
+col_search = _search_container  # search fills the placeholder container
+col_slider_row = _search_container.columns([1, 1, 3] if _gene_in_any_grn else [1, 4])
 col_slider      = col_slider_row[0]
 col_grn_slider  = col_slider_row[1] if _gene_in_any_grn else None
 
@@ -2197,11 +2201,11 @@ else:
 
     if len(grn_options) == 1:
         grn_choice = grn_options[0]
-        st.caption(f"GRN model: **{grn_choice}**")
+        _search_container.caption(f"GRN model: **{grn_choice}**")
     else:
         if st.session_state.get(_grn_state_key, "") not in grn_options:
             st.session_state[_grn_state_key] = grn_options[0]
-        grn_choice = st.radio(
+        grn_choice = _search_container.radio(
             "GRN model", options=grn_options,
             horizontal=True, key=_grn_state_key
         )
