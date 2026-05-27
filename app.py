@@ -1285,19 +1285,37 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     return fig, topo_df
 
 
-def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1):
-    if grn_mat is None:
+def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20):
+    if grn_mat is None or query_gene is None or query_gene not in grn_genes:
         return None
-    # Use all program genes as rows/cols — even if no edges
-    all_nodes = list(gene_set)
+    # Build the same direct-neighbour node set as build_grn_figure uses.
+    # gene_set (GNN program) and grn_genes (CardamomOT) rarely overlap, so we
+    # ignore gene_set here and use direct GRN neighbours of query_gene instead.
+    q_idx = grn_genes.index(query_gene)
+    direct = set()
+    for j, w in enumerate(grn_mat[q_idx]):
+        if abs(w) > 0 and grn_genes[j] != query_gene:
+            direct.add(grn_genes[j])
+    for i, w in enumerate(grn_mat[:, q_idx]):
+        if abs(w) > 0 and grn_genes[i] != query_gene:
+            direct.add(grn_genes[i])
+    # Limit to top_n by max(|outgoing|, |incoming|) weight
+    if len(direct) > top_n:
+        scored = []
+        for g in direct:
+            gi = grn_genes.index(g)
+            w_out = abs(float(grn_mat[q_idx, gi]))
+            w_in  = abs(float(grn_mat[gi, q_idx]))
+            scored.append((g, max(w_out, w_in)))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        direct = {g for g, _ in scored[:top_n]}
+    all_nodes = [query_gene] + sorted(direct)
+    node_set  = set(all_nodes)
     adj = pd.DataFrame(0.0, index=all_nodes, columns=all_nodes)
-    # Fill edges that exist within program
-    program_set = set(gene_set) & set(grn_genes)
-    for gene in program_set:
-        idx = grn_genes.index(gene)
-        row = grn_mat[idx]
-        for j, w in enumerate(row):
-            if abs(w) > 0 and grn_genes[j] in program_set and grn_genes[j] != gene:
+    for gene in all_nodes:
+        gi = grn_genes.index(gene)
+        for j, w in enumerate(grn_mat[gi]):
+            if abs(w) > 0 and grn_genes[j] in node_set and grn_genes[j] != gene:
                 adj.loc[gene, grn_genes[j]] = float(w)
     return adj, all_nodes
 
