@@ -1801,6 +1801,9 @@ elif st.session_state.get(f"default_run3_{dataset_key}"):
     query_gene = "HSPA1B" if "HSPA1B" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
+    # Clear last_selected so the search bar resets to placeholder after a Featured gene run,
+    # allowing the user to pick any gene (including the same one) without hitting the same-gene guard
+    st.session_state[f"last_selected_{dataset_key}"] = ""
 elif selected_gene and selected_gene != _last_q_gene:
     # Only fire a new query when the user picks a *different* gene
     # (the bar now keeps the current gene, so same-gene reruns must be ignored)
