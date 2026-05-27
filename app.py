@@ -2021,6 +2021,14 @@ with _about_expander:
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
 
+**How it works:**
+1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
+2. Nearest neighbors in embedding space define a **transcriptional program**
+3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
+4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
+
+> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
+
 **Vector databases:**
 
 | Database | Embeddings | Cells | Expression genes | Notes |
@@ -2028,14 +2036,6 @@ This is a **RAG-based gene program retrieval system** applied to single-cell RMS
 | **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings |
 | **RMS 2** | 8,836 | 4,706 | 8,836 | Second RMS cohort · GCN embeddings |
 | **Trajectory (beta)** | 3,887 | 13,968 | 8,442 | Temporal trajectory GNN embeddings · cells & expression from RMS original |
-
-**How it works:**
-1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
-2. Nearest neighbors in embedding space define a **transcriptional program**
-3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
-4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
-
-> 💡 **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
 
 **Therapeutic target logic (network perturbation approach):**
 - **Direct targets** — genes overexpressed in the tumor that are essential nodes in the GRN (e.g. CEP55: drives cytokinesis, supra-expressed in RMS)
@@ -2070,29 +2070,14 @@ Three co-existing RMS cell states are defined by gene expression thresholds appl
 
 DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregulation marks cells exiting the cell cycle. The same scoring rule is applied to real data, WT simulation, and KO simulation — making population shifts directly comparable.
 
-**References:**
-- CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
-- Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
-    """)
-
-
-with _about_expander:
-    st.markdown("""
 ---
 
-## 🧬 Gene Trajectory Graph Embeddings
-
-**What are Gene Trajectory Graph Embeddings?**
+**Gene Trajectory Graph Embeddings**
 
 Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
 
 - **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport.
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
-
-**References:**
-- Maron et al. *Provably Powerful Graph Networks.* NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136)
-- CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
-- OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
     _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
@@ -2335,6 +2320,14 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
         use_container_width=True,
     )
+
+    st.markdown("""
+**References:**
+- CARDAMOM / CardamomOT: [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
+- Nebius AI Studio (Llama 3.1-8B inference): [studio.nebius.com](https://studio.nebius.com)
+- Maron et al. *Provably Powerful Graph Networks.* NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136)
+- OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
+    """)
 
     _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
