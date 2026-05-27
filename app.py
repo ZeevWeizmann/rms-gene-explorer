@@ -1332,7 +1332,7 @@ st.markdown(f"""
 _search_container = st.container()
 
 # Advanced settings expander — below search (Vector database, Program size, Upload)
-_advanced_expander = st.expander("Query options", expanded=False)
+_advanced_expander = st.expander("Settings", expanded=False)
 _ctrl_container = _advanced_expander
 # GRN model placeholder — below advanced expander
 _grn_container  = st.container()
