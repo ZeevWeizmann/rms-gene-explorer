@@ -1494,10 +1494,10 @@ if st.session_state.get("_upload_file_id") and st.session_state.get("h5ad_upload
                                          key=f"upload_auto_{_meta_col}")
             _gene_sel_up = st.selectbox(
                 "Color UMAP by gene expression",
-                options=["— Выбери ген —"] + sorted(_var_names),
+                options=["— Select a gene —"] + sorted(_var_names),
                 key="upload_gene_sel"
             )
-            if _gene_sel_up != "— Выбери ген —" and _gene_sel_up in _var_names:
+            if _gene_sel_up != "— Select a gene —" and _gene_sel_up in _var_names:
                 _g_idx = _var_names.index(_gene_sel_up)
                 _plot_up = _umap_up.copy()
                 _plot_up["expression"] = _expr_up[:, _g_idx].astype(float)
