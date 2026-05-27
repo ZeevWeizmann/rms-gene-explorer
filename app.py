@@ -2358,8 +2358,8 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         height=510, scrolling=False
     )
 
-    _ot_img_local = os.path.join(LOCAL_DIR, "ot_explanation.png")
-    if not os.path.exists(_ot_img_local):
+    _ot_img_local = _os.path.join(LOCAL_DIR, "ot_explanation.png")
+    if not _os.path.exists(_ot_img_local):
         try:
             _token = st.secrets.get("HF_TOKEN", None)
             _ot_img_local = hf_hub_download(repo_id=REPO_ID, filename="ot_explanation.png",
