@@ -2020,11 +2020,10 @@ with _about_expander:
 # ================================================================
 # DATASET SELECTOR  (must come before upload so `genes` is defined)
 # ================================================================
-dataset_choice = st.radio(
-    "Dataset",
+dataset_choice = st.selectbox(
+    "Vector database",
     options=["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"],
-    horizontal=True,
-    label_visibility="collapsed"
+    key="dataset_select"
 )
 dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory Embeddings — RMS original (beta)" else "v2")
 
@@ -2243,9 +2242,10 @@ if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
 
 selected_label = col_search.selectbox(
-    "🔍  Search gene  (🕐 = recent · 🔬 = GRN)",
+    "🔍 Search gene",
     options=gene_labels_all,
     index=0,
+    label_visibility="collapsed",
     key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
 )
 # strip prefixes/suffixes to get clean gene name
@@ -2258,14 +2258,17 @@ selected_gene = (selected_label
 _last_q_hint = st.session_state.get(f"last_selected_{dataset_key}", "")
 if _last_q_hint:
     col_search.caption(f"Last: **{_last_q_hint}**")
-program_size = col_slider.slider(
-    "Program size (neighbors)",
+
+# Sliders below the search bar
+_sl1, _sl2, _sl3 = _search_container.columns([2, 2, 3] if _gene_in_any_grn else [2, 5])
+program_size = _sl1.slider(
+    "Program size",
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
 )
-if _gene_in_any_grn and col_grn_slider is not None:
-    grn_hops = col_grn_slider.slider(
-        "GRN hops (ego-network depth)",
+if _gene_in_any_grn:
+    grn_hops = _sl2.slider(
+        "GRN hops",
         min_value=1, max_value=3, value=1, step=1,
         key=f"grn_slider_{dataset_key}"
     )
