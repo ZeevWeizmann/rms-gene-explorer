@@ -2059,7 +2059,7 @@ with st.expander("Featured gene programs", expanded=False):
                 st.rerun()
 
 # ── About sections (bottom of page) ────────────────────────────
-_about_expander = st.expander("About this tool", expanded=False)
+_about_expander = st.expander("About Gene Program Explorer", expanded=False)
 with _about_expander:
     st.markdown("This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.")
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
