@@ -2465,8 +2465,6 @@ elif selected_gene:
     # so the same gene can be re-selected freely (no need to clear history).
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     query_gene = selected_gene
-elif query_gene := st.chat_input("Enter a gene name (e.g. MKI67, BIRC5, FOXP3, MYC)", key=f"chat_{dataset_key}"):
-    pass
 else:
     query_gene = None
 
