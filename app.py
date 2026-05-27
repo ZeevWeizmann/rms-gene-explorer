@@ -2132,7 +2132,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
     """)
 
-    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" width="100%" style="font-family:Arial,sans-serif;display:block">
+    _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
     @keyframes tPulse {
@@ -2362,9 +2362,20 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
 
 </svg>"""
-    st.markdown(
-        f"<div style='width:100%;overflow:hidden;line-height:0'>{_traj_svg}</div>",
-        unsafe_allow_html=True,
+    _components.html(
+        f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
+        <div style='width:100%'>{_traj_svg}</div>
+        <script>
+        var s = document.querySelector('svg');
+        function _sh() {{
+            var h = s.getBoundingClientRect().height;
+            window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.ceil(h) + 4}}, '*');
+        }}
+        window.addEventListener('load', _sh);
+        window.addEventListener('resize', _sh);
+        setTimeout(_sh, 200);
+        </script>""",
+        height=440, scrolling=False
     )
 
     _ot_img_local = _os.path.join(LOCAL_DIR, "ot_explanation.png")
@@ -2390,7 +2401,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 - OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
-    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" width="100%" style="font-family:Arial,sans-serif;display:block">
+    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
     @keyframes arrowPulse {
@@ -2601,9 +2612,20 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 
 # Arch diagram goes into the slot at the TOP of "About this tool"
 with _arch_diagram_slot:
-    st.markdown(
-        f"<div style='width:100%;overflow:hidden;line-height:0'>{_arch_svg}</div>",
-        unsafe_allow_html=True,
+    _components.html(
+        f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
+        <div style='width:100%'>{_arch_svg}</div>
+        <script>
+        var s = document.querySelector('svg');
+        function _sh() {{
+            var h = s.getBoundingClientRect().height;
+            window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.ceil(h) + 4}}, '*');
+        }}
+        window.addEventListener('load', _sh);
+        window.addEventListener('resize', _sh);
+        setTimeout(_sh, 200);
+        </script>""",
+        height=440, scrolling=False
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
