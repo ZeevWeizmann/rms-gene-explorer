@@ -285,7 +285,7 @@ def load_grn(grn_key="original"):
         mat_file  = "grn_matrix_foxm1.npy"
         gene_file = "grn_genes_foxm1.csv"
         gene_col  = "gene"
-    elif grn_key == "full":
+    elif grn_key in ("full", "full_foxm1"):
         mat_file  = "grn_matrix_full.npy"
         gene_file = "grn_genes_full.csv"
         gene_col  = "gene"
@@ -318,7 +318,7 @@ def load_grn_gene_list(grn_key="original"):
         gene_file, gene_col = "grn_genes_tubb.csv", "gene"
     elif grn_key == "foxm1":
         gene_file, gene_col = "grn_genes_foxm1.csv", "gene"
-    elif grn_key == "full":
+    elif grn_key in ("full", "full_foxm1"):
         gene_file, gene_col = "grn_genes_full.csv", "gene"
     else:
         gene_file, gene_col = "grn_genes.csv", "0"
@@ -340,6 +340,8 @@ def load_perturbation(grn_key="mki67"):
         f = "foxm1_ko_perturbation.csv"
     elif grn_key == "full":
         f = "full_ko_perturbation.csv"
+    elif grn_key == "full_foxm1":
+        f = "full_foxm1_ko_perturbation.csv"
     else:
         f = "birc5_ko_perturbation.csv"
     local = os.path.join(LOCAL_DIR, f)
@@ -1719,9 +1721,19 @@ else:
 if query_gene:
     # Scroll to top when a new gene is selected
     _components.html("""<script>
-        window.parent.document.querySelector('[data-testid="stAppViewContainer"]')?.scrollTo(0, 0);
-        window.parent.document.querySelector('section.main')?.scrollTo(0, 0);
-        window.parent.document.querySelector('.main')?.scrollTo(0, 0);
+        setTimeout(function() {
+            var p = window.parent;
+            var d = p.document;
+            [
+                d.querySelector('[data-testid="stMain"]'),
+                d.querySelector('[data-testid="stAppViewContainer"]'),
+                d.querySelector('[data-testid="block-container"]'),
+                d.querySelector('section.main'),
+                d.body,
+                d.documentElement
+            ].forEach(function(el) { if (el) el.scrollTop = 0; });
+            p.scrollTo(0, 0);
+        }, 50);
     </script>""", height=0)
     # Clear previous results — no history, each search is fresh
     st.session_state[f"messages_{dataset_key}"] = []
