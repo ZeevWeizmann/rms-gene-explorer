@@ -2024,6 +2024,7 @@ with st.expander("🧬 Featured genes — click to explore", expanded=False):
 # ── About sections (bottom of page) ────────────────────────────
 _about_expander = st.expander("ℹ️ About this tool", expanded=False)
 with _about_expander:
+    _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
 
@@ -2551,9 +2552,8 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 
 </svg>"""
 
-# Diagram goes into "About this tool" — re-enter stored expander reference
-
-with _about_expander:
+# Arch diagram goes into the slot at the TOP of "About this tool"
+with _arch_diagram_slot:
     _components.html(
         f"<div style='width:100%;overflow:hidden'>{_arch_svg}</div>",
         height=510, scrolling=False
