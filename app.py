@@ -1331,12 +1331,6 @@ st.markdown(f"""
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
 
-# Advanced settings expander — below search (Vector database, Program size, Upload)
-_advanced_expander = st.expander("Settings", expanded=False)
-_ctrl_container = _advanced_expander
-# GRN model placeholder — below advanced expander
-_grn_container  = st.container()
-
 
 # ================================================================
 # DATASET SELECTOR  — read from session_state so widget can live
@@ -1359,95 +1353,11 @@ with st.spinner("Loading data..."):
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
 # ================================================================
-# UPLOAD YOUR OWN DATA  — separate expander (can't nest in Streamlit)
+# UPLOAD YOUR OWN DATA — rendered AFTER results (placeholder processed here)
 # ================================================================
-with st.expander("Genes from your data", expanded=False):
-    st.caption("Processed in memory only — not stored anywhere. Max ~50k cells.")
-    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
-
-    if uploaded_file is not None:
-        file_id = uploaded_file.name + str(uploaded_file.size)
-
-        if st.session_state.get("_upload_file_id") != file_id:
-            import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
-
-            with st.spinner("Reading file..."):
-                bytes_data = uploaded_file.read()
-                adata = ad.read_h5ad(io.BytesIO(bytes_data))
-
-            st.success(f"✅ Loaded: **{adata.n_obs:,} cells × {adata.n_vars:,} genes**")
-
-            if adata.n_obs > 100_000:
-                st.warning("Large dataset — UMAP may be slow or run out of memory on Streamlit Cloud.")
-
-            with st.spinner("Normalizing → PCA → UMAP (1–2 min for ~10k cells)…"):
-                sc.pp.normalize_total(adata, target_sum=1e4)
-                sc.pp.log1p(adata)
-                n_top = min(3000, adata.n_vars)
-                sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
-                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
-                sc.pp.pca(adata, n_comps=n_comps)
-                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
-                sc.tl.umap(adata)
-
-            umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
-            for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
-                if col in adata.obs.columns:
-                    umap_coords[col] = adata.obs[col].values
-
-            uploaded_var_names = list(adata.var_names)
-            X_full = adata.X
-            if sp_sparse.issparse(X_full):
-                X_full = X_full.toarray()
-            X_f16 = X_full.astype(np.float16)
-
-            st.session_state["_upload_file_id"]   = file_id
-            st.session_state["_upload_umap"]       = umap_coords
-            st.session_state["_upload_var_names"]  = uploaded_var_names
-            st.session_state["_upload_expr"]       = X_f16
-
-        # ── Render ──────────────────────────────────────────────────────
-        umap_up   = st.session_state.get("_upload_umap")
-        var_names = st.session_state.get("_upload_var_names", [])
-        expr_up   = st.session_state.get("_upload_expr")
-
-        if umap_up is not None:
-            overlap = [g for g in var_names if g in set(genes)]
-            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in the Explorer. "
-                    "Select any of them in the 🔍 search above to explore their gene program and GRN.")
-
-            auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
-            if auto_cols:
-                auto_figs = st.columns(len(auto_cols))
-                for col_ui, meta_col in zip(auto_figs, auto_cols):
-                    fig_auto = px.scatter(umap_up, x="x", y="y", color=meta_col,
-                                         title=meta_col,
-                                         labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                         render_mode="webgl", height=400)
-                    fig_auto.update_traces(marker=dict(size=2.5, opacity=0.75))
-                    fig_auto.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                           margin=dict(l=0, r=0, t=30, b=0))
-                    col_ui.plotly_chart(fig_auto, use_container_width=True,
-                                        key=f"upload_auto_{meta_col}")
-
-            gene_sel_up = st.selectbox(
-                "Color UMAP by gene expression",
-                options=["— Select a gene —"] + sorted(var_names),
-                key="upload_gene_sel"
-            )
-            if gene_sel_up != "— Select a gene —" and gene_sel_up in var_names:
-                g_idx = var_names.index(gene_sel_up)
-                plot_up = umap_up.copy()
-                plot_up["expression"] = expr_up[:, g_idx].astype(float)
-                fig_gene = px.scatter(plot_up, x="x", y="y", color="expression",
-                                      color_continuous_scale="Viridis",
-                                      title=f"{gene_sel_up}",
-                                      labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                      render_mode="webgl", height=420)
-                fig_gene.update_traces(marker=dict(size=2.5, opacity=0.8))
-                fig_gene.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                       margin=dict(l=0, r=0, t=30, b=0))
-                st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
+# The actual expander is rendered below the query results.
+# Pre-process the upload if a file is already in session state.
+uploaded_file = None  # will be set when the expander is rendered later
 
 
 # ================================================================
@@ -1530,40 +1440,8 @@ _is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
 selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
 
 
-# ── Fill: controls row → below header ────────────────────────────
-with _ctrl_container:
-    if _gene_in_any_grn:
-        _c1, _c2, _c3 = st.columns([3, 2, 2])
-    else:
-        _c1, _c2 = st.columns([3, 3])
-    dataset_choice = _c1.selectbox(
-        "Vector database",
-        options=_ds_options,
-        index=_ds_options.index(dataset_choice),
-        key="dataset_select",
-    )
-    program_size = _c2.slider(
-        "Program size",
-        min_value=5, max_value=200, value=20, step=5,
-        key=f"slider_{dataset_key}"
-    )
-    if _gene_in_any_grn:
-        grn_hops = _c3.slider(
-            "GRN hops",
-            min_value=1, max_value=3, value=1, step=1,
-            key=f"grn_slider_{dataset_key}"
-        )
-
-# ── Fill: GRN model radio → below controls ───────────────────────
-if _gene_in_any_grn:
-    with _grn_container:
-        if len(grn_options) == 1:
-            st.caption(f"GRN model: **{grn_options[0]}**")
-        else:
-            grn_choice = st.radio(
-                "GRN model", options=grn_options,
-                horizontal=True, key=_grn_state_key
-            )
+# ── Read control values from session state (widgets rendered after results) ──
+program_size = st.session_state.get(f"slider_{dataset_key}", 20)
 
 load_real_expr_means()
 
@@ -2051,6 +1929,127 @@ if query_gene:
         # Reset selectbox to placeholder (allows re-selecting the same gene next time)
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
+
+# ── Settings expander — after results ────────────────────────────
+with st.expander("Settings", expanded=False):
+    if _gene_in_any_grn:
+        _c1, _c2, _c3 = st.columns([3, 2, 2])
+    else:
+        _c1, _c2 = st.columns([3, 3])
+    dataset_choice = _c1.selectbox(
+        "Vector database",
+        options=_ds_options,
+        index=_ds_options.index(dataset_choice),
+        key="dataset_select",
+    )
+    _c2.slider(
+        "Program size",
+        min_value=5, max_value=200, value=20, step=5,
+        key=f"slider_{dataset_key}"
+    )
+    if _gene_in_any_grn:
+        _c3.slider(
+            "GRN hops",
+            min_value=1, max_value=3, value=1, step=1,
+            key=f"grn_slider_{dataset_key}"
+        )
+    if _gene_in_any_grn:
+        if len(grn_options) == 1:
+            st.caption(f"GRN model: **{grn_options[0]}**")
+        else:
+            st.radio(
+                "GRN model", options=grn_options,
+                horizontal=True, key=_grn_state_key
+            )
+
+# ── Genes from your data expander — after results ─────────────────
+with st.expander("Genes from your data", expanded=False):
+    st.caption("Processed in memory only — not stored anywhere. Max ~50k cells.")
+    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
+
+    if uploaded_file is not None:
+        file_id = uploaded_file.name + str(uploaded_file.size)
+
+        if st.session_state.get("_upload_file_id") != file_id:
+            import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
+
+            with st.spinner("Reading file..."):
+                bytes_data = uploaded_file.read()
+                adata = ad.read_h5ad(io.BytesIO(bytes_data))
+
+            st.success(f"✅ Loaded: **{adata.n_obs:,} cells × {adata.n_vars:,} genes**")
+
+            if adata.n_obs > 100_000:
+                st.warning("Large dataset — UMAP may be slow or run out of memory on Streamlit Cloud.")
+
+            with st.spinner("Normalizing → PCA → UMAP (1–2 min for ~10k cells)…"):
+                sc.pp.normalize_total(adata, target_sum=1e4)
+                sc.pp.log1p(adata)
+                n_top = min(3000, adata.n_vars)
+                sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
+                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
+                sc.pp.pca(adata, n_comps=n_comps)
+                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
+                sc.tl.umap(adata)
+
+            umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
+            for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
+                if col in adata.obs.columns:
+                    umap_coords[col] = adata.obs[col].values
+
+            uploaded_var_names = list(adata.var_names)
+            X_full = adata.X
+            if sp_sparse.issparse(X_full):
+                X_full = X_full.toarray()
+            X_f16 = X_full.astype(np.float16)
+
+            st.session_state["_upload_file_id"]   = file_id
+            st.session_state["_upload_umap"]       = umap_coords
+            st.session_state["_upload_var_names"]  = uploaded_var_names
+            st.session_state["_upload_expr"]       = X_f16
+
+        # ── Render ──────────────────────────────────────────────────────
+        umap_up   = st.session_state.get("_upload_umap")
+        var_names = st.session_state.get("_upload_var_names", [])
+        expr_up   = st.session_state.get("_upload_expr")
+
+        if umap_up is not None:
+            overlap = [g for g in var_names if g in set(genes)]
+            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in the Explorer. "
+                    "Select any of them in the 🔍 search above to explore their gene program and GRN.")
+
+            auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
+            if auto_cols:
+                auto_figs = st.columns(len(auto_cols))
+                for col_ui, meta_col in zip(auto_figs, auto_cols):
+                    fig_auto = px.scatter(umap_up, x="x", y="y", color=meta_col,
+                                         title=meta_col,
+                                         labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                         render_mode="webgl", height=400)
+                    fig_auto.update_traces(marker=dict(size=2.5, opacity=0.75))
+                    fig_auto.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                                           margin=dict(l=0, r=0, t=30, b=0))
+                    col_ui.plotly_chart(fig_auto, use_container_width=True,
+                                        key=f"upload_auto_{meta_col}")
+
+            gene_sel_up = st.selectbox(
+                "Color UMAP by gene expression",
+                options=["— Select a gene —"] + sorted(var_names),
+                key="upload_gene_sel"
+            )
+            if gene_sel_up != "— Select a gene —" and gene_sel_up in var_names:
+                g_idx = var_names.index(gene_sel_up)
+                plot_up = umap_up.copy()
+                plot_up["expression"] = expr_up[:, g_idx].astype(float)
+                fig_gene = px.scatter(plot_up, x="x", y="y", color="expression",
+                                      color_continuous_scale="Viridis",
+                                      title=f"{gene_sel_up}",
+                                      labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                      render_mode="webgl", height=420)
+                fig_gene.update_traces(marker=dict(size=2.5, opacity=0.8))
+                fig_gene.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                                       margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
