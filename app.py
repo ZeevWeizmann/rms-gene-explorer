@@ -2589,6 +2589,10 @@ with _arch_diagram_slot:
 # ── Override styles — injected LAST so they beat emotion CSS ─────
 st.markdown("""
 <style>
+/* Search bar placeholder text — grey */
+html body div[data-testid="stSelectbox"] [class*="placeholder"] {
+    color: #aaa !important;
+}
 /* Borderless expanders — high-specificity override */
 html body div[data-testid="stExpander"] details {
     border: 0px solid transparent !important;
