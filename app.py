@@ -2037,11 +2037,11 @@ This is a **RAG-based gene program retrieval system** applied to single-cell RMS
 
 **Vector databases:**
 
-| Database | Genes | Cells | GRN genes | Notes |
-|---|---|---|---|---|
-| **RMS original** | 8,442 | 13,968 | 159 | Primary RMS scRNA-seq · GCN embeddings |
-| **RMS 2** | 8,836 | 4,706 | — | Second RMS cohort · GCN embeddings |
-| **Trajectory (beta)** | 3,887 | — | — | Temporal trajectory GNN embeddings |
+| Database | Genes | Cells | Notes |
+|---|---|---|---|
+| **RMS original** | 8,442 | 13,968 | Primary RMS scRNA-seq · GCN embeddings |
+| **RMS 2** | 8,836 | 4,706 | Second RMS cohort · GCN embeddings |
+| **Trajectory (beta)** | 3,887 | — | Temporal trajectory GNN embeddings |
 
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
