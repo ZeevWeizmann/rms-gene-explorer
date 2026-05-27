@@ -1502,8 +1502,20 @@ _components.html("""<script>
 _search_container = st.container()   # search + sliders go here
 
 # Small "About" link — content lives in pages/1_About.py
-if st.button("ℹ️ About this tool & Gene Trajectory Embeddings", key="about_link"):
-    st.switch_page("pages/1_About.py")
+with st.expander("ℹ️ About this tool & Gene Trajectory Embeddings", expanded=False):
+    st.markdown("""
+**RAG-based gene program retrieval** for single-cell RMS (Rhabdomyosarcoma) data.
+
+Type any gene → nearest neighbours in GNN embedding space → **co-expression program** → GRN inference (CardamomOT) → KO perturbation simulation.
+
+Precomputed programs: **TUBB** · **BIRC5** · **FOXM1** · **HSPA1B**
+
+**Therapeutic target logic:** direct targets (overexpressed essential GRN nodes) + co-targets (compensatory escape genes after KO) = network-informed synthetic lethality.
+
+**Gene Trajectory Embeddings (beta):** each gene receives a vector encoding how its co-expression neighbourhood changed over time — GAT encoder + optimal transport alignment across timepoints + PPGN regulatory structure (OmniPath/NEKO).
+
+References: [CardamomOT](https://github.com/eliasventre/CardamomOT) · [OmniPath](https://omnipathdb.org) · [Nebius AI Studio](https://studio.nebius.com)
+    """)
 st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
 
 # ================================================================
