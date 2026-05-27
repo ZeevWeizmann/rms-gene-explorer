@@ -1279,15 +1279,9 @@ if _logo_local:
 st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 
 # Logo + title — centered, vertical stack
-_logo_html = (
-    f"<img src='data:image/png;base64,{_logo_b64}' "
-    "style='height:56px;width:auto;"
-    "filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18));display:block;margin:0 auto 10px auto;'/>"
-    if _logo_b64 else ""
-)
 st.markdown(f"""
 <div style='text-align:center; margin-bottom:18px;'>
-  {_logo_html}
+  <div style='height:56px'></div>
   <div style='white-space:nowrap;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
