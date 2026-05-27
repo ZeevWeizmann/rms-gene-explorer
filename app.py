@@ -79,7 +79,28 @@ div[data-testid="stButton"] > button:hover {
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
 div.block-container { padding-top: 0.5rem !important; }
-div[data-testid="stExpander"] { margin-bottom: 4px !important; }
+
+/* Borderless expanders */
+div[data-testid="stExpander"] {
+    margin-bottom: 2px !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+div[data-testid="stExpander"] > details {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+div[data-testid="stExpander"] > details > summary {
+    border: none !important;
+    background: transparent !important;
+    padding-left: 0 !important;
+    color: #444 !important;
+}
+div[data-testid="stExpander"] > details > summary:hover {
+    color: #000 !important;
+    background: transparent !important;
+}
 
 /* Disable Streamlit header title link — clicking it would reload the page */
 header[data-testid="stHeader"] a,
