@@ -2180,9 +2180,10 @@ _gene_in_any_grn = bool(_check_gene) and any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
-col_search, col_slider, col_grn_slider = st.columns(
-    [6, 2, 2] if _gene_in_any_grn else [6, 2, 0.01]
-)
+col_search = st  # full width
+col_slider_row = st.columns([1, 1, 3] if _gene_in_any_grn else [1, 4])
+col_slider      = col_slider_row[0]
+col_grn_slider  = col_slider_row[1] if _gene_in_any_grn else None
 
 _grn_state_key = f"grn_choice_{dataset_key}"
 if not _gene_in_any_grn:
@@ -2258,7 +2259,7 @@ program_size = col_slider.slider(
     min_value=5, max_value=200, value=20, step=5,
     key=f"slider_{dataset_key}"
 )
-if _gene_in_any_grn:
+if _gene_in_any_grn and col_grn_slider is not None:
     grn_hops = col_grn_slider.slider(
         "GRN hops (ego-network depth)",
         min_value=1, max_value=3, value=1, step=1,
