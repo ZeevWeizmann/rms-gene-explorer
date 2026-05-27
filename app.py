@@ -1273,230 +1273,43 @@ if _logo_local:
     with open(_logo_local, "rb") as _f:
         _logo_b64 = _b64.b64encode(_f.read()).decode()
 
-# ── Calanques de Marseille header ────────────────────────────────
-# Streamlit's HTML sanitizer strips <svg> tags from st.markdown(), so we must
-# encode SVGs as base64 <img> tags.  CSS @keyframes animations work fine in
-# Streamlit unsafe_allow_html; SVG SMIL animations inside <img> do NOT.
-# Strategy: static background as base64 <img>, animated boat as a second
-# absolutely-positioned base64 <img> driven by CSS @keyframes.
+# ── Compact header: [logo + title] left  |  [search bar] right ─
+# Mirrors Google's results-page layout: brand on the left, search in the header.
 
-_calanques_static_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 160">
-  <defs>
-    <linearGradient id="csky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#87CEEB"/><stop offset="100%" stop-color="#E0F4FF"/>
-    </linearGradient>
-    <linearGradient id="csea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1A9DAB"/><stop offset="100%" stop-color="#0D6E78"/>
-    </linearGradient>
-    <linearGradient id="ccl" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0%" stop-color="#E8E0D0"/><stop offset="100%" stop-color="#C8B89A"/>
-    </linearGradient>
-    <linearGradient id="ccr" x1="1" y1="0" x2="0.7" y2="1">
-      <stop offset="0%" stop-color="#DDD5C5"/><stop offset="100%" stop-color="#BCA888"/>
-    </linearGradient>
-  </defs>
-  <rect width="900" height="160" fill="url(#csky)"/>
-  <path d="M0 95 Q225 80 450 90 Q675 100 900 85 L900 160 L0 160 Z" fill="url(#csea)"/>
-  <path d="M80 110 Q180 106 280 112" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
-  <path d="M550 108 Q650 104 750 110" stroke="#4DD0DC" stroke-width="1" fill="none" opacity="0.4"/>
-  <path d="M0 160 L0 40 L30 20 L55 35 L80 15 L110 30 L140 10 L170 28 L200 18 L230 45 L255 35 L280 60 L300 50 L330 75 L310 160 Z" fill="url(#ccl)"/>
-  <path d="M0 160 L0 60 L20 45 L50 55 L80 40 L120 55 L160 40 L200 55 L240 65 L270 75 L300 70 L310 160 Z" fill="#C8B89A" opacity="0.5"/>
-  <path d="M60 60 L70 90 L65 110" stroke="#A89880" stroke-width="0.8" fill="none" opacity="0.6"/>
-  <path d="M130 48 L140 78" stroke="#A89880" stroke-width="0.8" fill="none" opacity="0.6"/>
-  <g opacity="0.85">
-    <polygon points="85,14 80,30 90,30" fill="#2D5A27"/><polygon points="85,22 78,36 92,36" fill="#2D5A27"/><rect x="83" y="36" width="4" height="6" fill="#5C3D2E"/>
-    <polygon points="145,8 139,22 151,22" fill="#2D5A27"/><polygon points="145,17 137,30 153,30" fill="#2D5A27"/><rect x="143" y="30" width="4" height="5" fill="#5C3D2E"/>
-    <polygon points="200,16 195,28 205,28" fill="#336B2C"/><polygon points="200,24 193,36 207,36" fill="#336B2C"/><rect x="198" y="36" width="4" height="5" fill="#5C3D2E"/>
-  </g>
-  <path d="M900 160 L900 35 L870 18 L845 32 L820 12 L790 28 L760 8 L730 25 L700 15 L670 40 L645 30 L620 55 L600 48 L575 70 L590 160 Z" fill="url(#ccr)"/>
-  <path d="M900 160 L900 55 L880 42 L850 52 L820 38 L780 52 L740 38 L700 52 L660 62 L630 72 L600 68 L590 160 Z" fill="#BCA888" opacity="0.5"/>
-  <path d="M840 55 L830 82 L835 105" stroke="#A08868" stroke-width="0.8" fill="none" opacity="0.6"/>
-  <path d="M760 42 L750 70" stroke="#A08868" stroke-width="0.8" fill="none" opacity="0.6"/>
-  <g opacity="0.85">
-    <polygon points="820,10 815,24 825,24" fill="#2D5A27"/><polygon points="820,18 813,32 827,32" fill="#2D5A27"/><rect x="818" y="32" width="4" height="5" fill="#5C3D2E"/>
-    <polygon points="760,6 755,20 765,20" fill="#2D5A27"/><polygon points="760,15 753,28 767,28" fill="#2D5A27"/><rect x="758" y="28" width="4" height="5" fill="#5C3D2E"/>
-    <polygon points="700,13 695,26 705,26" fill="#336B2C"/><polygon points="700,22 693,34 707,34" fill="#336B2C"/><rect x="698" y="34" width="4" height="5" fill="#5C3D2E"/>
-  </g>
-  <g stroke="#555" stroke-width="1" fill="none" opacity="0.5">
-    <path d="M320 45 Q325 41 330 45"/><path d="M340 38 Q346 34 352 38"/>
-    <path d="M560 42 Q565 38 570 42"/><path d="M578 50 Q583 46 588 50"/>
-  </g>
-  <rect width="900" height="160" fill="white" opacity="0.08"/>
-</svg>"""
+_hdr_l, _hdr_r = st.columns([3, 5])
 
-# Sailboat — separate SVG, animated via CSS @keyframes (SMIL won't work inside <img>)
-_boat_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="-38 -20 76 40">
-  <path d="M-18 10 Q0 8 18 10 L12 15 L-12 15 Z" fill="#F5F0E8"/>
-  <line x1="0" y1="15" x2="0" y2="-15" stroke="#8B7355" stroke-width="1.2"/>
-  <path d="M0 -14 L16 8 L0 10 Z" fill="white" opacity="0.92"/>
-  <path d="M0 -8 L-10 6 L0 8 Z" fill="#F0E8D8" opacity="0.82"/>
-  <path d="M-20 16 Q-30 19 -37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
-  <path d="M20 16 Q30 19 37 16" stroke="#6DD4DF" stroke-width="0.9" fill="none" opacity="0.6"/>
-</svg>"""
-
-
-_cal_b64  = _b64.b64encode(_calanques_static_svg.encode()).decode()
-_boat_b64 = _b64.b64encode(_boat_svg.encode()).decode()
-
-# Custom background: use uploaded image from session_state if available
-_custom_bg  = st.session_state.get("custom_bg_b64", None)
-_bg_img_src = _custom_bg if _custom_bg else f"data:image/svg+xml;base64,{_cal_b64}"
-_bg_opacity = "0.88" if _custom_bg else "0.55"
-_boat_html  = "" if _custom_bg else (
-    f"<img src='data:image/svg+xml;base64,{_boat_b64}' "
-    f"style='position:absolute;width:5.5%;min-width:36px;"
-    f"animation:boatSail 10s ease-in-out infinite;pointer-events:none;'/>"
-)
-
-st.markdown(f"""
-<style>
-@keyframes boatSail {{
-  0%   {{ left:42%; top:54%; }}
-  25%  {{ left:46%; top:51%; }}
-  50%  {{ left:50%; top:54%; }}
-  75%  {{ left:46%; top:57%; }}
-  100% {{ left:42%; top:54%; }}
-}}
-@keyframes betaRay {{
-  0%, 100% {{ opacity:0.12; transform:scaleY(0.55); }}
-  50%       {{ opacity:1;    transform:scaleY(1);    }}
-}}
-.bsun {{ position:absolute; top:2px; left:68%; transform:translateX(-50%); width:54px; height:54px; z-index:3; }}
-.bsun-circle {{
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:28px; height:28px; border-radius:50%;
-  background:linear-gradient(135deg,#FDD835,#E8A020);
-  box-shadow:0 0 12px 3px rgba(253,216,53,0.55);
-  display:flex; align-items:center; justify-content:center;
-  color:white; font-size:0.42rem; font-weight:800; letter-spacing:0.8px;
-  z-index:2;
-}}
-.brw {{
-  position:absolute; top:0; left:0; right:0; bottom:0;
-  display:flex; align-items:flex-start; justify-content:center;
-}}
-.br {{
-  display:block; width:3px; height:8px; margin-top:2px;
-  background:#FDD835; border-radius:2px;
-  animation:betaRay 1.8s ease-in-out infinite;
-  transform-origin:center bottom;
-}}
-</style>
-<div id='gpe-header' style='position:relative; border-radius:12px; margin-bottom:8px;'>
-  <!-- inner clip wrapper keeps background + boat rounded, outer div stays overflow:visible for camera btn -->
-  <div style='position:absolute;top:0;left:0;right:0;bottom:0;border-radius:12px;overflow:hidden;z-index:0;'>
-    <img src='{_bg_img_src}'
-         style='position:absolute;top:0;left:0;width:100%;height:100%;
-                object-fit:cover;opacity:{_bg_opacity};pointer-events:none;'/>
-    {_boat_html}
-  </div>
-  <!-- BETA sun in the sky -->
-  <div class='bsun'>
-    <div class='brw' style='transform:rotate(0deg)'><span   class='br' style='animation-delay:0s'></span></div>
-    <div class='brw' style='transform:rotate(45deg)'><span  class='br' style='animation-delay:0.225s'></span></div>
-    <div class='brw' style='transform:rotate(90deg)'><span  class='br' style='animation-delay:0.45s'></span></div>
-    <div class='brw' style='transform:rotate(135deg)'><span class='br' style='animation-delay:0.675s'></span></div>
-    <div class='brw' style='transform:rotate(180deg)'><span class='br' style='animation-delay:0.9s'></span></div>
-    <div class='brw' style='transform:rotate(225deg)'><span class='br' style='animation-delay:1.125s'></span></div>
-    <div class='brw' style='transform:rotate(270deg)'><span class='br' style='animation-delay:1.35s'></span></div>
-    <div class='brw' style='transform:rotate(315deg)'><span class='br' style='animation-delay:1.575s'></span></div>
-    <div class='bsun-circle'>BETA</div>
-  </div>
-  <!-- Google-style centered content: logo on top, title below, all centered -->
-  <div style='position:relative; z-index:1;
-              display:flex; flex-direction:column; align-items:center; justify-content:center;
-              padding:28px 20px 22px 20px; text-align:center;'>
-    {"<a href='/' target='_self' style='line-height:0; margin-bottom:10px; display:block;'><img src='data:image/png;base64," + _logo_b64 + "' style='height:64px; width:auto; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.25)); cursor:pointer;'/></a>" if _logo_b64 else ""}
-    <div style='white-space:nowrap; margin-bottom:6px;'>
-      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
-                   color:#002395; text-shadow:0 1px 3px rgba(255,255,255,0.9);'>Gene</span>
-      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
-                   color:#FFFFFF; text-shadow:0 1px 5px rgba(0,0,0,0.35);'> Program </span>
-      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
-                   color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.9);'>Explorer</span>
+with _hdr_l:
+    _logo_html = (
+        f"<img src='data:image/png;base64,{_logo_b64}' "
+        "style='height:48px;width:auto;"
+        "filter:drop-shadow(0 1px 5px rgba(0,0,0,0.18));vertical-align:middle;margin-right:12px;'/>"
+        if _logo_b64 else "🧬&nbsp;"
+    )
+    st.markdown(f"""
+<div style='display:flex;align-items:center;padding:12px 0 6px 0;'>
+  {_logo_html}
+  <div style='line-height:1.2;'>
+    <div style='white-space:nowrap;'>
+      <span style='font-size:1.55rem;font-weight:800;color:#002395;'>Gene</span><span
+            style='font-size:1.55rem;font-weight:800;color:#444;'>&nbsp;Program&nbsp;</span><span
+            style='font-size:1.55rem;font-weight:800;color:#ED2939;'>Explorer</span>
     </div>
-    <div style='font-size:clamp(0.7rem,2vw,0.88rem); color:#333;
-                text-shadow:0 1px 2px rgba(255,255,255,0.8); opacity:0.85;'>
-      <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; HSPA1B KO · BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
+    <div style='font-size:0.68rem;color:#999;margin-top:2px;'>
+      14,581 embeddings &nbsp;·&nbsp; 594 GRN genes &nbsp;·&nbsp; RMS
     </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Hidden file uploader (triggered by JS camera icon in header) ──
-st.markdown('<div id="cam-fu-anchor" style="display:none"></div>', unsafe_allow_html=True)
-_cam_upload = st.file_uploader(
-    "bg", type=["png","jpg","jpeg","webp"],
-    key="bg_cam_uploader", label_visibility="collapsed"
-)
-if _cam_upload is not None:
-    _file_id = f"{_cam_upload.name}_{_cam_upload.size}"
-    if st.session_state.get("_bg_last_file") != _file_id:
-        st.session_state["_bg_last_file"] = _file_id
-        st.session_state["custom_bg_b64"] = (
-            f"data:{_cam_upload.type};base64," + _b64.b64encode(_cam_upload.read()).decode()
-        )
-        st.rerun()
+# Right side: search bar placeholder — filled after data loads
+with _hdr_r:
+    _search_container = st.container()
 
-# ── JS: inject camera icon into header; hide file uploader via DOM; proxy click ──
-_components.html("""<script>
-(function() {{
-  function hideFU() {{
-    const pd = window.parent.document;
-    const anchor = pd.getElementById('cam-fu-anchor');
-    if (!anchor) return;
-    // Find stFileUploader that comes after the anchor in document order
-    const uploaders = [...pd.querySelectorAll('[data-testid="stFileUploader"]')];
-    const fu = uploaders.find(u => anchor.compareDocumentPosition(u) & 4);
-    if (!fu) return;
-    // opacity+height:0 keeps element interactive (.click() works), just invisible
-    const hide = 'opacity:0!important;height:0!important;overflow:hidden!important;'
-               + 'margin:0!important;padding:0!important;border:none!important;';
-    fu.style.cssText = hide;
-    if (fu.parentElement) fu.parentElement.style.cssText = hide;
-  }}
+# Below header: controls row placeholder
+_ctrl_container = st.container()
+# Below controls: GRN model placeholder
+_grn_container  = st.container()
 
-  function inject() {{
-    const pd = window.parent.document;
-    const hdr = pd.getElementById('gpe-header');
-    if (!hdr) {{ setTimeout(inject, 200); return; }}
-    if (pd.getElementById('gpe-cam-btn')) {{ hideFU(); return; }}
-
-    hideFU();
-
-    // ── camera button ──
-    const cam = pd.createElement('div');
-    cam.id = 'gpe-cam-btn'; cam.title = 'Change background'; cam.textContent = '📷';
-    cam.style.cssText = 'position:absolute;top:10px;right:14px;z-index:500;'
-      + 'display:inline-flex;align-items:center;justify-content:center;'
-      + 'width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:13px;'
-      + 'background:rgba(255,255,255,0.68);border:1.5px solid rgba(255,255,255,0.55);'
-      + 'box-shadow:0 1px 6px rgba(0,0,0,0.25);user-select:none;';
-    cam.onmouseover = () => cam.style.background = 'rgba(255,255,255,0.95)';
-    cam.onmouseout  = () => cam.style.background = 'rgba(255,255,255,0.68)';
-    cam.onclick = () => {{
-      const anchor = pd.getElementById('cam-fu-anchor');
-      const btns = [...pd.querySelectorAll('[data-testid="stFileUploaderDropzone"] button')];
-      const fu = anchor ? btns.find(b => anchor.compareDocumentPosition(b) & 4) : btns[0];
-      if (fu) fu.click();
-    }};
-    hdr.appendChild(cam);
-
-  }}
-
-  setInterval(() => {{
-    const pd = window.parent.document;
-    if (pd.getElementById('gpe-header') && !pd.getElementById('gpe-cam-btn')) inject();
-    else hideFU();
-  }}, 500);
-  inject();
-}})();
-</script>""", height=0, scrolling=False)
-
-# ── Placeholders: filled after data loads so search sits under banner ──
-_search_container = st.container()   # search + sliders go here
-st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
 # ================================================================
 # DATASET SELECTOR  — read from session_state so widget can live
@@ -1645,14 +1458,6 @@ _gene_in_any_grn = bool(_check_gene) and any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
-# ── Pre-create ordered slots inside the placeholder container ─────
-# Streamlit renders container children in insertion order, so create
-# slots up-front: controls first (compact, above search), search second, GRN model third.
-with _search_container:
-    _ctrl_slot   = st.container()   # 1. dataset + program_size + grn_hops (compact, above search)
-    _search_slot = st.container()   # 2. search gene selectbox (full width)
-    _grn_slot    = st.container()   # 3. GRN model radio (when applicable)
-
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
 _grn_state_key = f"grn_choice_{dataset_key}"
 if not _gene_in_any_grn:
@@ -1672,28 +1477,26 @@ else:
     with st.spinner("Loading GRN..."):
         grn_mat, grn_genes = load_grn(grn_key)
 
-# 🔬 icon in search = gene present in ANY GRN model
+# 🔬 icon = gene present in ANY GRN model
 grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
 
 def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
     return f"{g}{suffix}"
 
-# All genes alphabetically — no history, no recent section
 _PLACEHOLDER    = "🔍 Select a gene..."
 gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
 
-# ── Render slot 2: search gene selectbox (full width, below controls) ──
+# ── Fill: search bar → right column of header ────────────────────
 _sel_ver_key = f"sel_version_{dataset_key}"
 if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
 
-# Default index: show last queried gene so the bar isn't blank after a search
-_last_q_gene = st.session_state.get(f"last_selected_{dataset_key}", "")
+_last_q_gene  = st.session_state.get(f"last_selected_{dataset_key}", "")
 _default_label = gene_label(_last_q_gene) if _last_q_gene and _last_q_gene in genes else _PLACEHOLDER
-_default_idx = gene_labels_all.index(_default_label) if _default_label in gene_labels_all else 0
+_default_idx   = gene_labels_all.index(_default_label) if _default_label in gene_labels_all else 0
 
-selected_label = _search_slot.selectbox(
+selected_label = _search_container.selectbox(
     "🔍 Search gene",
     options=gene_labels_all,
     index=_default_idx,
@@ -1703,13 +1506,12 @@ selected_label = _search_slot.selectbox(
 _is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
 selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
 
-# ── Render slot 1: controls row — compact, centered, above search ──
-with _ctrl_slot:
-    # Pad with empty columns on each side so controls stay narrow & centred
+# ── Fill: controls row → below header ────────────────────────────
+with _ctrl_container:
     if _gene_in_any_grn:
-        _pad_l, _c1, _c2, _c3, _pad_r = st.columns([1, 3, 2, 2, 1])
+        _c1, _c2, _c3 = st.columns([3, 2, 2])
     else:
-        _pad_l, _c1, _c2, _pad_r = st.columns([2, 3, 2, 2])
+        _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
         "Vector database",
         options=_ds_options,
@@ -1728,9 +1530,9 @@ with _ctrl_slot:
             key=f"grn_slider_{dataset_key}"
         )
 
-# ── Render slot 3: GRN model radio ───────────────────────────────
+# ── Fill: GRN model radio → below controls ───────────────────────
 if _gene_in_any_grn:
-    with _grn_slot:
+    with _grn_container:
         if len(grn_options) == 1:
             st.caption(f"GRN model: **{grn_options[0]}**")
         else:
