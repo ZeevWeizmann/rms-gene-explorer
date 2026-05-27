@@ -1494,7 +1494,7 @@ _components.html("""<script>
 _search_container = st.container()   # search + sliders go here
 
 # Small "About" link — content lives in pages/1_About.py
-st.page_link("pages/1_About.py", label="ℹ️ About this tool & Gene Trajectory Embeddings", icon=None)
+st.page_link("pages/1_About.py", label="ℹ️ About this tool & Gene Trajectory Embeddings")
 st.markdown("<div style='height:2px'></div>", unsafe_allow_html=True)
 
 # ================================================================
