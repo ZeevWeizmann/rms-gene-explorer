@@ -1311,9 +1311,9 @@ _grn_container  = st.container()
 # inside _search_container (rendered visually under the banner).
 # ================================================================
 _ds_options = [
-    "Original — 8,442 genes · 13,968 cells · GCN",
-    "Cohort 2 — 8,836 genes · 4,706 cells · GCN",
-    "Trajectory (beta) — 3,887 embeddings · 13,968 cells · GNN+OT temporal",
+    "8,442 genes · 13,968 cells · GCN",
+    "8,836 genes · 4,706 cells · GCN",
+    "3,887 embeddings · 13,968 cells · GNN+OT temporal (beta)",
 ]
 dataset_choice = st.session_state.get("dataset_select", _ds_options[0])
 if dataset_choice not in _ds_options:
