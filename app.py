@@ -29,30 +29,52 @@ st.markdown("""
 section.main > div { max-width: 960px; margin: auto; }
 
 /* ── Google-style search selectbox ────────────────────────────── */
-/* Target the first column's selectbox (the search box) */
-div[data-testid="stSelectbox"]:first-of-type > div > div {
+div[data-testid="stSelectbox"] > label {
+    font-size: 0.78rem !important;
+    color: #666 !important;
+    margin-bottom: 2px !important;
+}
+div[data-testid="stSelectbox"] > div > div {
     border-radius: 24px !important;
     border: 1.5px solid #dfe1e5 !important;
     box-shadow: 0 1px 6px rgba(32,33,36,0.1) !important;
-    padding: 4px 8px !important;
-    font-size: 1.05rem !important;
+    font-size: 1rem !important;
     transition: box-shadow 0.2s;
+    min-height: 46px !important;
 }
-div[data-testid="stSelectbox"]:first-of-type > div > div:hover,
-div[data-testid="stSelectbox"]:first-of-type > div > div:focus-within {
-    box-shadow: 0 2px 10px rgba(32,33,36,0.22) !important;
+div[data-testid="stSelectbox"] > div > div:hover,
+div[data-testid="stSelectbox"] > div > div:focus-within {
+    box-shadow: 0 2px 12px rgba(32,33,36,0.2) !important;
     border-color: #bdc1c6 !important;
 }
 
-/* Compact sliders — tighter label */
-div[data-testid="stSlider"] label { font-size: 0.78rem !important; }
+/* Compact sliders */
+div[data-testid="stSlider"] label { font-size: 0.78rem !important; color: #666 !important; }
+div[data-testid="stSlider"] { padding-top: 4px !important; }
 
 /* Compact radio (dataset chooser) */
 div[data-testid="stRadio"] label { font-size: 0.82rem !important; }
 div[data-testid="stRadio"] > div { gap: 6px !important; }
 
-/* Reduce top padding on metrics / captions */
+/* Clear history — small subtle button */
+div[data-testid="stButton"] > button {
+    font-size: 0.78rem !important;
+    padding: 2px 10px !important;
+    border-radius: 12px !important;
+    color: #888 !important;
+    border-color: #ddd !important;
+    background: transparent !important;
+}
+div[data-testid="stButton"] > button:hover {
+    color: #333 !important;
+    border-color: #aaa !important;
+    background: #f5f5f5 !important;
+}
+
+/* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
+div.block-container { padding-top: 0.5rem !important; }
+div[data-testid="stExpander"] { margin-bottom: 4px !important; }
 </style>
 <script>
 (function() {
@@ -2115,23 +2137,23 @@ n_genes = len(genes)
 n_clusters = len(set(clusters))
 n_cells = umap_df.shape[0]
 
-_clear_col, _stats_col = st.columns([1, 5])
-with _stats_col:
-    st.markdown(
-        f"<div style='color:#666;font-size:0.82rem;padding-top:6px'>"
-        f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
-        f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
-        f"<b>{n_cells:,}</b> cells"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-with _clear_col:
-    if st.button("🗑️ Clear history", key=f"clear_{dataset_key}", use_container_width=True):
-        st.session_state[f"messages_{dataset_key}"] = []
-        st.session_state[f"last_selected_{dataset_key}"] = ""
-        st.session_state[f"recent_{dataset_key}"] = []
-        st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
-        st.rerun()
+st.markdown(
+    f"<div style='display:flex;align-items:center;gap:18px;margin:2px 0 8px 0;'>"
+    f"<span style='color:#555;font-size:0.82rem;'>"
+    f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
+    f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
+    f"<b>{n_cells:,}</b> cells"
+    f"</span>"
+    f"</div>",
+    unsafe_allow_html=True
+)
+_clear_placeholder = st.empty()
+if _clear_placeholder.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
+    st.session_state[f"messages_{dataset_key}"] = []
+    st.session_state[f"last_selected_{dataset_key}"] = ""
+    st.session_state[f"recent_{dataset_key}"] = []
+    st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
+    st.rerun()
 
 # ── GRN selector — hide only if gene is in NO model at all ──────
 _orig_gene_set   = load_grn_gene_list("original")
@@ -2159,7 +2181,7 @@ _gene_in_any_grn = bool(_check_gene) and any(
 )
 
 col_search, col_slider, col_grn_slider = st.columns(
-    [5, 2, 2] if _gene_in_any_grn else [5, 2, 0.01]
+    [6, 2, 2] if _gene_in_any_grn else [6, 2, 0.01]
 )
 
 _grn_state_key = f"grn_choice_{dataset_key}"
