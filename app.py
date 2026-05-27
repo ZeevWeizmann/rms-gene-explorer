@@ -1495,14 +1495,14 @@ _search_container = st.container()   # search + sliders go here
 st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
 
 # ================================================================
-# DATASET SELECTOR  (must come before upload so `genes` is defined)
+# DATASET SELECTOR  — read from session_state so widget can live
+# inside _search_container (rendered visually under the banner).
 # ================================================================
-dataset_choice = st.selectbox(
-    "Vector database",
-    options=["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"],
-    key="dataset_select"
-)
-dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice == "Trajectory Embeddings — RMS original (beta)" else "v2")
+_ds_options = ["RMS original", "RMS 2", "Trajectory Embeddings — RMS original (beta)"]
+dataset_choice = st.session_state.get("dataset_select", "RMS original")
+if dataset_choice not in _ds_options:
+    dataset_choice = "RMS original"
+dataset_key = "v1" if dataset_choice == "RMS original" else ("traj" if dataset_choice.startswith("Trajectory") else "v2")
 
 with st.spinner("Loading data..."):
     if dataset_key == "traj":
@@ -1644,26 +1644,26 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Fill the placeholder that sits right under the banner ────────
 with _search_container:
-    _stats_c, _clear_c = st.columns([5, 1])
-    _stats_c.markdown(
-        f"<div style='color:#555;font-size:0.82rem;padding-top:6px'>"
-        f"<b>{n_genes:,}</b> gene embeddings &nbsp;·&nbsp; "
-        f"<b>{n_clusters}</b> programs &nbsp;·&nbsp; "
-        f"<b>{n_cells:,}</b> cells"
-        f"</div>",
-        unsafe_allow_html=True
+    # ── Row 1: Vector database selector + Program size slider ────
+    _ctrl_cols = st.columns([3, 2, 2] if _gene_in_any_grn else [3, 3])
+    dataset_choice = _ctrl_cols[0].selectbox(
+        "Vector database",
+        options=_ds_options,
+        index=_ds_options.index(dataset_choice),
+        key="dataset_select",
+        label_visibility="visible",
     )
-    if _clear_c.button("🗑️ Clear history", key=f"clear_{dataset_key}"):
-        st.session_state[f"messages_{dataset_key}"] = []
-        st.session_state[f"last_selected_{dataset_key}"] = ""
-        st.session_state[f"recent_{dataset_key}"] = []
-        st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
-        st.rerun()
+    program_size = _ctrl_cols[1].slider(
+        "Program size",
+        min_value=5, max_value=200, value=20, step=5,
+        key=f"slider_{dataset_key}"
+    )
+    if _gene_in_any_grn:
+        grn_hops_ctrl = _ctrl_cols[2]
+    else:
+        grn_hops_ctrl = None
 
-col_search = _search_container  # search fills the placeholder container
-col_slider_row = _search_container.columns([1, 1, 3] if _gene_in_any_grn else [1, 4])
-col_slider      = col_slider_row[0]
-col_grn_slider  = col_slider_row[1] if _gene_in_any_grn else None
+col_search = _search_container  # search selectbox fills the placeholder container
 
 _grn_state_key = f"grn_choice_{dataset_key}"
 if not _gene_in_any_grn:
@@ -1689,6 +1689,16 @@ else:
     grn_key = _ALL_MODELS[grn_choice][0]
     with st.spinner("Loading GRN..."):
         grn_mat, grn_genes = load_grn(grn_key)
+
+    # GRN hops slider — in the control row next to Program size
+    if grn_hops_ctrl is not None:
+        grn_hops = grn_hops_ctrl.slider(
+            "GRN hops",
+            min_value=1, max_value=3, value=1, step=1,
+            key=f"grn_slider_{dataset_key}"
+        )
+    else:
+        grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
 
 # 🔬 icon in search = gene present in ANY GRN model
 grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
@@ -1736,22 +1746,8 @@ _last_q_hint = st.session_state.get(f"last_selected_{dataset_key}", "")
 if _last_q_hint:
     col_search.caption(f"Last: **{_last_q_hint}**")
 
-# Sliders below the search bar
-_slider_cols = _search_container.columns([2, 2, 3] if _gene_in_any_grn else [2, 5])
-_sl1 = _slider_cols[0]
-_sl2 = _slider_cols[1] if _gene_in_any_grn else None
-program_size = _sl1.slider(
-    "Program size",
-    min_value=5, max_value=200, value=20, step=5,
-    key=f"slider_{dataset_key}"
-)
-if _gene_in_any_grn and _sl2 is not None:
-    grn_hops = _sl2.slider(
-        "GRN hops",
-        min_value=1, max_value=3, value=1, step=1,
-        key=f"grn_slider_{dataset_key}"
-    )
-else:
+# grn_hops fallback if not already set above
+if not _gene_in_any_grn:
     grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
 
 load_real_expr_means()
