@@ -80,6 +80,13 @@ div[data-testid="stButton"] > button:hover {
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
 div.block-container { padding-top: 0.5rem !important; }
 div[data-testid="stExpander"] { margin-bottom: 4px !important; }
+
+/* Disable Streamlit header title link — clicking it would reload the page */
+header[data-testid="stHeader"] a,
+header[data-testid="stHeader"] [data-testid="stAppViewBlockContainer"] {
+    pointer-events: none !important;
+    cursor: default !important;
+}
 </style>
 <script>
 (function() {
@@ -1280,7 +1287,7 @@ st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 
 # Logo + title — centered, vertical stack
 st.markdown(f"""
-<div style='text-align:center; margin-bottom:18px;'>
+<div style='text-align:center; margin-bottom:18px; pointer-events:none; user-select:none;'>
   <div style='height:56px'></div>
   <div style='white-space:nowrap;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
