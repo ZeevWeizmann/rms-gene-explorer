@@ -1148,41 +1148,26 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                     next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
 
-    reachable = nx.single_source_shortest_path_length(
-        G_full.to_undirected(), query_gene, cutoff=hops
-    )
-    nodes_to_keep = {query_gene}
-    for node, dist in reachable.items():
-        if node in program_set:
-            try:
-                path = nx.shortest_path(G_full.to_undirected(), query_gene, node)
-                nodes_to_keep.update(path)
-            except nx.NetworkXNoPath:
-                pass
+    # Keep all direct GRN neighbours (1-hop ego network).
+    # The program_set filter was removed because GNN program genes and GRN genes
+    # are independent sets and rarely overlap — filtering by program_set produced
+    # an empty graph for almost every gene.
+    # Limit to top_n neighbours by edge weight to avoid overloaded graphs.
+    direct_neighbors = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
+    if len(direct_neighbors) > top_n:
+        # Keep the top_n edges by absolute weight
+        all_edges = (
+            [(query_gene, n, abs(G_full[query_gene][n]['weight'])) for n in G_full.successors(query_gene)]
+            + [(n, query_gene, abs(G_full[n][query_gene]['weight'])) for n in G_full.predecessors(query_gene)]
+        )
+        all_edges.sort(key=lambda x: x[2], reverse=True)
+        top_neighbors = set()
+        for src, dst, _ in all_edges[:top_n]:
+            top_neighbors.add(src); top_neighbors.add(dst)
+        direct_neighbors = top_neighbors - {query_gene}
+    nodes_to_keep = {query_gene} | direct_neighbors
 
-    # ── Fallback: query gene is isolated (structural protein, not a TF) ──
-    # Show the top hub genes from the program set instead of a blank graph.
-    if len(nodes_to_keep) <= 1 and len(program_set) > 1:
-        # Build a subgraph of the program genes and pick the top-degree hubs
-        prog_in_grn = [g for g in program_set if g in grn_genes]
-        prog_idx    = [grn_genes.index(g) for g in prog_in_grn]
-        G_prog = nx.DiGraph()
-        for pi, gi in zip(prog_idx, prog_in_grn):
-            for pj, gj in zip(prog_idx, prog_in_grn):
-                if pi != pj:
-                    w = float(grn_mat[pi, pj])
-                    if abs(w) > 0:
-                        G_prog.add_edge(gi, gj, weight=w)
-        # Pick top-16 hubs by total degree, plus keep query_gene
-        deg_order = sorted(G_prog.nodes(), key=lambda n: G_prog.degree(n), reverse=True)
-        top_hubs  = set(deg_order[:16]) | {query_gene}
-        G_prog    = G_prog.subgraph(top_hubs).copy()
-        if not G_prog.has_node(query_gene):
-            G_prog.add_node(query_gene)
-        G = G_prog
-        nodes_to_keep = set(G.nodes())
-    else:
-        G = G_full.subgraph(nodes_to_keep).copy()
+    G = G_full.subgraph(nodes_to_keep).copy()
 
     # ── Topology analysis ────────────────────────────────────────
     # upstream / downstream relative to query
