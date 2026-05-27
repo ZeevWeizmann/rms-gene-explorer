@@ -1647,10 +1647,10 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Pre-create ordered slots inside the placeholder container ─────
 # Streamlit renders container children in insertion order, so create
-# slots up-front: search first, controls second, GRN model third.
+# slots up-front: controls first (compact, above search), search second, GRN model third.
 with _search_container:
-    _search_slot = st.container()   # 1. search gene selectbox
-    _ctrl_slot   = st.container()   # 2. dataset + program_size + grn_hops
+    _ctrl_slot   = st.container()   # 1. dataset + program_size + grn_hops (compact, above search)
+    _search_slot = st.container()   # 2. search gene selectbox (full width)
     _grn_slot    = st.container()   # 3. GRN model radio (when applicable)
 
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
@@ -1683,7 +1683,7 @@ def gene_label(g):
 _PLACEHOLDER    = "🔍 Select a gene..."
 gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
 
-# ── Render slot 1: search gene selectbox (full width) ────────────
+# ── Render slot 2: search gene selectbox (full width, below controls) ──
 _sel_ver_key = f"sel_version_{dataset_key}"
 if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
@@ -1698,22 +1698,26 @@ selected_label = _search_slot.selectbox(
 _is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
 selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
 
-# ── Render slot 2: controls row (Vector database / Program size / GRN hops) ──
+# ── Render slot 1: controls row — compact, centered, above search ──
 with _ctrl_slot:
-    _ctrl_cols = st.columns([3, 2, 2] if _gene_in_any_grn else [3, 3])
-    dataset_choice = _ctrl_cols[0].selectbox(
+    # Pad with empty columns on each side so controls stay narrow & centred
+    if _gene_in_any_grn:
+        _pad_l, _c1, _c2, _c3, _pad_r = st.columns([1, 3, 2, 2, 1])
+    else:
+        _pad_l, _c1, _c2, _pad_r = st.columns([2, 3, 2, 2])
+    dataset_choice = _c1.selectbox(
         "Vector database",
         options=_ds_options,
         index=_ds_options.index(dataset_choice),
         key="dataset_select",
     )
-    program_size = _ctrl_cols[1].slider(
+    program_size = _c2.slider(
         "Program size",
         min_value=5, max_value=200, value=20, step=5,
         key=f"slider_{dataset_key}"
     )
     if _gene_in_any_grn:
-        grn_hops = _ctrl_cols[2].slider(
+        grn_hops = _c3.slider(
             "GRN hops",
             min_value=1, max_value=3, value=1, step=1,
             key=f"grn_slider_{dataset_key}"
