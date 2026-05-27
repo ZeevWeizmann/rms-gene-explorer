@@ -1,6 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as _components
-import base64 as _b64
 import os
 
 st.set_page_config(
@@ -12,7 +10,7 @@ st.set_page_config(
 
 st.markdown("# 🧬 About Gene Program Explorer")
 
-st.page_link("app.py", label="← Back to Explorer", icon="🔍")
+st.markdown("<a href='/' target='_self' style='font-size:0.9rem;color:#555;text-decoration:none;'>← Back to Explorer</a>", unsafe_allow_html=True)
 
 st.markdown("---")
 
