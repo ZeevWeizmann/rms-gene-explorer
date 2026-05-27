@@ -1644,6 +1644,7 @@ def _render_msg_figures(msg, msg_id):
                             pert_df, q_gene, ko_gene=_ko_gene_label,
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                        st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
                         # Population proportions + delta + UMAP — foxm1, tubb, mki67
                         if _msg_grn_model in ("foxm1", "tubb", "mki67", "full"):
                             try:
