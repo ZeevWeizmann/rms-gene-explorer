@@ -1359,14 +1359,11 @@ with st.spinner("Loading data..."):
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data(dataset_key)
 
 # ================================================================
-# UPLOAD YOUR OWN DATA  (inside Advanced expander)
+# UPLOAD YOUR OWN DATA  — separate expander (can't nest in Streamlit)
 # ================================================================
-with _advanced_expander:
-    st.markdown("---")
-    st.markdown("**Upload your own .h5ad file**")
+with st.expander("Upload your own .h5ad file for a query of interest", expanded=False):
     st.caption("Processed in memory only — not stored anywhere. Max ~50k cells.")
-    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload",
-                                     label_visibility="collapsed")
+    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
 
     if uploaded_file is not None:
         file_id = uploaded_file.name + str(uploaded_file.size)
