@@ -1346,7 +1346,7 @@ st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 st.markdown(f"""
 <div style='text-align:center; margin-bottom:18px;'>
   <div style='height:56px'></div>
-  <a href='/' target='_self' style='text-decoration:none; cursor:pointer;'>
+  <a href='/' target='_self' onclick='window.location.reload(); return false;' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
