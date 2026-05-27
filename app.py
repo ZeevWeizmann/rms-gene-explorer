@@ -34,8 +34,8 @@ div[data-testid="stSelectbox"] > label {
     color: #666 !important;
     margin-bottom: 2px !important;
 }
-/* Search bar keeps its pill border */
-div[data-testid="stSelectbox"]:first-of-type > div > div {
+/* Search bar — pill style */
+div[data-testid="stSelectbox"] > div > div {
     border-radius: 24px !important;
     border: 1.5px solid #dfe1e5 !important;
     box-shadow: 0 1px 6px rgba(32,33,36,0.1) !important;
@@ -43,20 +43,21 @@ div[data-testid="stSelectbox"]:first-of-type > div > div {
     transition: box-shadow 0.2s;
     min-height: 46px !important;
 }
-div[data-testid="stSelectbox"]:first-of-type > div > div:hover,
-div[data-testid="stSelectbox"]:first-of-type > div > div:focus-within {
+div[data-testid="stSelectbox"] > div > div:hover,
+div[data-testid="stSelectbox"] > div > div:focus-within {
     box-shadow: 0 2px 12px rgba(32,33,36,0.2) !important;
     border-color: #bdc1c6 !important;
 }
-/* Vector database selector — borderless */
-div[data-testid="stSelectbox"]:not(:first-of-type) > div > div {
+/* Vector database selector — borderless (targets selectbox inside a column) */
+div[data-testid="column"] div[data-testid="stSelectbox"] > div > div {
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
     font-size: 0.9rem !important;
-    color: #555 !important;
+    min-height: unset !important;
+    border-radius: 6px !important;
 }
-div[data-testid="stSelectbox"]:not(:first-of-type) > div > div:hover {
+div[data-testid="column"] div[data-testid="stSelectbox"] > div > div:hover {
     background: #f5f5f5 !important;
 }
 
