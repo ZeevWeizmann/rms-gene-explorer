@@ -1273,38 +1273,35 @@ if _logo_local:
     with open(_logo_local, "rb") as _f:
         _logo_b64 = _b64.b64encode(_f.read()).decode()
 
-# ── Compact header: [logo + title] left  |  [search bar] right ─
-# Mirrors Google's results-page layout: brand on the left, search in the header.
+# ── Google-homepage style: centered title above, search below ─────
 
-_hdr_l, _hdr_r = st.columns([3, 5])
+# Top padding
+st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 
-with _hdr_l:
-    _logo_html = (
-        f"<img src='data:image/png;base64,{_logo_b64}' "
-        "style='height:48px;width:auto;"
-        "filter:drop-shadow(0 1px 5px rgba(0,0,0,0.18));vertical-align:middle;margin-right:12px;'/>"
-        if _logo_b64 else "🧬&nbsp;"
-    )
-    st.markdown(f"""
-<div style='display:flex;align-items:center;padding:12px 0 6px 0;'>
+# Logo + title — centered, vertical stack
+_logo_html = (
+    f"<img src='data:image/png;base64,{_logo_b64}' "
+    "style='height:56px;width:auto;"
+    "filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18));display:block;margin:0 auto 10px auto;'/>"
+    if _logo_b64 else ""
+)
+st.markdown(f"""
+<div style='text-align:center; margin-bottom:18px;'>
   {_logo_html}
-  <div style='line-height:1.2;'>
-    <div style='white-space:nowrap;'>
-      <span style='font-size:1.55rem;font-weight:800;color:#002395;'>Gene</span><span
-            style='font-size:1.55rem;font-weight:800;color:#444;'>&nbsp;Program&nbsp;</span><span
-            style='font-size:1.55rem;font-weight:800;color:#ED2939;'>Explorer</span>
-    </div>
+  <div style='white-space:nowrap;'>
+    <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
+          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
+          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Right side: search bar placeholder — filled after data loads
-with _hdr_r:
-    _search_container = st.container()
+# Search bar placeholder — filled after data loads (sits directly below title)
+_search_container = st.container()
 
-# Below header: controls row placeholder
+# Controls row placeholder — below search
 _ctrl_container = st.container()
-# Below controls: GRN model placeholder
+# GRN model placeholder — below controls
 _grn_container  = st.container()
 
 
