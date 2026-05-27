@@ -1717,6 +1717,8 @@ else:
     query_gene = None
 
 if query_gene:
+    # Scroll to top when a new gene is selected
+    _components.html("<script>window.parent.scrollTo(0, 0);</script>", height=0)
     # Clear previous results — no history, each search is fresh
     st.session_state[f"messages_{dataset_key}"] = []
     messages = st.session_state[f"messages_{dataset_key}"]
