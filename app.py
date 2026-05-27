@@ -1528,6 +1528,9 @@ selected_label = _search_container.selectbox(
 _is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
 selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
 
+if _is_placeholder:
+    _search_container.caption("Select a gene to explore its program")
+
 # ── Fill: controls row → below header ────────────────────────────
 with _ctrl_container:
     if _gene_in_any_grn:
