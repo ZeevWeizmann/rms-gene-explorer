@@ -1404,10 +1404,11 @@ _full_gene_set   = load_grn_gene_list("full")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
-    "Full program (200 genes, HSPA1B KO)":    ("full",     _full_gene_set),
-    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",    _foxm1_gene_set),
-    "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
-    "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
+    "Full program (200 genes, HSPA1B KO)":    ("full",       _full_gene_set),
+    "Full program (200 genes, FOXM1 KO)":     ("full_foxm1", _full_gene_set),
+    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",      _foxm1_gene_set),
+    "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",      _mki67_gene_set),
+    "TUBB program (201 genes, TUBB KO)":       ("tubb",       _tubb_gene_set),
     "Original (159 genes)":                    ("original", _orig_gene_set),
 }
 
@@ -1510,7 +1511,7 @@ def _render_msg_figures(msg, msg_id):
     if "grn_fig" in msg and msg["grn_fig"] is not None:
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
-            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B"}.get(_msg_grn_model, "")
+            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
             if _has_pert:
                 _tab_results = st.tabs([f"🧬 {_ko_gene_label} KO Perturbation", "Network graph", "Adjacency matrix"])
                 tab_pert, tab_graph, tab_matrix = _tab_results
@@ -1719,22 +1720,6 @@ else:
     query_gene = None
 
 if query_gene:
-    # Scroll to top when a new gene is selected
-    _components.html("""<script>
-        setTimeout(function() {
-            var p = window.parent;
-            var d = p.document;
-            [
-                d.querySelector('[data-testid="stMain"]'),
-                d.querySelector('[data-testid="stAppViewContainer"]'),
-                d.querySelector('[data-testid="block-container"]'),
-                d.querySelector('section.main'),
-                d.body,
-                d.documentElement
-            ].forEach(function(el) { if (el) el.scrollTop = 0; });
-            p.scrollTo(0, 0);
-        }, 50);
-    </script>""", height=0)
     # Clear previous results — no history, each search is fresh
     st.session_state[f"messages_{dataset_key}"] = []
     messages = st.session_state[f"messages_{dataset_key}"]
