@@ -1311,8 +1311,8 @@ _grn_container  = st.container()
 # inside _search_container (rendered visually under the banner).
 # ================================================================
 _ds_options = [
-    "RMS original — 8,442 genes · 13,968 cells · GCN",
-    "RMS 2 — 8,836 genes · 4,706 cells · GCN",
+    "Original — 8,442 genes · 13,968 cells · GCN",
+    "Cohort 2 — 8,836 genes · 4,706 cells · GCN",
     "Trajectory (beta) — 3,887 embeddings · 13,968 cells · GNN+OT temporal",
 ]
 dataset_choice = st.session_state.get("dataset_select", _ds_options[0])
