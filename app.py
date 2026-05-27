@@ -48,6 +48,11 @@ div[data-testid="stSelectbox"] > div > div:focus-within {
     border-color: #bdc1c6 !important;
 }
 
+/* ── Google-style spacing: search is the hero element ──────────── */
+div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]:first-child) {
+    margin-top: 8px !important;
+}
+
 /* Compact sliders */
 div[data-testid="stSlider"] label { font-size: 0.78rem !important; color: #666 !important; }
 div[data-testid="stSlider"] { padding-top: 4px !important; }
@@ -1398,23 +1403,22 @@ st.markdown(f"""
     <div class='brw' style='transform:rotate(315deg)'><span class='br' style='animation-delay:1.575s'></span></div>
     <div class='bsun-circle'>BETA</div>
   </div>
+  <!-- Google-style centered content: logo on top, title below, all centered -->
   <div style='position:relative; z-index:1;
-              display:flex; align-items:center; gap:12px;
-              padding:18px 20px 14px 20px; flex-wrap:nowrap;'>
-    {"<a href='/' target='_self' style='flex-shrink:0; line-height:0;'><img src='data:image/png;base64," + _logo_b64 + "' style='height:60px; width:auto; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3)); cursor:pointer;'/></a>" if _logo_b64 else ""}
-    <div>
-      <div style='white-space:nowrap;'>
-        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
-                     color:#002395; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Gene</span>
-        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
-                     color:#FFFFFF; text-shadow:0 1px 4px rgba(0,0,0,0.4);'> Program </span>
-        <span style='font-size:clamp(1.2rem,4vw,2.2rem); font-weight:800;
-                     color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.8);'>Explorer</span>
-      </div>
-      <div style='font-size:clamp(0.65rem,2vw,0.85rem); color:#333;
-                  margin-top:2px; text-shadow:0 1px 2px rgba(255,255,255,0.7);'>
-        <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; HSPA1B KO · BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
-      </div>
+              display:flex; flex-direction:column; align-items:center; justify-content:center;
+              padding:28px 20px 22px 20px; text-align:center;'>
+    {"<a href='/' target='_self' style='line-height:0; margin-bottom:10px; display:block;'><img src='data:image/png;base64," + _logo_b64 + "' style='height:64px; width:auto; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.25)); cursor:pointer;'/></a>" if _logo_b64 else ""}
+    <div style='white-space:nowrap; margin-bottom:6px;'>
+      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
+                   color:#002395; text-shadow:0 1px 3px rgba(255,255,255,0.9);'>Gene</span>
+      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
+                   color:#FFFFFF; text-shadow:0 1px 5px rgba(0,0,0,0.35);'> Program </span>
+      <span style='font-size:clamp(1.6rem,5vw,2.8rem); font-weight:800; letter-spacing:-0.5px;
+                   color:#ED2939; text-shadow:0 1px 3px rgba(255,255,255,0.9);'>Explorer</span>
+    </div>
+    <div style='font-size:clamp(0.7rem,2vw,0.88rem); color:#333;
+                text-shadow:0 1px 2px rgba(255,255,255,0.8); opacity:0.85;'>
+      <b>14,581</b> gene embeddings &nbsp;·&nbsp; <b>594</b> GRN genes &nbsp;·&nbsp; HSPA1B KO · BIRC5 KO · TUBB KO · FOXM1 KO &nbsp;·&nbsp; RMS
     </div>
   </div>
 </div>
@@ -1492,7 +1496,7 @@ _components.html("""<script>
 
 # ── Placeholders: filled after data loads so search sits under banner ──
 _search_container = st.container()   # search + sliders go here
-st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
 # ================================================================
 # DATASET SELECTOR  — read from session_state so widget can live
@@ -1571,8 +1575,8 @@ with st.expander("📂 Upload your own .h5ad file for a query of interest", expa
             meta_cols = [c for c in umap_up.columns if c not in ["x", "y"]]
 
             overlap = [g for g in var_names if g in set(genes)]
-            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in RMS embedding space. "
-                    "Type any of them in the chat below to query similar genes and GRN.")
+            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in the Explorer. "
+                    "Select any of them in the 🔍 search above to explore their gene program and GRN.")
 
             # ── Auto-show cell_type and time side by side ────────────
             auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
