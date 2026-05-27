@@ -2027,6 +2027,14 @@ with _about_expander:
     st.markdown("""
 This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.
 
+**Vector databases:**
+
+| Database | Genes | Cells | GRN genes | Notes |
+|---|---|---|---|---|
+| **RMS original** | 8,442 | 13,968 | 159 | Primary RMS scRNA-seq · GCN embeddings |
+| **RMS 2** | 8,836 | 4,706 | — | Second RMS cohort · GCN embeddings |
+| **Trajectory (beta)** | 3,887 | — | — | Temporal trajectory GNN embeddings |
+
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
