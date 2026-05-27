@@ -1403,10 +1403,10 @@ with st.expander("📂 Upload your own .h5ad file for a query of interest", expa
             # ── Gene expression coloring ─────────────────────────────
             gene_sel_up = st.selectbox(
                 "Color UMAP by gene expression",
-                options=["— none —"] + sorted(var_names),
+                options=["— Выбери ген —"] + sorted(var_names),
                 key="upload_gene_sel"
             )
-            if gene_sel_up != "— none —" and gene_sel_up in var_names:
+            if gene_sel_up != "— Выбери ген —" and gene_sel_up in var_names:
                 g_idx = var_names.index(gene_sel_up)
                 plot_up = umap_up.copy()
                 plot_up["expression"] = expr_up[:, g_idx].astype(float)
