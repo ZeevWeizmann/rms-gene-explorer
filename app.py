@@ -1160,7 +1160,29 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             except nx.NetworkXNoPath:
                 pass
 
-    G = G_full.subgraph(nodes_to_keep).copy()
+    # ── Fallback: query gene is isolated (structural protein, not a TF) ──
+    # Show the top hub genes from the program set instead of a blank graph.
+    if len(nodes_to_keep) <= 1 and len(program_set) > 1:
+        # Build a subgraph of the program genes and pick the top-degree hubs
+        prog_in_grn = [g for g in program_set if g in grn_genes]
+        prog_idx    = [grn_genes.index(g) for g in prog_in_grn]
+        G_prog = nx.DiGraph()
+        for pi, gi in zip(prog_idx, prog_in_grn):
+            for pj, gj in zip(prog_idx, prog_in_grn):
+                if pi != pj:
+                    w = float(grn_mat[pi, pj])
+                    if abs(w) > 0:
+                        G_prog.add_edge(gi, gj, weight=w)
+        # Pick top-16 hubs by total degree, plus keep query_gene
+        deg_order = sorted(G_prog.nodes(), key=lambda n: G_prog.degree(n), reverse=True)
+        top_hubs  = set(deg_order[:16]) | {query_gene}
+        G_prog    = G_prog.subgraph(top_hubs).copy()
+        if not G_prog.has_node(query_gene):
+            G_prog.add_node(query_gene)
+        G = G_prog
+        nodes_to_keep = set(G.nodes())
+    else:
+        G = G_full.subgraph(nodes_to_keep).copy()
 
     # ── Topology analysis ────────────────────────────────────────
     # upstream / downstream relative to query
@@ -1266,7 +1288,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
         ))
 
     fig.update_layout(
-        title=(f"GRN for {query_gene} — {hops}-hop ego network  "
+        title=(f"GRN for {query_gene} — "
+               f"({'top hubs in program' if len(nodes_to_keep) > 1 and G.degree(query_gene) == 0 else f'{hops}-hop ego network'})  "
                f"(green=activation, red=repression | size=degree | ◆=feedback loop)"),
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
