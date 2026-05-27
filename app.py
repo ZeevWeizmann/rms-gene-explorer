@@ -1639,23 +1639,73 @@ _ALL_MODELS = {
 
 # use last queried gene (or most recent search) to decide visibility
 _last_q      = st.session_state.get(f"last_selected_{dataset_key}", "")
-_recent_list = st.session_state.get(f"recent_{dataset_key}", [])
-_check_gene  = (_last_q or (_recent_list[0] if _recent_list else "")).strip().upper()
+_check_gene  = _last_q.strip().upper()
 
 _gene_in_any_grn = bool(_check_gene) and any(
     _check_gene in gs for _, gs in _ALL_MODELS.values()
 )
 
-# ── Fill the placeholder that sits right under the banner ────────
+# ── Pre-create ordered slots inside the placeholder container ─────
+# Streamlit renders container children in insertion order, so create
+# slots up-front: search first, controls second, GRN model third.
 with _search_container:
-    # ── Row 1: Vector database selector + Program size slider ────
+    _search_slot = st.container()   # 1. search gene selectbox
+    _ctrl_slot   = st.container()   # 2. dataset + program_size + grn_hops
+    _grn_slot    = st.container()   # 3. GRN model radio (when applicable)
+
+# ── Load GRN data (no UI rendering yet) ──────────────────────────
+_grn_state_key = f"grn_choice_{dataset_key}"
+if not _gene_in_any_grn:
+    grn_mat, grn_genes = None, []
+    grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
+    grn_options = []
+else:
+    if _check_gene:
+        grn_options = [label for label, (_, gs) in _ALL_MODELS.items()
+                       if _check_gene in gs]
+    else:
+        grn_options = list(_ALL_MODELS.keys())
+    if st.session_state.get(_grn_state_key, "") not in grn_options:
+        st.session_state[_grn_state_key] = grn_options[0]
+    grn_choice = st.session_state[_grn_state_key]
+    grn_key = _ALL_MODELS[grn_choice][0]
+    with st.spinner("Loading GRN..."):
+        grn_mat, grn_genes = load_grn(grn_key)
+
+# 🔬 icon in search = gene present in ANY GRN model
+grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
+
+def gene_label(g):
+    suffix = " 🔬" if g in grn_gene_set else ""
+    return f"{g}{suffix}"
+
+# All genes alphabetically — no history, no recent section
+_PLACEHOLDER    = "🔍 Select a gene..."
+gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
+
+# ── Render slot 1: search gene selectbox (full width) ────────────
+_sel_ver_key = f"sel_version_{dataset_key}"
+if _sel_ver_key not in st.session_state:
+    st.session_state[_sel_ver_key] = 0
+
+selected_label = _search_slot.selectbox(
+    "🔍 Search gene",
+    options=gene_labels_all,
+    index=0,
+    label_visibility="collapsed",
+    key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
+)
+_is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
+selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
+
+# ── Render slot 2: controls row (Vector database / Program size / GRN hops) ──
+with _ctrl_slot:
     _ctrl_cols = st.columns([3, 2, 2] if _gene_in_any_grn else [3, 3])
     dataset_choice = _ctrl_cols[0].selectbox(
         "Vector database",
         options=_ds_options,
         index=_ds_options.index(dataset_choice),
         key="dataset_select",
-        label_visibility="visible",
     )
     program_size = _ctrl_cols[1].slider(
         "Program size",
@@ -1663,96 +1713,22 @@ with _search_container:
         key=f"slider_{dataset_key}"
     )
     if _gene_in_any_grn:
-        grn_hops_ctrl = _ctrl_cols[2]
-    else:
-        grn_hops_ctrl = None
-
-col_search = _search_container  # search selectbox fills the placeholder container
-
-_grn_state_key = f"grn_choice_{dataset_key}"
-if not _gene_in_any_grn:
-    grn_mat, grn_genes = None, []
-else:
-    if _check_gene:
-        grn_options = [label for label, (_, gs) in _ALL_MODELS.items()
-                       if _check_gene in gs]
-    else:
-        grn_options = list(_ALL_MODELS.keys())
-
-    if len(grn_options) == 1:
-        grn_choice = grn_options[0]
-        _search_container.caption(f"GRN model: **{grn_choice}**")
-    else:
-        if st.session_state.get(_grn_state_key, "") not in grn_options:
-            st.session_state[_grn_state_key] = grn_options[0]
-        grn_choice = _search_container.radio(
-            "GRN model", options=grn_options,
-            horizontal=True, key=_grn_state_key
-        )
-
-    grn_key = _ALL_MODELS[grn_choice][0]
-    with st.spinner("Loading GRN..."):
-        grn_mat, grn_genes = load_grn(grn_key)
-
-    # GRN hops slider — in the control row next to Program size
-    if grn_hops_ctrl is not None:
-        grn_hops = grn_hops_ctrl.slider(
+        grn_hops = _ctrl_cols[2].slider(
             "GRN hops",
             min_value=1, max_value=3, value=1, step=1,
             key=f"grn_slider_{dataset_key}"
         )
-    else:
-        grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
 
-# 🔬 icon in search = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
-
-# ── Recent searches ───────────────────────────────────────────────
-recent_key = f"recent_{dataset_key}"
-if recent_key not in st.session_state:
-    st.session_state[recent_key] = []
-recent = st.session_state[recent_key]
-
-def gene_label(g, is_recent=False):
-    prefix = "🕐 " if is_recent else ""
-    suffix = " 🔬" if g in grn_gene_set else ""
-    return f"{prefix}{g}{suffix}"
-
-# recent первыми, потом все остальные по алфавиту
-recent_labels   = [gene_label(g, is_recent=True) for g in recent]
-all_labels      = [gene_label(g) for g in sorted(genes) if g not in recent]
-separator       = ["─── Recent ───"] if recent else []
-separator2      = ["─── All genes ───"] if recent else []
-_PLACEHOLDER    = "🔍 Select a gene..."
-gene_labels_all = [_PLACEHOLDER] + separator + recent_labels + separator2 + all_labels
-
-# Version counter: incremented after each query so the widget resets,
-# allowing the same gene to be selected again without clearing history.
-_sel_ver_key = f"sel_version_{dataset_key}"
-if _sel_ver_key not in st.session_state:
-    st.session_state[_sel_ver_key] = 0
-
-selected_label = col_search.selectbox(
-    "🔍 Search gene",
-    options=gene_labels_all,
-    index=0,
-    label_visibility="collapsed",
-    key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
-)
-# strip prefixes/suffixes to get clean gene name
-_is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER or selected_label.startswith("─")
-selected_gene = (selected_label
-    .replace("🕐 ", "").replace(" 🔬", "").replace("🔬 ", "")
-    .strip()) if not _is_placeholder else ""
-
-# Show last-queried gene as a small hint below the dropdown
-_last_q_hint = st.session_state.get(f"last_selected_{dataset_key}", "")
-if _last_q_hint:
-    col_search.caption(f"Last: **{_last_q_hint}**")
-
-# grn_hops fallback if not already set above
-if not _gene_in_any_grn:
-    grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
+# ── Render slot 3: GRN model radio ───────────────────────────────
+if _gene_in_any_grn:
+    with _grn_slot:
+        if len(grn_options) == 1:
+            st.caption(f"GRN model: **{grn_options[0]}**")
+        else:
+            grn_choice = st.radio(
+                "GRN model", options=grn_options,
+                horizontal=True, key=_grn_state_key
+            )
 
 load_real_expr_means()
 
@@ -2011,15 +1987,11 @@ else:
     query_gene = None
 
 if query_gene:
+    # Clear previous results — no history, each search is fresh
+    st.session_state[f"messages_{dataset_key}"] = []
+    messages = st.session_state[f"messages_{dataset_key}"]
     messages.append({"role": "user", "content": query_gene})
     query_gene = query_gene.strip().upper()
-
-    # Save to recent searches (max 8, no duplicates)
-    recent = st.session_state.get(recent_key, [])
-    if query_gene in recent:
-        recent.remove(query_gene)
-    recent.insert(0, query_gene)
-    st.session_state[recent_key] = recent[:8]
 
     if query_gene not in genes:
         response = f"Gene {query_gene} not found in the co-expression graph."
