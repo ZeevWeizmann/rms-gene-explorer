@@ -15,6 +15,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ── Reset app state when ?reset=1 is in URL ──────────────────────
+if st.query_params.get("reset"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.query_params.clear()
+    st.rerun()
+
 # ── Detect mobile via JS → session_state ────────────────────────
 st.markdown("""
 <style>
@@ -1348,7 +1355,7 @@ st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 st.markdown(f"""
 <div style='text-align:center; margin-bottom:18px;'>
   <div style='height:56px'></div>
-  <a href='/' target='_self' onclick='window.location.reload(); return false;' style='text-decoration:none; cursor:pointer;'>
+  <a href='/?reset=1' target='_self' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
@@ -1511,8 +1518,9 @@ def _render_msg_figures(msg, msg_id):
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
             _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
+            _pert_tab_title = "🧬 KO Perturbation" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} KO Perturbation"
             if _has_pert:
-                _tab_results = st.tabs([f"🧬 {_ko_gene_label} KO Perturbation", "Network graph", "Adjacency matrix"])
+                _tab_results = st.tabs([_pert_tab_title, "Network graph", "Adjacency matrix"])
                 tab_pert, tab_graph, tab_matrix = _tab_results
             else:
                 _tab_results = st.tabs(["Network graph", "Adjacency matrix"])
@@ -1576,7 +1584,18 @@ def _render_msg_figures(msg, msg_id):
             if tab_pert is not None:
                 with tab_pert:
                     try:
-                        pert_df = load_perturbation(_msg_grn_model)
+                        # KO selector for Full program (same GRN, two KO choices)
+                        if _msg_grn_model == "full":
+                            _full_ko_key = f"{msg_id}_full_ko_choice"
+                            _full_ko_choice = st.radio(
+                                "KO gene", ["HSPA1B", "FOXM1"],
+                                horizontal=True, key=_full_ko_key
+                            )
+                            _effective_grn_model = "full_foxm1" if _full_ko_choice == "FOXM1" else "full"
+                            _ko_gene_label = _full_ko_choice
+                        else:
+                            _effective_grn_model = _msg_grn_model
+                        pert_df = load_perturbation(_effective_grn_model)
                         q_gene  = msg.get("query_gene", "MKI67")
                         _real_means = load_real_expr_means()
                         bar_fig, line_fig = build_perturbation_figures(
@@ -1584,16 +1603,16 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        # Population proportions + delta + UMAP — foxm1, tubb, mki67
-                        if _msg_grn_model in ("foxm1", "tubb", "mki67", "full"):
+                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full
+                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full"):
                             try:
-                                if _msg_grn_model == "foxm1":
+                                if _effective_grn_model == "foxm1":
                                     _sim_scored = load_foxm1_pop_sim()
                                     _ko_label   = "FOXM1 KO"
-                                elif _msg_grn_model == "tubb":
+                                elif _effective_grn_model == "tubb":
                                     _sim_scored = load_tubb_pop_sim()
                                     _ko_label   = "TUBB KO"
-                                elif _msg_grn_model == "mki67":
+                                elif _effective_grn_model == "mki67":
                                     _sim_scored = load_mki67_pop_sim()
                                     _ko_label   = "BIRC5 KO"
                                 else:
@@ -1660,8 +1679,8 @@ def _render_msg_figures(msg, msg_id):
                                 )
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
-                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)"}
-                        _prog = _prog_map.get(_msg_grn_model, "program")
+                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)"}
+                        _prog = _prog_map.get(_effective_grn_model, "program")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
                     except Exception as e:
                         st.info(f"Perturbation data not available. ({e})")
