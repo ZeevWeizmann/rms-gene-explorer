@@ -68,7 +68,7 @@ st.set_page_config(
 # ── Scroll-to-results after gene selection ───────────────────────
 if st.session_state.pop("_do_scroll", False):
     _components.html(
-        "<script>setTimeout(function(){ window.parent.scrollTo({top: 220, behavior: 'smooth'}); }, 150);</script>",
+        "<script>setTimeout(function(){ window.parent.scrollTo({top: 0, behavior: 'smooth'}); }, 150);</script>",
         height=1,
     )
 
