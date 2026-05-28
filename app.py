@@ -1441,9 +1441,9 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
 _grn_state_key = f"grn_choice_{dataset_key}"
+grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
-    grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
     grn_options = []
 else:
     if _check_gene:
