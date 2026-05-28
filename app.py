@@ -1583,30 +1583,30 @@ def _strip_label(label: str) -> str:
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
-# ── Clear search selectbox on focus — runs in main page context ───
-_search_container.markdown("""
-<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
- onload="(function(){
+# ── Clear search selectbox on focus via iframe JS ────────────────
+_components.html("""<script>
+(function(){
+  var d = window.parent.document;
   function patch(){
-    document.querySelectorAll('div[data-testid=\\'stSelectbox\\']').forEach(function(b){
-      if(b.closest('[data-testid=\\'column\\']'))return;
-      var i=b.querySelector('input');
-      if(!i||i._sp)return; i._sp=1;
-      i.addEventListener('focus',function(){
-        var el=this;
+    d.querySelectorAll('div[data-testid="stSelectbox"] input').forEach(function(inp){
+      if(inp._sp) return;
+      inp._sp = true;
+      inp.addEventListener('focus', function(){
+        var el = this;
         setTimeout(function(){
-          var s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
-          s.call(el,'');
-          el.dispatchEvent(new Event('input',{bubbles:true}));
-        },30);
+          var s = Object.getOwnPropertyDescriptor(
+            window.parent.HTMLInputElement.prototype, 'value'
+          ).set;
+          s.call(el, '');
+          el.dispatchEvent(new Event('input', {bubbles: true}));
+        }, 50);
       });
     });
   }
-  patch();
-  new MutationObserver(patch).observe(document.body,{childList:true,subtree:true});
- })()"
- style="display:none">
-""", unsafe_allow_html=True)
+  [0, 300, 800, 2000].forEach(function(t){ setTimeout(patch, t); });
+  new MutationObserver(patch).observe(d.body, {childList:true, subtree:true});
+})();
+</script>""", height=1)
 
 # ── Read control values from session state (widgets rendered after results) ──
 program_size = st.session_state.get(f"slider_{dataset_key}", 20)
