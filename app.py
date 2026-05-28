@@ -65,6 +65,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ── Scroll-to-results after gene selection ───────────────────────
+if st.session_state.pop("_do_scroll", False):
+    _components.html(
+        "<script>setTimeout(function(){ window.parent.scrollTo({top: 220, behavior: 'smooth'}); }, 150);</script>",
+        height=1,
+    )
+
 # ── Reset app state when ?reset=1 is in URL ──────────────────────
 if st.query_params.get("reset"):
     for key in list(st.session_state.keys()):
@@ -1880,11 +1887,7 @@ elif selected_gene and selected_gene != _last_q_gene:
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     _save_recent(dataset_key, selected_gene)
     query_gene = selected_gene
-    # Scroll page up so results are visible
-    st.components.v1.html(
-        "<script>window.parent.scrollTo({top: 220, behavior: 'smooth'});</script>",
-        height=0,
-    )
+    st.session_state["_do_scroll"] = True
 else:
     query_gene = None
 
