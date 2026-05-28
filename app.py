@@ -1586,22 +1586,7 @@ if _logo_local:
 
 # ── Google-homepage style: centered title above, search below ─────
 
-# Top padding
-st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
-
-# Logo + title — centered, vertical stack
-st.markdown(f"""
-<div style='text-align:center; margin-bottom:18px;'>
-  <div style='height:56px'></div>
-  <a href='/?reset=1' target='_self' style='text-decoration:none; cursor:pointer;'>
-    <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
-          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
-          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
-  </a>
-</div>
-""", unsafe_allow_html=True)
-
-# Language toggle — compact horizontal radio in top-right corner
+# Top padding + language toggle in top-right corner
 _cur_lang = st.session_state.get('_lang', 'en')
 _, _lang_rc = st.columns([10, 1])
 with _lang_rc:
@@ -1614,6 +1599,19 @@ with _lang_rc:
         st.session_state['_lang'] = 'fr' if _lang_choice == '🇫🇷' else 'en'
         st.rerun()
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
+
+st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+# Logo + title — centered, vertical stack
+st.markdown(f"""
+<div style='text-align:center; margin-bottom:18px;'>
+  <a href='/?reset=1' target='_self' style='text-decoration:none; cursor:pointer;'>
+    <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
+          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
+          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
+  </a>
+</div>
+""", unsafe_allow_html=True)
 
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
