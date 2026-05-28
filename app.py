@@ -300,11 +300,18 @@ div[data-testid="stButton"] > button:hover {
     border-color: #aaa !important;
     background: #f5f5f5 !important;
 }
-/* Language radio — compact flags */
-div[data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
-div[data-testid="stRadio"] > div { gap: 4px !important; }
-div[data-testid="stRadio"] label { font-size: 1.3rem !important; padding: 0 2px !important; gap: 0 !important; }
-div[data-testid="stRadio"] label > div:first-child { display: none !important; }
+/* Flag buttons — no border, transparent, emoji only */
+button[data-testid="baseButton-secondary"]:is([key="lang_en"], [key="lang_fr"]),
+div[data-testid="stColumn"]:has(button[key="lang_en"]) button,
+div[data-testid="stColumn"]:has(button[key="lang_fr"]) button {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 1.4rem !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    line-height: 1.2 !important;
+}
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
@@ -1586,18 +1593,15 @@ if _logo_local:
 
 # ── Google-homepage style: centered title above, search below ─────
 
-# Top padding + language toggle in top-right corner
+# Language toggle — two flag buttons top-right
 _cur_lang = st.session_state.get('_lang', 'en')
-_, _lang_rc = st.columns([7, 2])
-with _lang_rc:
-    _lang_choice = st.radio('', ['🇬🇧', '🇫🇷'],
-                             index=0 if _cur_lang == 'en' else 1,
-                             horizontal=True,
-                             label_visibility='collapsed',
-                             key='lang_radio')
-    if (_lang_choice == '🇫🇷') != (_cur_lang == 'fr'):
-        st.session_state['_lang'] = 'fr' if _lang_choice == '🇫🇷' else 'en'
-        st.rerun()
+_, _col_en, _col_fr = st.columns([8, 1, 1])
+with _col_en:
+    if st.button('🇬🇧', key='lang_en', use_container_width=True):
+        st.session_state['_lang'] = 'en'; st.rerun()
+with _col_fr:
+    if st.button('🇫🇷', key='lang_fr', use_container_width=True):
+        st.session_state['_lang'] = 'fr'; st.rerun()
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
