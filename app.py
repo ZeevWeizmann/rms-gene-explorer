@@ -1596,14 +1596,13 @@ _components.html("""<script>
     inp._sp = true;
     inp.addEventListener('focus', function() {
       var el = this;
-      par.requestAnimationFrame(function() {
-        // React ignores direct .value= so use native setter + synthetic event
+      setTimeout(function() {
         var setter = Object.getOwnPropertyDescriptor(
           par.HTMLInputElement.prototype, 'value'
         ).set;
         setter.call(el, '');
         el.dispatchEvent(new Event('input', { bubbles: true }));
-      });
+      }, 30);
     });
   }
 
@@ -1611,10 +1610,10 @@ _components.html("""<script>
     d.querySelectorAll('div[data-testid="stSelectbox"]').forEach(patchBox);
   }
 
-  run();
+  [0, 200, 500, 1500].forEach(function(t){ setTimeout(run, t); });
   new MutationObserver(run).observe(d.body, { childList: true, subtree: true });
 })();
-</script>""", height=0)
+</script>""", height=1)
 
 # ── Read control values from session state (widgets rendered after results) ──
 program_size = st.session_state.get(f"slider_{dataset_key}", 20)
