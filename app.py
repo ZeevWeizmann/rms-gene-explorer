@@ -156,6 +156,16 @@ div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]:firs
     margin-top: 8px !important;
 }
 
+/* ── Sticky search bar ──────────────────────────────────────────── */
+div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stSelectbox"]) {
+    position: sticky !important;
+    top: 52px !important;
+    z-index: 100 !important;
+    background: white !important;
+    padding: 6px 0 8px 0 !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
 /* Compact sliders */
 div[data-testid="stSlider"] label { font-size: 0.78rem !important; color: #666 !important; }
 div[data-testid="stSlider"] { padding-top: 4px !important; }
