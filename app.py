@@ -91,11 +91,6 @@ div[data-testid="stSelectbox"] > label {
     color: #666 !important;
     margin-bottom: 2px !important;
 }
-/* Hide selected value text when the search selectbox is focused
-   so the field appears empty and user can type immediately */
-div[data-testid="stSelectbox"]:not([data-testid="column"] *):focus-within [class*="singleValue"] {
-    display: none !important;
-}
 /* Search bar — pill style */
 div[data-testid="stSelectbox"] > div > div {
     border-radius: 24px !important;
@@ -1587,6 +1582,59 @@ def _strip_label(label: str) -> str:
     return label.replace(" 🔬", "").strip()
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
+
+# ── Inject JS: clear selectbox value on focus so field looks empty ──
+_components.html("""
+<script>
+(function() {
+  function install() {
+    var doc = window.parent.document;
+    // Only patch the MAIN search selectbox (not the small ones inside columns)
+    var boxes = doc.querySelectorAll(
+      'div[data-testid="stSelectbox"]:not(div[data-testid="column"] div[data-testid="stSelectbox"])'
+    );
+    boxes.forEach(function(box) {
+      if (box._focusPatchDone) return;
+      var input = box.querySelector('input');
+      if (!input) return;
+      box._focusPatchDone = true;
+
+      input.addEventListener('focus', function() {
+        // Hide every child element that could be showing the selected value
+        Array.from(box.querySelectorAll('div, span')).forEach(function(el) {
+          var cls = el.className || '';
+          if (typeof cls === 'string' && (
+              cls.toLowerCase().includes('value') ||
+              cls.toLowerCase().includes('placeholder')
+          ) && !el.querySelector('input')) {
+            el.dataset._hiddenByFocus = el.style.visibility || '';
+            el.style.visibility = 'hidden';
+          }
+        });
+      });
+
+      input.addEventListener('blur', function() {
+        Array.from(box.querySelectorAll('[data-_hidden-by-focus]')).forEach(function(el) {
+          el.style.visibility = el.dataset._hiddenByFocus || '';
+          delete el.dataset._hiddenByFocus;
+        });
+        // Also restore anything we hid
+        Array.from(box.querySelectorAll('div, span')).forEach(function(el) {
+          if ('_hiddenByFocus' in el.dataset) {
+            el.style.visibility = el.dataset._hiddenByFocus || '';
+            delete el.dataset._hiddenByFocus;
+          }
+        });
+      });
+    });
+  }
+
+  // Run now and re-run on DOM changes (Streamlit re-renders)
+  install();
+  new MutationObserver(install).observe(window.parent.document.body, {childList: true, subtree: true});
+})();
+</script>
+""", height=0)
 
 
 # ── Read control values from session state (widgets rendered after results) ──
