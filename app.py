@@ -1530,7 +1530,7 @@ def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
     return f"{g}{suffix}"
 
-_PLACEHOLDER    = "🔍  Search gene..."
+_PLACEHOLDER    = "🔍 Select a gene to explore its program"
 _RECENT_SEP     = "── Recent ──────────────────────"
 
 # ── Build dropdown options with recent searches at top ────────────
