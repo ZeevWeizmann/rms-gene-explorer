@@ -149,17 +149,6 @@ div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]:firs
     margin-top: 8px !important;
 }
 
-/* ── Sticky search bar (sticks to top when scrolling past it) ───── */
-section[data-testid="stMain"] { overflow: visible !important; }
-div[data-testid="stMainBlockContainer"] { overflow: visible !important; }
-div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stSelectbox"]) {
-    position: sticky !important;
-    top: 52px !important;
-    z-index: 999 !important;
-    background: white !important;
-    padding: 6px 0 10px 0 !important;
-    border-bottom: 1px solid #f0f0f0 !important;
-}
 
 /* Compact sliders */
 div[data-testid="stSlider"] label { font-size: 0.78rem !important; color: #666 !important; }
