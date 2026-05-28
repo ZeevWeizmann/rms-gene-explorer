@@ -58,6 +58,134 @@ def _save_recent(dataset_key: str, gene: str) -> list[str]:
         pass
     return recent
 
+# ── Translations ─────────────────────────────────────────────────
+_TRANSLATIONS = {
+    'en': {
+        # Search
+        'search_placeholder': '🔍 Select a gene to explore its program',
+        # Main sections
+        'settings': 'Settings',
+        'genes_from_data': 'Genes from your data',
+        'featured_targets': 'Featured drug targets',
+        'about': 'About Gene Program Explorer',
+        # Settings labels
+        'vector_db': 'Vector database',
+        'program_size': 'Program size',
+        'grn_hops': 'GRN hops',
+        'grn_model': 'GRN model',
+        # Data upload
+        'upload_note': 'Processed in memory only — not stored anywhere. Max ~50k cells.',
+        'upload_label': 'Upload .h5ad file',
+        'loading': 'Loading...',
+        'reading_file': 'Reading file...',
+        'normalizing': 'Normalizing → PCA → UMAP (1–2 min for ~10k cells)…',
+        'large_dataset': 'Large dataset — UMAP may be slow or run out of memory on Streamlit Cloud.',
+        'color_umap': 'Color UMAP by gene expression',
+        # Population labels
+        'quiescent': 'quiescent',
+        'proliferative': 'proliferative',
+        'intermediate': 'intermediate',
+        'real_data': 'Real data (populations *)',
+        'sim_wt': 'Simulation WT (populations *)',
+        'population': 'Population',
+        'pop_shift': 'Population shift after {gene} KO (Δ%)',
+        'delta_pct': 'Δ% (KO – WT)',
+        # Network tabs
+        'ko_perturbation': 'KO Perturbation',
+        'network_graph': 'Network graph',
+        'adjacency_matrix': 'Adjacency matrix',
+        'network_topology': '📊 Network topology analysis',
+        'upstream': 'Upstream regulators',
+        'downstream': 'Downstream targets',
+        'feedback': 'Feedback loop nodes',
+        'cycle_nodes': 'Nodes in any cycle',
+        # Plot labels
+        'umap1': 'UMAP 1',
+        'umap2': 'UMAP 2',
+        'expression': 'Expression',
+        'time': 'Time',
+        'cell_type': 'Cell Type',
+        'time_sim': 'Time (simulation WT)',
+        'knocked_out': 'knocked out',
+        # About section (short)
+        'about_intro': 'This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.',
+        'how_it_works': '**How it works**',
+        'show_results': '📊 Show results for',
+        'gene_program_for': 'Gene program for',
+        'cluster': 'cluster',
+        'top_20': 'Top 20 genes affected by',
+        'top_hub': '🔵 **Top hub**',
+        'most_connected': 'most connected node in this subnetwork',
+        'sim_caption': 'Simulation: CARDAMOM mechanistic model',
+        'pop_unavail': 'Population shift unavailable',
+        'pert_unavail': 'Perturbation data not available',
+        'loading_data': 'Loading data...',
+        'loading_grn': 'Loading GRN...',
+    },
+    'fr': {
+        # Search
+        'search_placeholder': '🔍 Sélectionnez un gène à explorer',
+        # Main sections
+        'settings': 'Paramètres',
+        'genes_from_data': 'Gènes depuis vos données',
+        'featured_targets': 'Cibles thérapeutiques',
+        'about': "À propos de l'Explorateur",
+        # Settings labels
+        'vector_db': 'Base vectorielle',
+        'program_size': 'Taille du programme',
+        'grn_hops': 'Sauts GRN',
+        'grn_model': 'Modèle GRN',
+        # Data upload
+        'upload_note': 'Traité en mémoire uniquement — aucune donnée stockée. Max ~50k cellules.',
+        'upload_label': 'Importer un fichier .h5ad',
+        'loading': 'Chargement...',
+        'reading_file': 'Lecture du fichier...',
+        'normalizing': 'Normalisation → ACP → UMAP (1–2 min pour ~10k cellules)…',
+        'large_dataset': "Grand jeu de données — l'UMAP peut être lent ou manquer de mémoire.",
+        'color_umap': "Colorier l'UMAP par expression génique",
+        # Population labels
+        'quiescent': 'quiescentes',
+        'proliferative': 'prolifératives',
+        'intermediate': 'intermédiaires',
+        'real_data': 'Données réelles (populations *)',
+        'sim_wt': 'Simulation WT (populations *)',
+        'population': 'Population',
+        'pop_shift': 'Changement de population après KO de {gene} (Δ%)',
+        'delta_pct': 'Δ% (KO – WT)',
+        # Network tabs
+        'ko_perturbation': 'Perturbation KO',
+        'network_graph': 'Graphe du réseau',
+        'adjacency_matrix': "Matrice d'adjacence",
+        'network_topology': '📊 Analyse topologique du réseau',
+        'upstream': 'Régulateurs en amont',
+        'downstream': 'Cibles en aval',
+        'feedback': 'Nœuds en boucle de rétroaction',
+        'cycle_nodes': 'Nœuds dans un cycle',
+        # Plot labels
+        'umap1': 'UMAP 1',
+        'umap2': 'UMAP 2',
+        'expression': 'Expression',
+        'time': 'Temps',
+        'cell_type': 'Type cellulaire',
+        'time_sim': 'Temps (simulation WT)',
+        'knocked_out': 'invalidé',
+        # About section (short)
+        'about_intro': 'Système de récupération de programmes géniques basé sur **RAG**, appliqué à des données scRNA-seq de RMS (Rhabdomyosarcome).',
+        'how_it_works': '**Comment ça fonctionne**',
+        'show_results': '📊 Résultats pour',
+        'gene_program_for': 'Programme génique pour',
+        'cluster': 'cluster',
+        'top_20': '20 gènes les plus affectés par',
+        'top_hub': '🔵 **Nœud central**',
+        'most_connected': 'nœud le plus connecté dans ce sous-réseau',
+        'sim_caption': 'Simulation : modèle mécaniste CARDAMOM',
+        'pop_unavail': 'Changement de population non disponible',
+        'pert_unavail': 'Données de perturbation non disponibles',
+        'loading_data': 'Chargement des données...',
+        'loading_grn': 'Chargement du GRN...',
+    }
+}
+
 st.set_page_config(
     page_title="Gene Program Explorer",
     page_icon="🧬",
@@ -1468,6 +1596,15 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Language toggle
+_lang_col1, _lang_col2 = st.columns([20, 1])
+with _lang_col2:
+    _cur_lang = st.session_state.get('_lang', 'en')
+    if st.button('🇫🇷' if _cur_lang == 'en' else '🇬🇧', key='lang_toggle', help='Switch language / Changer de langue'):
+        st.session_state['_lang'] = 'fr' if _cur_lang == 'en' else 'en'
+        st.rerun()
+T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
+
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
 
@@ -1486,7 +1623,7 @@ if dataset_choice not in _ds_options:
     dataset_choice = _ds_options[0]
 dataset_key = "v1" if dataset_choice == _ds_options[0] else ("traj" if dataset_choice == _ds_options[2] else "v2")
 
-with st.spinner("Loading data..."):
+with st.spinner(T['loading_data']):
     if dataset_key == "traj":
         genes, embeddings, clusters, annotations, summaries, umap_df, expr, gene_names, grn_mat, grn_genes = load_data_traj()
     else:
@@ -1547,7 +1684,7 @@ else:
         st.session_state[_grn_state_key] = grn_options[0]
     grn_choice = st.session_state[_grn_state_key]
     grn_key = _ALL_MODELS[grn_choice][0]
-    with st.spinner("Loading GRN..."):
+    with st.spinner(T['loading_grn']):
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon = gene present in ANY GRN model
@@ -1654,19 +1791,19 @@ def _render_msg_figures(msg, msg_id):
             _msg_grn_model = msg.get("grn_model")
             _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
             _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
-            _pert_tab_title = "🧬 KO Perturbation" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} KO Perturbation"
+            _pert_tab_title = f"🧬 {T['ko_perturbation']}" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} {T['ko_perturbation']}"
             if _has_pert:
-                _tab_results = st.tabs([_pert_tab_title, "Network graph", "Adjacency matrix"])
+                _tab_results = st.tabs([_pert_tab_title, T['network_graph'], T['adjacency_matrix']])
                 tab_pert, tab_graph, tab_matrix = _tab_results
             else:
-                _tab_results = st.tabs(["Network graph", "Adjacency matrix"])
+                _tab_results = st.tabs([T['network_graph'], T['adjacency_matrix']])
                 tab_graph, tab_matrix = _tab_results
                 tab_pert = None
             with tab_graph:
                 st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
                 topo = msg.get("grn_topo")
                 if topo is not None and not topo.empty:
-                    with st.expander("📊 Network topology analysis", expanded=True):
+                    with st.expander(T['network_topology'], expanded=True):
                         # summary metrics
                         n_fb = int(topo["Feedback loop"].sum())
                         n_up = int((topo["Role"] == "upstream").sum())
@@ -1674,15 +1811,15 @@ def _render_msg_figures(msg, msg_id):
                         n_fb_role = int((topo["Role"] == "feedback loop").sum())
                         top_hub = topo[topo["Role"] != "query"].nlargest(1, "Total degree")
                         c1, c2, c3, c4 = st.columns(4)
-                        c1.metric("Upstream regulators", n_up)
-                        c2.metric("Downstream targets", n_dn)
-                        c3.metric("Feedback loop nodes", n_fb_role)
-                        c4.metric("Nodes in any cycle", n_fb)
+                        c1.metric(T['upstream'], n_up)
+                        c2.metric(T['downstream'], n_dn)
+                        c3.metric(T['feedback'], n_fb_role)
+                        c4.metric(T['cycle_nodes'], n_fb)
                         if not top_hub.empty:
                             hub_name = top_hub.iloc[0]["Gene"]
                             hub_deg  = int(top_hub.iloc[0]["Total degree"])
-                            st.info(f"🔵 **Top hub**: **{hub_name}** (degree {hub_deg}) — "
-                                    f"most connected node in this subnetwork")
+                            st.info(f"{T['top_hub']}: **{hub_name}** (degree {hub_deg}) — "
+                                    f"{T['most_connected']}")
                         # table
                         show_cols = ["Gene", "Role", "In-degree", "Out-degree",
                                      "Total degree", "Feedback loop"]
@@ -1779,8 +1916,8 @@ def _render_msg_figures(msg, msg_id):
                                     _pop_umap_real = px.scatter(
                                         _pr, x="x", y="y", color="population",
                                         color_discrete_map=_POP_COLORS,
-                                        title="Real data (populations *)",
-                                        labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
+                                        title=T['real_data'],
+                                        labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
                                         opacity=0.6, height=420, render_mode="svg",
                                         category_orders={"population": _pt_pop_order},
                                     )
@@ -1794,8 +1931,8 @@ def _render_msg_figures(msg, msg_id):
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
-                                    title="Simulation WT (populations *)",
-                                    labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
+                                    title=T['sim_wt'],
+                                    labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_wt": _pt_pop_order},
                                 )
@@ -1807,7 +1944,7 @@ def _render_msg_figures(msg, msg_id):
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
                                     title=f"Simulation {_ko_label} (populations *)",
-                                    labels={"x_ko": "UMAP 1", "y_ko": "UMAP 2", "pop_ko": "Population"},
+                                    labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
                                 )
@@ -1823,12 +1960,12 @@ def _render_msg_figures(msg, msg_id):
                                     "**Intermediate** — all remaining cells"
                                 )
                             except Exception as _e:
-                                st.info(f"Population shift unavailable: {_e}")
+                                st.info(f"{T['pop_unavail']}: {_e}")
                         _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)", "full_aurkb": "Full program (200 genes)"}
                         _prog = _prog_map.get(_effective_grn_model, "program")
-                        st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
+                        st.caption(f"{T['sim_caption']} · {_prog} · {_ko_gene_label} {T['knocked_out']}")
                     except Exception as e:
-                        st.info(f"Perturbation data not available. ({e})")
+                        st.info(f"{T['pert_unavail']}. ({e})")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
@@ -1849,7 +1986,7 @@ for _mi, msg in enumerate(messages):
             else:
                 # Older result — collapsed
                 _gene_lbl = msg.get("query_gene", "")
-                with st.expander(f"📊 Show results for {_gene_lbl}", expanded=False):
+                with st.expander(f"{T['show_results']} {_gene_lbl}", expanded=False):
                     _render_msg_figures(msg, id(msg))
 
 if st.session_state.get(f"default_run_{dataset_key}"):
@@ -1935,21 +2072,21 @@ if query_gene:
                 umap_plot, x="x", y="y",
                 color="expression",
                 color_continuous_scale="Viridis",
-                title=f"{query_gene} — Expression ({len(umap_plot):,} cells shown)",
-                labels={"x": "UMAP 1", "y": "UMAP 2"},
+                title=f"{query_gene} — {T['expression']} ({len(umap_plot):,} cells shown)",
+                labels={"x": T['umap1'], "y": T['umap2']},
                 opacity=0.6, height=450,
                 render_mode="svg"
             )
             fig.update_traces(marker=dict(size=3))
-            fig.update_layout(coloraxis_colorbar=dict(title="Expression"),
+            fig.update_layout(coloraxis_colorbar=dict(title=T['expression']),
                               plot_bgcolor="white", paper_bgcolor="white")
 
         if "time" in umap_df.columns:
             fig_time = px.scatter(
                 umap_plot, x="x", y="y",
                 color=umap_plot["time"].astype(str),
-                title="Time",
-                labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Time"},
+                title=T['time'],
+                labels={"x": T['umap1'], "y": T['umap2'], "color": T['time']},
                 opacity=0.6, height=450,
                 render_mode="svg",
                 category_orders={"color": [str(t) for t in sorted(umap_df["time"].unique())]}
@@ -1961,8 +2098,8 @@ if query_gene:
             fig_celltype = px.scatter(
                 umap_plot, x="x", y="y",
                 color="cell_type",
-                title="Cell Type",
-                labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Cell Type"},
+                title=T['cell_type'],
+                labels={"x": T['umap1'], "y": T['umap2'], "color": T['cell_type']},
                 opacity=0.6, height=450,
                 render_mode="svg"
             )
@@ -2030,8 +2167,8 @@ if query_gene:
                 fig_sim_time = px.scatter(
                     _proj, x=_xcol, y=_ycol,
                     color=_proj[_tcol].astype(int).astype(str),
-                    title="Time (simulation WT)",
-                    labels={_xcol: "UMAP 1", _ycol: "UMAP 2", "color": "Time"},
+                    title=T['time_sim'],
+                    labels={_xcol: T['umap1'], _ycol: T['umap2'], "color": T['time']},
                     opacity=0.6, height=450,
                     render_mode="svg",
                     category_orders={"color": _t_order},
@@ -2057,8 +2194,8 @@ if query_gene:
                     _pr, x="x", y="y",
                     color="population",
                     color_discrete_map=_POP_COLORS,
-                    title="Population — real data (DNAJB1 / MKI67-100)",
-                    labels={"x": "UMAP 1", "y": "UMAP 2", "population": "Population"},
+                    title=f"{T['population']} — real data (DNAJB1 / MKI67-100)",
+                    labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
                     opacity=0.6, height=450, render_mode="svg",
                     category_orders={"population": _POP_ORDER},
                 )
@@ -2082,8 +2219,8 @@ if query_gene:
                     _ps, x="x_wt", y="y_wt",
                     color="pop_wt",
                     color_discrete_map=_POP_COLORS,
-                    title="Population — simulation WT (DNAJB1 / MKI67-100)",
-                    labels={"x_wt": "UMAP 1", "y_wt": "UMAP 2", "pop_wt": "Population"},
+                    title=f"{T['population']} — simulation WT (DNAJB1 / MKI67-100)",
+                    labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
                     opacity=0.6, height=450, render_mode="svg",
                     category_orders={"pop_wt": _POP_ORDER},
                 )
@@ -2099,7 +2236,7 @@ if query_gene:
             "HSPA1B": "🎯 **Novel target** — HSP70 inhibitor class, no approved RMS drug",
         }
         _drug_line = _DRUG_MAP.get(query_gene.upper(), "")
-        _content = f"**Gene program for {query_gene}** — cluster {query_cluster}: *{query_annotation}*"
+        _content = f"**{T['gene_program_for']} {query_gene}** — {T['cluster']} {query_cluster}: *{query_annotation}*"
         if _drug_line:
             _content += f"\n\n{_drug_line}"
 
@@ -2125,41 +2262,41 @@ if query_gene:
         st.rerun()
 
 # ── Settings expander — after results ────────────────────────────
-with st.expander("Settings", expanded=False):
+with st.expander(T['settings'], expanded=False):
     if _gene_in_any_grn:
         _c1, _c2, _c3 = st.columns([3, 2, 2])
     else:
         _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
-        "Vector database",
+        T['vector_db'],
         options=_ds_options,
         index=_ds_options.index(dataset_choice),
         key="dataset_select",
     )
     _c2.slider(
-        "Program size",
+        T['program_size'],
         min_value=5, max_value=200, value=20, step=5,
         key=f"slider_{dataset_key}"
     )
     if _gene_in_any_grn:
         _c3.slider(
-            "GRN hops",
+            T['grn_hops'],
             min_value=1, max_value=3, value=1, step=1,
             key=f"grn_slider_{dataset_key}"
         )
     if _gene_in_any_grn:
         if len(grn_options) == 1:
-            st.caption(f"GRN model: **{grn_options[0]}**")
+            st.caption(f"{T['grn_model']}: **{grn_options[0]}**")
         else:
             st.radio(
-                "GRN model", options=grn_options,
+                T['grn_model'], options=grn_options,
                 horizontal=True, key=_grn_state_key
             )
 
 # ── Genes from your data expander — after results ─────────────────
-with st.expander("Genes from your data", expanded=False):
-    st.caption("Processed in memory only — not stored anywhere. Max ~50k cells.")
-    uploaded_file = st.file_uploader("Upload .h5ad file", type=["h5ad"], key="h5ad_upload")
+with st.expander(T['genes_from_data'], expanded=False):
+    st.caption(T['upload_note'])
+    uploaded_file = st.file_uploader(T['upload_label'], type=["h5ad"], key="h5ad_upload")
 
     if uploaded_file is not None:
         file_id = uploaded_file.name + str(uploaded_file.size)
@@ -2167,16 +2304,16 @@ with st.expander("Genes from your data", expanded=False):
         if st.session_state.get("_upload_file_id") != file_id:
             import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
 
-            with st.spinner("Reading file..."):
+            with st.spinner(T['reading_file']):
                 bytes_data = uploaded_file.read()
                 adata = ad.read_h5ad(io.BytesIO(bytes_data))
 
             st.success(f"✅ Loaded: **{adata.n_obs:,} cells × {adata.n_vars:,} genes**")
 
             if adata.n_obs > 100_000:
-                st.warning("Large dataset — UMAP may be slow or run out of memory on Streamlit Cloud.")
+                st.warning(T['large_dataset'])
 
-            with st.spinner("Normalizing → PCA → UMAP (1–2 min for ~10k cells)…"):
+            with st.spinner(T['normalizing']):
                 sc.pp.normalize_total(adata, target_sum=1e4)
                 sc.pp.log1p(adata)
                 n_top = min(3000, adata.n_vars)
@@ -2227,7 +2364,7 @@ with st.expander("Genes from your data", expanded=False):
                                         key=f"upload_auto_{meta_col}")
 
             gene_sel_up = st.selectbox(
-                "Color UMAP by gene expression",
+                T['color_umap'],
                 options=["— Select a gene —"] + sorted(var_names),
                 key="upload_gene_sel"
             )
@@ -2251,7 +2388,7 @@ _FEATURED = [
     ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
     ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
 ]
-with st.expander("Featured drug targets", expanded=False):
+with st.expander(T['featured_targets'], expanded=False):
     _fcols = st.columns(len(_FEATURED))
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
         with _fc:
@@ -2262,9 +2399,9 @@ with st.expander("Featured drug targets", expanded=False):
                 st.rerun()
 
 # ── About sections (bottom of page) ────────────────────────────
-_about_expander = st.expander("About Gene Program Explorer", expanded=False)
+_about_expander = st.expander(T['about'], expanded=False)
 with _about_expander:
-    st.markdown("This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.")
+    st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown("""
 **How it works:**
