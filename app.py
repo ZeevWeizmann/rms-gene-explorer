@@ -91,6 +91,11 @@ div[data-testid="stSelectbox"] > label {
     color: #666 !important;
     margin-bottom: 2px !important;
 }
+/* Hide selected value text when the search selectbox is focused
+   so the field appears empty and user can type immediately */
+div[data-testid="stSelectbox"]:not([data-testid="column"] *):focus-within [class*="singleValue"] {
+    display: none !important;
+}
 /* Search bar — pill style */
 div[data-testid="stSelectbox"] > div > div {
     border-radius: 24px !important;
