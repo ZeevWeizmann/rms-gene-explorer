@@ -86,6 +86,13 @@ st.markdown("""
 section.main > div { max-width: 960px; margin: auto; }
 
 /* ── Google-style search selectbox ────────────────────────────── */
+/* Hide placeholder value when selectbox is focused (dropdown portal is outside this container) */
+div[data-testid="stSelectbox"]:focus-within > div > div {
+    color: transparent !important;
+}
+div[data-testid="stSelectbox"]:focus-within input {
+    color: black !important;
+}
 div[data-testid="stSelectbox"] > label {
     font-size: 0.78rem !important;
     color: #666 !important;
