@@ -300,12 +300,11 @@ div[data-testid="stButton"] > button:hover {
     border-color: #aaa !important;
     background: #f5f5f5 !important;
 }
-/* Language radio — minimal, no label gap, flags only */
-div[data-testid="stRadio"]:has(div[data-testid="stHorizontalBlock"]) {
-    margin: 0 !important; padding: 0 !important;
-}
-div[data-testid="stRadio"] label { font-size: 1.25rem !important; padding: 0 4px !important; }
-div[data-testid="stRadio"] div[data-testid="stMarkdownContainer"] { display: none !important; }
+/* Language radio — compact flags */
+div[data-testid="stRadio"] { margin: 0 !important; padding: 0 !important; }
+div[data-testid="stRadio"] > div { gap: 4px !important; }
+div[data-testid="stRadio"] label { font-size: 1.3rem !important; padding: 0 2px !important; gap: 0 !important; }
+div[data-testid="stRadio"] label > div:first-child { display: none !important; }
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
