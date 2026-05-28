@@ -133,7 +133,57 @@ _TRANSLATIONS = {
 3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
 4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
 
-> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app.
+> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
+
+**Vector databases:**
+
+| Database | Embeddings | Cells | Expression genes | Notes |
+|---|---|---|---|---|
+| **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings |
+| **RMS 2** | 8,836 | 4,706 | 8,836 | Second RMS cohort · GCN embeddings |
+| **Trajectory (beta)** | 3,887 | 13,968 | 8,442 | Temporal trajectory GNN embeddings · cells & expression from RMS original |
+
+**Therapeutic target logic (network perturbation approach):**
+- **Direct targets** — genes overexpressed in the tumor that are essential nodes in the GRN (e.g. CEP55: drives cytokinesis, supra-expressed in RMS)
+- **Co-targets** — genes that go *up* after BIRC5 KO, acting as compensatory escape mechanisms (e.g. PPP1R12B, MAP3K21); blocking them alongside BIRC5 leaves the cell no survival route
+- This approach is called **network-informed synthetic lethality** — targets are chosen not in isolation but based on their role in the regulatory network under perturbation
+
+**Upload your own data:**
+Upload any `.h5ad` file for query of interest.
+
+**Available GRN models:**
+- **Original** — 159 genes, inferred from full RMS scRNA-seq data
+- **Full program** — 200 genes (complete quiescent + proliferative gene set), HSPA1B KO perturbation simulated via CARDAMOM mechanistic model
+- **FOXM1 program** — 198 genes (top-200 GNN neighbors of FOXM1), FOXM1 KO perturbation simulated via CARDAMOM mechanistic model
+- **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
+- **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
+
+**Population dynamics under knockout (Full program):**
+When querying a gene from the **Full program** (e.g. HSPA1B), the app runs a full CARDAMOM mechanistic simulation of HSPA1B knockout and tracks how the cell population composition changes over time.
+RMS tumours contain three co-existing cell states — **Proliferative**, **Quiescent**, and **Intermediate** — that are in dynamic equilibrium.
+Each state is scored from the scRNA-seq data using gene signatures: **DNAJB1 z-score** (top HSPA1B neighbour, sim=0.91) for quiescence; **mean of top-100 MKI67 neighbours** for proliferation. Cells in neither top-30% → intermediate.
+After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
+This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
+
+**Gene program annotation (LLM):**
+Each retrieved gene program is automatically annotated by **Llama 3.1-8B** (via Nebius AI Studio) — the model receives the top co-expressed genes and generates a concise biological label (e.g. *"Mitotic Cell Proliferation"*, *"Cytoskeletal remodelling"*). This enables rapid biological interpretation of each program without manual curation.
+
+**Cell population scoring (DNAJB1 / MKI67-100):**
+Three co-existing RMS cell states are defined by gene expression thresholds applied uniformly to real data and all simulations:
+- **Proliferative** (red) — mean expression of top-100 MKI67 co-expression neighbours >= 70th percentile
+- **Quiescent** (blue) — DNAJB1 z-score >= 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91)
+- **Intermediate** (grey) — all remaining cells
+
+DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregulation marks cells exiting the cell cycle. The same scoring rule is applied to real data, WT simulation, and KO simulation — making population shifts directly comparable.
+
+---
+
+**Gene Trajectory Graph Embeddings**
+
+Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
+
+- **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport.
+- **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
 """,
     },
     'fr': {
@@ -209,7 +259,54 @@ _TRANSLATIONS = {
 3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle ODE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
 4. Le même modèle CardamomOT est utilisé pour des **simulations de perturbation in silico** (ex : knockout de BIRC5), révélant quels gènes changent et permettant l'**identification de cibles par le réseau**
 
-> **Pour plusieurs programmes clés (Full, FOXM1, MKI67, TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application.
+> **Pour plusieurs programmes clés (Full, FOXM1, MKI67, TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application. Vous pouvez explorer les cibles thérapeutiques candidates sans exécuter CardamomOT vous-même.
+
+**Bases de données vectorielles :**
+
+| Base de données | Embeddings | Cellules | Gènes d'expression | Notes |
+|---|---|---|---|---|
+| **RMS original** | 8 442 | 13 968 | 8 442 | scRNA-seq RMS primaire · embeddings GCN |
+| **RMS 2** | 8 836 | 4 706 | 8 836 | Deuxième cohorte RMS · embeddings GCN |
+| **Trajectoire (bêta)** | 3 887 | 13 968 | 8 442 | Embeddings GNN de trajectoire temporelle |
+
+**Logique de cible thérapeutique (approche par perturbation de réseau) :**
+- **Cibles directes** — gènes surexprimés dans la tumeur qui sont des nœuds essentiels du GRN (ex : CEP55 : conduit la cytocinèse, supra-exprimé dans le RMS)
+- **Co-cibles** — gènes qui *augmentent* après KO de BIRC5, agissant comme mécanismes de compensation (ex : PPP1R12B, MAP3K21) ; les bloquer simultanément ne laisse aucune voie de survie à la cellule
+- Cette approche est appelée **létalité synthétique guidée par le réseau** — les cibles sont choisies non isolément mais selon leur rôle dans le réseau régulateur sous perturbation
+
+**Importer vos propres données :**
+Importez n'importe quel fichier `.h5ad` pour votre gène d'intérêt.
+
+**Modèles GRN disponibles :**
+- **Original** — 159 gènes, inféré sur les données complètes scRNA-seq RMS
+- **Programme complet** — 200 gènes (ensemble quiescent + prolifératif), perturbation KO HSPA1B simulée via CARDAMOM
+- **Programme FOXM1** — 198 gènes (top-200 voisins GNN de FOXM1), perturbation KO FOXM1 simulée via CARDAMOM
+- **Programme MKI67** — 201 gènes (top-200 voisins GNN de MKI67), perturbation KO BIRC5 simulée via CARDAMOM
+- **Programme TUBB** — 201 gènes (top-200 voisins GNN de TUBB), perturbation KO TUBB simulée via CARDAMOM
+
+**Dynamique de population sous knockout (programme complet) :**
+Lors de l'interrogation d'un gène du **programme complet** (ex : HSPA1B), l'application exécute une simulation CARDAMOM du knockout de HSPA1B et suit l'évolution de la composition de la population cellulaire.
+Les tumeurs RMS contiennent trois états cellulaires coexistants — **Prolifératif**, **Quiescent** et **Intermédiaire** — en équilibre dynamique.
+Chaque état est scoré depuis les données scRNA-seq : **z-score DNAJB1** (top voisin HSPA1B, sim=0.91) pour la quiescence ; **moyenne des top-100 voisins MKI67** pour la prolifération.
+Après KO, CARDAMOM propage la perturbation à travers le GRN et resimule les trajectoires cellulaires ; le décalage résultant (Δ%) montre si le knockout pousse les cellules vers ou hors de la prolifération.
+
+**Annotation des programmes géniques (LLM) :**
+Chaque programme génique est automatiquement annoté par **Llama 3.1-8B** (via Nebius AI Studio) — le modèle reçoit les gènes les plus co-exprimés et génère un label biologique concis (ex : *"Prolifération cellulaire mitotique"*, *"Remodelage du cytosquelette"*).
+
+**Scoring de population cellulaire (DNAJB1 / MKI67-100) :**
+Trois états cellulaires RMS coexistants sont définis par des seuils d'expression appliqués uniformément aux données réelles et à toutes les simulations :
+- **Prolifératif** (rouge) — expression moyenne des top-100 voisins MKI67 >= 70e percentile
+- **Quiescent** (bleu) — z-score DNAJB1 >= 70e percentile
+- **Intermédiaire** (gris) — toutes les cellules restantes
+
+---
+
+**Embeddings de graphes de trajectoire génique**
+
+Chaque gène reçoit un vecteur encodant **comment son voisinage de co-expression a évolué dans le temps**. Deux sources d'information sont combinées :
+
+- **Trajectoire temporelle** — des graphes de co-expression WGCNA sont construits par point temporel, encodés par un GAT partagé et alignés par transport optimal.
+- **Structure régulatrice** — un PPGN (WL-3) analyse le graphe d'interaction mécaniste OmniPath (via NEKO) et capture les motifs régulateurs tels que boucles de rétroaction et triangles.
 """,
     }
 }
