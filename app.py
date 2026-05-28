@@ -1880,6 +1880,11 @@ elif selected_gene and selected_gene != _last_q_gene:
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     _save_recent(dataset_key, selected_gene)
     query_gene = selected_gene
+    # Scroll page up so results are visible
+    st.components.v1.html(
+        "<script>window.parent.scrollTo({top: 220, behavior: 'smooth'});</script>",
+        height=0,
+    )
 else:
     query_gene = None
 
