@@ -85,9 +85,10 @@ st.markdown("""
 }
 section.main > div { max-width: 960px; margin: auto; }
 
-/* ── Fake placeholder for empty selectbox ───────────────────────
+/* ── Fake placeholder for main search selectbox only ────────────
    _PLACEHOLDER="" so field is truly empty on click.
-   ::before shows hint text when not focused; hides on click. */
+   ::before shows hint text when not focused; hides on click.
+   Excluded for selectboxes inside expanders/columns. */
 div[data-testid="stSelectbox"] > div {
     position: relative;
 }
@@ -105,9 +106,9 @@ div[data-testid="stSelectbox"] > div::before {
 div[data-testid="stSelectbox"]:focus-within > div::before {
     display: none !important;
 }
-/* Also hide hint when a gene is selected (non-empty value shown) */
-div[data-testid="stSelectbox"]:not(:focus-within) > div:has([aria-selected="true"]:not([data-value=""])) ::before {
-    display: none;
+/* Hide ::before inside expanders (Settings etc) */
+div[data-testid="stExpander"] div[data-testid="stSelectbox"] > div::before {
+    content: none !important;
 }
 
 /* ── Google-style search selectbox ────────────────────────────── */
