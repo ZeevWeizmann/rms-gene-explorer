@@ -1583,29 +1583,13 @@ def _strip_label(label: str) -> str:
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
-# ── Clear search selectbox on focus via iframe JS ────────────────
+# ── JS test: inject red border if window.parent works ────────────
 _components.html("""<script>
-(function(){
-  var d = window.parent.document;
-  function patch(){
-    d.querySelectorAll('div[data-testid="stSelectbox"] input').forEach(function(inp){
-      if(inp._sp) return;
-      inp._sp = true;
-      inp.addEventListener('focus', function(){
-        var el = this;
-        setTimeout(function(){
-          var s = Object.getOwnPropertyDescriptor(
-            window.parent.HTMLInputElement.prototype, 'value'
-          ).set;
-          s.call(el, '');
-          el.dispatchEvent(new Event('input', {bubbles: true}));
-        }, 50);
-      });
-    });
-  }
-  [0, 300, 800, 2000].forEach(function(t){ setTimeout(patch, t); });
-  new MutationObserver(patch).observe(d.body, {childList:true, subtree:true});
-})();
+try {
+  var s = window.parent.document.createElement('style');
+  s.textContent = 'div[data-testid="stSelectbox"] > div > div { border: 3px solid red !important; }';
+  window.parent.document.head.appendChild(s);
+} catch(e) {}
 </script>""", height=1)
 
 # ── Read control values from session state (widgets rendered after results) ──
