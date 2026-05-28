@@ -1588,7 +1588,7 @@ _cur_lang = st.session_state.get('_lang', 'en')
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
 st.markdown(f"""
-<div style="text-align:right; font-size:1.6rem; padding-right:4px; margin-bottom:4px; line-height:1;">
+<div style="position:fixed; top:60px; right:24px; font-size:1.6rem; z-index:9999; line-height:1;">
   <a href="?lang=en" style="text-decoration:none; opacity:{_en_op};">🇬🇧</a>
   &thinsp;
   <a href="?lang=fr" style="text-decoration:none; opacity:{_fr_op};">🇫🇷</a>
