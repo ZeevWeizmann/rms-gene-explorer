@@ -530,10 +530,23 @@ def load_full_sim_umap_proj():
 
 @st.cache_resource
 def load_full_pop_sim():
-    """Full program (200 genes) sim cells scored by population (WT+KO).
+    """Full program (200 genes) sim cells scored by population (WT + HSPA1B KO).
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
     f = "full_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local): return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_full_foxm1_pop_sim():
+    """Full program (200 genes) sim cells scored by population (WT + FOXM1 KO).
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "full_foxm1_pop_sim_scored.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
@@ -1603,8 +1616,8 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full
-                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full"):
+                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full, full_foxm1
+                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1"):
                             try:
                                 if _effective_grn_model == "foxm1":
                                     _sim_scored = load_foxm1_pop_sim()
@@ -1615,6 +1628,9 @@ def _render_msg_figures(msg, msg_id):
                                 elif _effective_grn_model == "mki67":
                                     _sim_scored = load_mki67_pop_sim()
                                     _ko_label   = "BIRC5 KO"
+                                elif _effective_grn_model == "full_foxm1":
+                                    _sim_scored = load_full_foxm1_pop_sim()
+                                    _ko_label   = "FOXM1 KO"
                                 else:
                                     _sim_scored = load_full_pop_sim()
                                     _ko_label   = "HSPA1B KO"
