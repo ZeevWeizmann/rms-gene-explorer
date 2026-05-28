@@ -7,6 +7,56 @@ import plotly.graph_objects as go
 import networkx as nx
 from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
+import json
+import os as _os
+
+# ── Recent searches (session + optional disk persistence) ─────────
+_RECENT_FILE = _os.path.join(_os.path.dirname(__file__), "recent_searches.json")
+_MAX_RECENT  = 5
+_RECENT_SS_KEY = "__recent_searches__"   # key inside st.session_state
+
+def _load_recent(dataset_key: str) -> list[str]:
+    """Load per-dataset recent searches: session_state first, then disk fallback."""
+    # 1. session_state (works on cloud, survives reruns)
+    ss = st.session_state.get(_RECENT_SS_KEY, {})
+    if dataset_key in ss:
+        return list(ss[dataset_key])
+    # 2. disk (works locally, skipped silently if unavailable)
+    try:
+        with open(_RECENT_FILE, "r") as f:
+            data = json.load(f)
+        recent = data.get(dataset_key, [])
+        # seed session_state from disk so subsequent calls are fast
+        if _RECENT_SS_KEY not in st.session_state:
+            st.session_state[_RECENT_SS_KEY] = {}
+        st.session_state[_RECENT_SS_KEY][dataset_key] = recent
+        return recent
+    except Exception:
+        return []
+
+def _save_recent(dataset_key: str, gene: str) -> list[str]:
+    """Prepend *gene* to the recent list, deduplicate, cap at _MAX_RECENT, persist."""
+    # Update session_state
+    if _RECENT_SS_KEY not in st.session_state:
+        st.session_state[_RECENT_SS_KEY] = {}
+    recent = list(st.session_state[_RECENT_SS_KEY].get(dataset_key, []))
+    recent = [g for g in recent if g != gene]
+    recent.insert(0, gene)
+    recent = recent[:_MAX_RECENT]
+    st.session_state[_RECENT_SS_KEY][dataset_key] = recent
+    # Also persist to disk (best-effort, silent on cloud)
+    try:
+        try:
+            with open(_RECENT_FILE, "r") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+        data[dataset_key] = recent
+        with open(_RECENT_FILE, "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+    return recent
 
 st.set_page_config(
     page_title="Gene Program Explorer",
@@ -1481,7 +1531,27 @@ def gene_label(g):
     return f"{g}{suffix}"
 
 _PLACEHOLDER    = "🔍 Select a gene to explore its program"
-gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
+_RECENT_SEP     = "── Recent ──────────────────────"
+
+# ── Build dropdown options with recent searches at top ────────────
+_recent_genes = [g for g in _load_recent(dataset_key) if g in genes]
+
+def _recent_label(g):
+    """Label for a recently-searched gene: clock icon + optional 🔬."""
+    suffix = " 🔬" if g in grn_gene_set else ""
+    return f"🕐 {g}{suffix}"
+
+_recent_options = [_recent_label(g) for g in _recent_genes]
+
+if _recent_options:
+    gene_labels_all = (
+        [_PLACEHOLDER]
+        + _recent_options
+        + [_RECENT_SEP]
+        + [gene_label(g) for g in sorted(genes)]
+    )
+else:
+    gene_labels_all = [_PLACEHOLDER] + [gene_label(g) for g in sorted(genes)]
 
 # ── Fill: search bar → right column of header ────────────────────
 _sel_ver_key = f"sel_version_{dataset_key}"
@@ -1489,8 +1559,9 @@ if _sel_ver_key not in st.session_state:
     st.session_state[_sel_ver_key] = 0
 
 _last_q_gene  = st.session_state.get(f"last_selected_{dataset_key}", "")
-_default_label = gene_label(_last_q_gene) if _last_q_gene and _last_q_gene in genes else _PLACEHOLDER
-_default_idx   = gene_labels_all.index(_default_label) if _default_label in gene_labels_all else 0
+# Always start at placeholder so the field is empty when user clicks —
+# recent searches at the top of the list serve as quick-access history
+_default_idx = 0
 
 selected_label = _search_container.selectbox(
     "🔍 Search gene",
@@ -1499,8 +1570,19 @@ selected_label = _search_container.selectbox(
     label_visibility="collapsed",
     key=f"selectbox_{dataset_key}_v{st.session_state[_sel_ver_key]}"
 )
-_is_placeholder = (not selected_label) or selected_label == _PLACEHOLDER
-selected_gene = selected_label.replace(" 🔬", "").strip() if not _is_placeholder else ""
+# Separator is not a valid gene — treat as placeholder
+_is_placeholder = (
+    (not selected_label)
+    or selected_label == _PLACEHOLDER
+    or selected_label == _RECENT_SEP
+)
+# Strip both 🕐 prefix (recent) and 🔬 suffix to get raw gene name
+def _strip_label(label: str) -> str:
+    if label.startswith("🕐 "):
+        label = label[len("🕐 "):]
+    return label.replace(" 🔬", "").strip()
+
+selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
 
 # ── Read control values from session state (widgets rendered after results) ──
@@ -1763,6 +1845,7 @@ elif st.session_state.get(f"default_run3_{dataset_key}"):
     query_gene = "HSPA1B" if "HSPA1B" in genes else None
 elif st.session_state.get(f"recent_clicked_{dataset_key}"):
     query_gene = st.session_state.pop(f"recent_clicked_{dataset_key}")
+    _save_recent(dataset_key, query_gene)
     # Clear last_selected so the search bar resets to placeholder after a Featured gene run,
     # allowing the user to pick any gene (including the same one) without hitting the same-gene guard
     st.session_state[f"last_selected_{dataset_key}"] = ""
@@ -1770,6 +1853,7 @@ elif selected_gene and selected_gene != _last_q_gene:
     # Only fire a new query when the user picks a *different* gene
     # (the bar now keeps the current gene, so same-gene reruns must be ignored)
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
+    _save_recent(dataset_key, selected_gene)
     query_gene = selected_gene
 else:
     query_gene = None
