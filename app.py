@@ -349,6 +349,8 @@ def load_perturbation(grn_key="mki67"):
         f = "full_ko_perturbation.csv"
     elif grn_key == "full_foxm1":
         f = "full_foxm1_ko_perturbation.csv"
+    elif grn_key == "full_aurkb":
+        f = "full_aurkb_ko_perturbation.csv"
     else:
         f = "birc5_ko_perturbation.csv"
     local = os.path.join(LOCAL_DIR, f)
@@ -547,6 +549,19 @@ def load_full_foxm1_pop_sim():
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
     f = "full_foxm1_pop_sim_scored.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local): return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+@st.cache_resource
+def load_full_aurkb_pop_sim():
+    """Full program (200 genes) sim cells scored by population (WT + AURKB KO).
+    Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
+    import os
+    f = "full_aurkb_pop_sim_scored.csv"
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
@@ -1597,14 +1612,17 @@ def _render_msg_figures(msg, msg_id):
             if tab_pert is not None:
                 with tab_pert:
                     try:
-                        # KO selector for Full program (same GRN, two KO choices)
+                        # KO selector for Full program (same GRN, three KO choices)
                         if _msg_grn_model == "full":
                             _full_ko_key = f"{msg_id}_full_ko_choice"
                             _full_ko_choice = st.radio(
-                                "KO gene", ["HSPA1B", "FOXM1"],
+                                "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
                                 horizontal=True, key=_full_ko_key
                             )
-                            _effective_grn_model = "full_foxm1" if _full_ko_choice == "FOXM1" else "full"
+                            _effective_grn_model = {
+                                "FOXM1": "full_foxm1",
+                                "AURKB": "full_aurkb",
+                            }.get(_full_ko_choice, "full")
                             _ko_gene_label = _full_ko_choice
                         else:
                             _effective_grn_model = _msg_grn_model
@@ -1616,8 +1634,8 @@ def _render_msg_figures(msg, msg_id):
                             real_expr_means=_real_means)
                         st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                         st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full, full_foxm1
-                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1"):
+                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full, full_foxm1, full_aurkb
+                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1", "full_aurkb"):
                             try:
                                 if _effective_grn_model == "foxm1":
                                     _sim_scored = load_foxm1_pop_sim()
@@ -1631,6 +1649,9 @@ def _render_msg_figures(msg, msg_id):
                                 elif _effective_grn_model == "full_foxm1":
                                     _sim_scored = load_full_foxm1_pop_sim()
                                     _ko_label   = "FOXM1 KO"
+                                elif _effective_grn_model == "full_aurkb":
+                                    _sim_scored = load_full_aurkb_pop_sim()
+                                    _ko_label   = "AURKB KO"
                                 else:
                                     _sim_scored = load_full_pop_sim()
                                     _ko_label   = "HSPA1B KO"
@@ -1695,7 +1716,7 @@ def _render_msg_figures(msg, msg_id):
                                 )
                             except Exception as _e:
                                 st.info(f"Population shift unavailable: {_e}")
-                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)"}
+                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)", "full_aurkb": "Full program (200 genes)"}
                         _prog = _prog_map.get(_effective_grn_model, "program")
                         st.caption(f"Simulation: CARDAMOM mechanistic model · {_prog} · {_ko_gene_label} knocked out")
                     except Exception as e:
