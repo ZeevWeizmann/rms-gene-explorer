@@ -300,23 +300,12 @@ div[data-testid="stButton"] > button:hover {
     border-color: #aaa !important;
     background: #f5f5f5 !important;
 }
-/* Flag buttons — no border, no background */
-button[data-testid="baseButton-secondary"][kind="secondary"]:is([aria-label="English"], [aria-label="Français"]),
-div[data-testid="column"]:has(button[key="lang_en"]) button,
-div[data-testid="column"]:has(button[key="lang_fr"]) button {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    font-size: 1.3rem !important;
-    padding: 0 2px !important;
-    line-height: 1 !important;
+/* Language radio — minimal, no label gap, flags only */
+div[data-testid="stRadio"]:has(div[data-testid="stHorizontalBlock"]) {
+    margin: 0 !important; padding: 0 !important;
 }
-/* Simpler: target the last two columns near search */
-div[data-testid="stColumn"]:nth-last-child(-n+2) button[kind] {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}
+div[data-testid="stRadio"] label { font-size: 1.25rem !important; padding: 0 4px !important; }
+div[data-testid="stRadio"] div[data-testid="stMarkdownContainer"] { display: none !important; }
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
@@ -1613,16 +1602,18 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Language toggle — both flags always visible, no button borders
+# Language toggle — compact horizontal radio in top-right corner
 _cur_lang = st.session_state.get('_lang', 'en')
-_lang_col1, _lang_col2, _lang_col3 = st.columns([20, 1, 1])
-with _lang_col2:
-    _en_style = "font-size:1.4rem; opacity:1.0;" if _cur_lang == 'en' else "font-size:1.1rem; opacity:0.35; cursor:pointer;"
-    if st.button('🇬🇧', key='lang_en', help='English', disabled=(_cur_lang == 'en')):
-        st.session_state['_lang'] = 'en'; st.rerun()
-with _lang_col3:
-    if st.button('🇫🇷', key='lang_fr', help='Français', disabled=(_cur_lang == 'fr')):
-        st.session_state['_lang'] = 'fr'; st.rerun()
+_, _lang_rc = st.columns([10, 1])
+with _lang_rc:
+    _lang_choice = st.radio('', ['🇬🇧', '🇫🇷'],
+                             index=0 if _cur_lang == 'en' else 1,
+                             horizontal=True,
+                             label_visibility='collapsed',
+                             key='lang_radio')
+    if (_lang_choice == '🇫🇷') != (_cur_lang == 'fr'):
+        st.session_state['_lang'] = 'fr' if _lang_choice == '🇫🇷' else 'en'
+        st.rerun()
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
 
 # Search bar placeholder — filled after data loads (sits directly below title)
