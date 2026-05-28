@@ -300,6 +300,23 @@ div[data-testid="stButton"] > button:hover {
     border-color: #aaa !important;
     background: #f5f5f5 !important;
 }
+/* Flag buttons — no border, no background */
+button[data-testid="baseButton-secondary"][kind="secondary"]:is([aria-label="English"], [aria-label="Français"]),
+div[data-testid="column"]:has(button[key="lang_en"]) button,
+div[data-testid="column"]:has(button[key="lang_fr"]) button {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 1.3rem !important;
+    padding: 0 2px !important;
+    line-height: 1 !important;
+}
+/* Simpler: target the last two columns near search */
+div[data-testid="stColumn"]:nth-last-child(-n+2) button[kind] {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
@@ -1596,13 +1613,16 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Language toggle
-_lang_col1, _lang_col2 = st.columns([20, 1])
+# Language toggle — both flags always visible, no button borders
+_cur_lang = st.session_state.get('_lang', 'en')
+_lang_col1, _lang_col2, _lang_col3 = st.columns([20, 1, 1])
 with _lang_col2:
-    _cur_lang = st.session_state.get('_lang', 'en')
-    if st.button('🇫🇷' if _cur_lang == 'en' else '🇬🇧', key='lang_toggle', help='Switch language / Changer de langue'):
-        st.session_state['_lang'] = 'fr' if _cur_lang == 'en' else 'en'
-        st.rerun()
+    _en_style = "font-size:1.4rem; opacity:1.0;" if _cur_lang == 'en' else "font-size:1.1rem; opacity:0.35; cursor:pointer;"
+    if st.button('🇬🇧', key='lang_en', help='English', disabled=(_cur_lang == 'en')):
+        st.session_state['_lang'] = 'en'; st.rerun()
+with _lang_col3:
+    if st.button('🇫🇷', key='lang_fr', help='Français', disabled=(_cur_lang == 'fr')):
+        st.session_state['_lang'] = 'fr'; st.rerun()
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
 
 # Search bar placeholder — filled after data loads (sits directly below title)
