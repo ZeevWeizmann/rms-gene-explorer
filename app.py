@@ -1588,14 +1588,26 @@ _cur_lang = st.session_state.get('_lang', 'en')
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
 st.markdown(f"""
-<div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:6px; align-items:center;">
+<div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:8px; align-items:center;">
   <a href="?lang=en" style="text-decoration:none; opacity:{_en_op}; transition:opacity .2s;">
-    <img src="https://flagcdn.com/w40/gb.png"
-         style="width:26px; height:26px; border-radius:50%; object-fit:cover; display:block;">
+    <div style="position:relative; width:30px; height:30px; border-radius:50%;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.5);">
+      <img src="https://flagcdn.com/w40/gb.png"
+           style="width:30px; height:30px; border-radius:50%; object-fit:cover; display:block;">
+      <div style="position:absolute; top:0; left:0; right:0; bottom:0; border-radius:50%;
+                  background: radial-gradient(circle at 38% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 60%);
+                  pointer-events:none;"></div>
+    </div>
   </a>
   <a href="?lang=fr" style="text-decoration:none; opacity:{_fr_op}; transition:opacity .2s;">
-    <img src="https://flagcdn.com/w40/fr.png"
-         style="width:26px; height:26px; border-radius:50%; object-fit:cover; display:block;">
+    <div style="position:relative; width:30px; height:30px; border-radius:50%;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.5);">
+      <img src="https://flagcdn.com/w40/fr.png"
+           style="width:30px; height:30px; border-radius:50%; object-fit:cover; display:block;">
+      <div style="position:absolute; top:0; left:0; right:0; bottom:0; border-radius:50%;
+                  background: radial-gradient(circle at 38% 28%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 60%);
+                  pointer-events:none;"></div>
+    </div>
   </a>
 </div>
 """, unsafe_allow_html=True)
