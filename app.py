@@ -300,18 +300,6 @@ div[data-testid="stButton"] > button:hover {
     border-color: #aaa !important;
     background: #f5f5f5 !important;
 }
-/* Flag buttons — no border, transparent, emoji only */
-button[data-testid="baseButton-secondary"]:is([key="lang_en"], [key="lang_fr"]),
-div[data-testid="stColumn"]:has(button[key="lang_en"]) button,
-div[data-testid="stColumn"]:has(button[key="lang_fr"]) button {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    font-size: 1.4rem !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-    line-height: 1.2 !important;
-}
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
@@ -1593,15 +1581,19 @@ if _logo_local:
 
 # ── Google-homepage style: centered title above, search below ─────
 
-# Language toggle — two flag buttons top-right
+# Language toggle — HTML flag links (query param based)
+if 'lang' in st.query_params:
+    st.session_state['_lang'] = st.query_params['lang']
 _cur_lang = st.session_state.get('_lang', 'en')
-_, _col_en, _col_fr = st.columns([8, 1, 1])
-with _col_en:
-    if st.button('🇬🇧', key='lang_en', use_container_width=True):
-        st.session_state['_lang'] = 'en'; st.rerun()
-with _col_fr:
-    if st.button('🇫🇷', key='lang_fr', use_container_width=True):
-        st.session_state['_lang'] = 'fr'; st.rerun()
+_en_op = '1.0' if _cur_lang == 'en' else '0.35'
+_fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
+st.markdown(f"""
+<div style="text-align:right; font-size:1.6rem; padding-right:4px; margin-bottom:4px; line-height:1;">
+  <a href="?lang=en" style="text-decoration:none; opacity:{_en_op};">🇬🇧</a>
+  &thinsp;
+  <a href="?lang=fr" style="text-decoration:none; opacity:{_fr_op};">🇫🇷</a>
+</div>
+""", unsafe_allow_html=True)
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
