@@ -1588,7 +1588,7 @@ if _logo_local:
 
 # Top padding + language toggle in top-right corner
 _cur_lang = st.session_state.get('_lang', 'en')
-_, _lang_rc = st.columns([10, 1])
+_, _lang_rc = st.columns([7, 2])
 with _lang_rc:
     _lang_choice = st.radio('', ['🇬🇧', '🇫🇷'],
                              index=0 if _cur_lang == 'en' else 1,
