@@ -1583,24 +1583,6 @@ def _strip_label(label: str) -> str:
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
-# ── Set placeholder text on the search input via JS ──────────────
-_components.html("""<script>
-(function(){
-  function patch(){
-    var inputs = window.parent.document.querySelectorAll(
-      'div[data-testid="stSelectbox"] input'
-    );
-    inputs.forEach(function(inp){
-      if(!inp._ph){ inp.placeholder = '🔍 Search gene...'; inp._ph=1; }
-    });
-  }
-  patch();
-  new MutationObserver(patch).observe(
-    window.parent.document.body, {childList:true, subtree:true}
-  );
-})();
-</script>""", height=0)
-
 
 # ── Read control values from session state (widgets rendered after results) ──
 program_size = st.session_state.get(f"slider_{dataset_key}", 20)
