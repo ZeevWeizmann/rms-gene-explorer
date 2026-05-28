@@ -1588,10 +1588,15 @@ _cur_lang = st.session_state.get('_lang', 'en')
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
 st.markdown(f"""
-<div style="position:fixed; top:60px; right:24px; font-size:1.6rem; z-index:9999; line-height:1;">
-  <a href="?lang=en" style="text-decoration:none; opacity:{_en_op};">🇬🇧</a>
-  &thinsp;
-  <a href="?lang=fr" style="text-decoration:none; opacity:{_fr_op};">🇫🇷</a>
+<div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:6px; align-items:center;">
+  <a href="?lang=en" style="text-decoration:none; opacity:{_en_op}; transition:opacity .2s;">
+    <img src="https://flagcdn.com/w40/gb.png"
+         style="width:26px; height:26px; border-radius:50%; object-fit:cover; display:block;">
+  </a>
+  <a href="?lang=fr" style="text-decoration:none; opacity:{_fr_op}; transition:opacity .2s;">
+    <img src="https://flagcdn.com/w40/fr.png"
+         style="width:26px; height:26px; border-radius:50%; object-fit:cover; display:block;">
+  </a>
 </div>
 """, unsafe_allow_html=True)
 T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
