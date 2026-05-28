@@ -2713,7 +2713,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         stroke="#C0392B" stroke-width="2.5" fill="none" stroke-dasharray="7,4"
         marker-end="url(#ahRed)"/>
   <rect x="390" y="228" width="260" height="24" rx="5" fill="white" opacity="0.85"/>
-  <text x="520" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program → CardamomOT GRN</text>
+  <text x="520" y="244" text-anchor="middle" font-size="12" font-weight="bold" fill="#C0392B">Gene Program</text>
 </g>
 
 <!-- ═══ ROW 2 TITLE ═══ -->
