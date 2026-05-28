@@ -149,14 +149,21 @@ div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]:firs
     margin-top: 8px !important;
 }
 
-/* ── Sticky search bar ──────────────────────────────────────────── */
+/* ── Sticky search bar (fixed at top while scrolling) ───────────── */
 div[data-testid="stVerticalBlock"] > div:has(> div[data-testid="stSelectbox"]) {
-    position: sticky !important;
+    position: fixed !important;
     top: 52px !important;
-    z-index: 100 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: min(728px, 100vw - 4rem) !important;
+    z-index: 999 !important;
     background: white !important;
-    padding: 6px 0 8px 0 !important;
+    padding: 6px 0 10px 0 !important;
     border-bottom: 1px solid #f0f0f0 !important;
+}
+/* Push content down so it isn't hidden under the fixed bar */
+div[data-testid="stMainBlockContainer"] {
+    padding-top: 80px !important;
 }
 
 /* Compact sliders */
