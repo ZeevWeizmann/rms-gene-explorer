@@ -85,6 +85,31 @@ st.markdown("""
 }
 section.main > div { max-width: 960px; margin: auto; }
 
+/* ── Fake placeholder for empty selectbox ───────────────────────
+   _PLACEHOLDER="" so field is truly empty on click.
+   ::before shows hint text when not focused; hides on click. */
+div[data-testid="stSelectbox"] > div {
+    position: relative;
+}
+div[data-testid="stSelectbox"] > div::before {
+    content: "🔍 Select a gene to explore its program";
+    position: absolute;
+    top: 50%; left: 16px;
+    transform: translateY(-50%);
+    color: #9aa0a6;
+    font-size: 1rem;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+}
+div[data-testid="stSelectbox"]:focus-within > div::before {
+    display: none !important;
+}
+/* Also hide hint when a gene is selected (non-empty value shown) */
+div[data-testid="stSelectbox"]:not(:focus-within) > div:has([aria-selected="true"]:not([data-value=""])) ::before {
+    display: none;
+}
+
 /* ── Google-style search selectbox ────────────────────────────── */
 div[data-testid="stSelectbox"] > label {
     font-size: 0.78rem !important;
@@ -1530,7 +1555,7 @@ def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
     return f"{g}{suffix}"
 
-_PLACEHOLDER    = "🔍 Select a gene to explore its program"
+_PLACEHOLDER    = ""
 _RECENT_SEP     = "── Recent ──────────────────────"
 
 # ── Build dropdown options with recent searches at top ────────────
@@ -1583,14 +1608,6 @@ def _strip_label(label: str) -> str:
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
-# ── JS test: inject red border if window.parent works ────────────
-_components.html("""<script>
-try {
-  var s = window.parent.document.createElement('style');
-  s.textContent = 'div[data-testid="stSelectbox"] > div > div { border: 3px solid red !important; }';
-  window.parent.document.head.appendChild(s);
-} catch(e) {}
-</script>""", height=1)
 
 # ── Read control values from session state (widgets rendered after results) ──
 program_size = st.session_state.get(f"slider_{dataset_key}", 20)
