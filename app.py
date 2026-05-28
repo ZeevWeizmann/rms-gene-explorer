@@ -121,6 +121,20 @@ _TRANSLATIONS = {
         'pert_unavail': 'Perturbation data not available',
         'loading_data': 'Loading data...',
         'loading_grn': 'Loading GRN...',
+        # Misc UI
+        'select_gene_option': '— Select a gene —',
+        'genes_found': '**{n_overlap:,}** of your {n_total:,} genes found in the Explorer. Select any of them in the 🔍 search above to explore their gene program and GRN.',
+        'loaded_success': '✅ Loaded: **{n_obs:,} cells × {n_vars:,} genes**',
+        'cluster_details': 'Cluster annotation details',
+        'how_it_works_body': """
+**How it works:**
+1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
+2. Nearest neighbors in embedding space define a **transcriptional program**
+3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
+4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
+
+> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app.
+""",
     },
     'fr': {
         # Search
@@ -183,6 +197,20 @@ _TRANSLATIONS = {
         'pert_unavail': 'Données de perturbation non disponibles',
         'loading_data': 'Chargement des données...',
         'loading_grn': 'Chargement du GRN...',
+        # Misc UI
+        'select_gene_option': '— Sélectionner un gène —',
+        'genes_found': '**{n_overlap:,}** de vos {n_total:,} gènes trouvés dans l\'Explorateur. Sélectionnez-en un dans la 🔍 recherche ci-dessus pour explorer son programme génique et son GRN.',
+        'loaded_success': '✅ Chargé : **{n_obs:,} cellules × {n_vars:,} gènes**',
+        'cluster_details': 'Détails d\'annotation du cluster',
+        'how_it_works_body': """
+**Comment ça fonctionne :**
+1. Un gène requête est représenté dans un espace GNN de co-expression (entraîné sur des graphes WGCNA issus de scRNA-seq)
+2. Les voisins les plus proches dans cet espace définissent un **programme transcriptionnel**
+3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle ODE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
+4. Le même modèle CardamomOT est utilisé pour des **simulations de perturbation in silico** (ex : knockout de BIRC5), révélant quels gènes changent et permettant l'**identification de cibles par le réseau**
+
+> **Pour plusieurs programmes clés (Full, FOXM1, MKI67, TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application.
+""",
     }
 }
 
@@ -199,6 +227,12 @@ if st.query_params.get("reset"):
         del st.session_state[key]
     st.query_params.clear()
     st.rerun()
+
+# ── Language detection (early — needed for CSS placeholder) ──────
+if 'lang' in st.query_params:
+    st.session_state['_lang'] = st.query_params['lang']
+_cur_lang = st.session_state.get('_lang', 'en')
+T = _TRANSLATIONS[_cur_lang]
 
 # ── Detect mobile via JS → session_state ────────────────────────
 st.markdown("""
@@ -339,6 +373,15 @@ header[data-testid="stHeader"] [data-testid="stAppViewBlockContainer"] {
     window.parent.postMessage({type:"streamlit:setComponentValue", value: isMobile}, "*");
 })();
 </script>
+""", unsafe_allow_html=True)
+
+# ── Dynamic CSS: translated placeholder for search bar ───────────
+st.markdown(f"""
+<style>
+div[data-testid="stSelectbox"] > div::before {{
+    content: "{T['search_placeholder']}";
+}}
+</style>
 """, unsafe_allow_html=True)
 
 # simple mobile detection via screen width stored in session_state
@@ -1581,10 +1624,7 @@ if _logo_local:
 
 # ── Google-homepage style: centered title above, search below ─────
 
-# Language toggle — HTML flag links (query param based)
-if 'lang' in st.query_params:
-    st.session_state['_lang'] = st.query_params['lang']
-_cur_lang = st.session_state.get('_lang', 'en')
+# Language toggle — HTML flag links (query param based, lang already detected above)
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
 st.markdown(f"""
@@ -1611,7 +1651,6 @@ st.markdown(f"""
   </a>
 </div>
 """, unsafe_allow_html=True)
-T = _TRANSLATIONS[st.session_state.get('_lang', 'en')]
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
@@ -1792,7 +1831,7 @@ def _render_msg_figures(msg, msg_id):
         if "cluster_id" in msg:
             summary = summaries.get(msg["cluster_id"], "")
             if summary:
-                with st.popover("Cluster annotation details"):
+                with st.popover(T['cluster_details']):
                     st.markdown(summary)
     # Expression UMAP — full width, taller
     if msg.get("fig") is not None:
@@ -2329,7 +2368,7 @@ with st.expander(T['genes_from_data'], expanded=False):
                 bytes_data = uploaded_file.read()
                 adata = ad.read_h5ad(io.BytesIO(bytes_data))
 
-            st.success(f"✅ Loaded: **{adata.n_obs:,} cells × {adata.n_vars:,} genes**")
+            st.success(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
 
             if adata.n_obs > 100_000:
                 st.warning(T['large_dataset'])
@@ -2367,8 +2406,7 @@ with st.expander(T['genes_from_data'], expanded=False):
 
         if umap_up is not None:
             overlap = [g for g in var_names if g in set(genes)]
-            st.info(f"**{len(overlap):,}** of your {len(var_names):,} genes found in the Explorer. "
-                    "Select any of them in the 🔍 search above to explore their gene program and GRN.")
+            st.info(T['genes_found'].format(n_overlap=len(overlap), n_total=len(var_names)))
 
             auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
             if auto_cols:
@@ -2386,10 +2424,10 @@ with st.expander(T['genes_from_data'], expanded=False):
 
             gene_sel_up = st.selectbox(
                 T['color_umap'],
-                options=["— Select a gene —"] + sorted(var_names),
+                options=[T['select_gene_option']] + sorted(var_names),
                 key="upload_gene_sel"
             )
-            if gene_sel_up != "— Select a gene —" and gene_sel_up in var_names:
+            if gene_sel_up != T['select_gene_option'] and gene_sel_up in var_names:
                 g_idx = var_names.index(gene_sel_up)
                 plot_up = umap_up.copy()
                 plot_up["expression"] = expr_up[:, g_idx].astype(float)
@@ -2424,65 +2462,7 @@ _about_expander = st.expander(T['about'], expanded=False)
 with _about_expander:
     st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
-    st.markdown("""
-**How it works:**
-1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
-2. Nearest neighbors in embedding space define a **transcriptional program**
-3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
-4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
-
-> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
-
-**Vector databases:**
-
-| Database | Embeddings | Cells | Expression genes | Notes |
-|---|---|---|---|---|
-| **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings |
-| **RMS 2** | 8,836 | 4,706 | 8,836 | Second RMS cohort · GCN embeddings |
-| **Trajectory (beta)** | 3,887 | 13,968 | 8,442 | Temporal trajectory GNN embeddings · cells & expression from RMS original |
-
-**Therapeutic target logic (network perturbation approach):**
-- **Direct targets** — genes overexpressed in the tumor that are essential nodes in the GRN (e.g. CEP55: drives cytokinesis, supra-expressed in RMS)
-- **Co-targets** — genes that go *up* after BIRC5 KO, acting as compensatory escape mechanisms (e.g. PPP1R12B, MAP3K21); blocking them alongside BIRC5 leaves the cell no survival route
-- This approach is called **network-informed synthetic lethality** — targets are chosen not in isolation but based on their role in the regulatory network under perturbation
-
-**Upload your own data:**
-Upload any `.h5ad` file for query of interest.
-
-**Available GRN models:**
-- **Original** — 159 genes, inferred from full RMS scRNA-seq data
-- **Full program** — 200 genes (complete quiescent + proliferative gene set), HSPA1B KO perturbation simulated via CARDAMOM mechanistic model
-- **FOXM1 program** — 198 genes (top-200 GNN neighbors of FOXM1), FOXM1 KO perturbation simulated via CARDAMOM mechanistic model
-- **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
-- **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
-
-**Population dynamics under knockout (Full program):**
-When querying a gene from the **Full program** (e.g. HSPA1B), the app runs a full CARDAMOM mechanistic simulation of HSPA1B knockout and tracks how the cell population composition changes over time.
-RMS tumours contain three co-existing cell states — **Proliferative**, **Quiescent**, and **Intermediate** — that are in dynamic equilibrium.
-Each state is scored from the scRNA-seq data using gene signatures: **DNAJB1 z-score** (top HSPA1B neighbour, sim=0.91) for quiescence; **mean of top-100 MKI67 neighbours** for proliferation. Cells in neither top-30% → intermediate.
-After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
-This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
-
-**Gene program annotation (LLM):**
-Each retrieved gene program is automatically annotated by **Llama 3.1-8B** (via Nebius AI Studio) — the model receives the top co-expressed genes and generates a concise biological label (e.g. *"Mitotic Cell Proliferation"*, *"Cytoskeletal remodelling"*). This enables rapid biological interpretation of each program without manual curation.
-
-**Cell population scoring (DNAJB1 / MKI67-100):**
-Three co-existing RMS cell states are defined by gene expression thresholds applied uniformly to real data and all simulations:
-- **Proliferative** (red) — mean expression of top-100 MKI67 co-expression neighbours >= 70th percentile
-- **Quiescent** (blue) — DNAJB1 z-score >= 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91)
-- **Intermediate** (grey) — all remaining cells
-
-DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregulation marks cells exiting the cell cycle. The same scoring rule is applied to real data, WT simulation, and KO simulation — making population shifts directly comparable.
-
----
-
-**Gene Trajectory Graph Embeddings**
-
-Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
-
-- **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport.
-- **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
-    """)
+    st.markdown(T['how_it_works_body'])
 
     _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
