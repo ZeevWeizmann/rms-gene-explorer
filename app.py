@@ -1547,7 +1547,6 @@ if _recent_options:
     gene_labels_all = (
         [_PLACEHOLDER]
         + _recent_options
-        + [_RECENT_SEP]
         + [gene_label(g) for g in sorted(genes)]
     )
 else:
