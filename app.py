@@ -193,7 +193,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'settings': 'Paramètres',
         'genes_from_data': 'Gènes depuis vos données',
         'featured_targets': 'Cibles thérapeutiques',
-        'about': "À propos de l'Explorateur",
+        'about': "À propos du Gene Program Explorer",
         # Settings labels
         'vector_db': 'Base vectorielle',
         'program_size': 'Taille du programme',
