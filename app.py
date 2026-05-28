@@ -86,13 +86,6 @@ st.markdown("""
 section.main > div { max-width: 960px; margin: auto; }
 
 /* ── Google-style search selectbox ────────────────────────────── */
-/* Hide placeholder value when selectbox is focused (dropdown portal is outside this container) */
-div[data-testid="stSelectbox"]:focus-within > div > div {
-    color: transparent !important;
-}
-div[data-testid="stSelectbox"]:focus-within input {
-    color: black !important;
-}
 div[data-testid="stSelectbox"] > label {
     font-size: 0.78rem !important;
     color: #666 !important;
@@ -1537,7 +1530,7 @@ def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
     return f"{g}{suffix}"
 
-_PLACEHOLDER    = "🔍 Select a gene to explore its program"
+_PLACEHOLDER    = "🔍"
 _RECENT_SEP     = "── Recent ──────────────────────"
 
 # ── Build dropdown options with recent searches at top ────────────
