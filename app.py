@@ -1583,6 +1583,38 @@ def _strip_label(label: str) -> str:
 
 selected_gene = _strip_label(selected_label) if not _is_placeholder else ""
 
+# ── Clear search selectbox on focus via JS (React-compatible) ─────
+_components.html("""<script>
+(function(){
+  var par = window.parent;
+  var d   = par.document;
+
+  function patchBox(box) {
+    if (box.closest('[data-testid="column"]')) return;
+    var inp = box.querySelector('input');
+    if (!inp || inp._sp) return;
+    inp._sp = true;
+    inp.addEventListener('focus', function() {
+      var el = this;
+      par.requestAnimationFrame(function() {
+        // React ignores direct .value= so use native setter + synthetic event
+        var setter = Object.getOwnPropertyDescriptor(
+          par.HTMLInputElement.prototype, 'value'
+        ).set;
+        setter.call(el, '');
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  }
+
+  function run() {
+    d.querySelectorAll('div[data-testid="stSelectbox"]').forEach(patchBox);
+  }
+
+  run();
+  new MutationObserver(run).observe(d.body, { childList: true, subtree: true });
+})();
+</script>""", height=0)
 
 # ── Read control values from session state (widgets rendered after results) ──
 program_size = st.session_state.get(f"slider_{dataset_key}", 20)
