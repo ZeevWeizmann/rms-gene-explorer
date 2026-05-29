@@ -2085,32 +2085,37 @@ def _render_msg_figures(msg, msg_id):
                                     _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
                                 except Exception:
                                     pass
-                                # WT simulation UMAP
+                                # WT simulation UMAP — flip x and y to match real data orientation
+                                _x_max = _sim_scored["x_wt"].max()
+                                _y_max = _sim_scored["y_wt"].max()
+                                _sim_scored = _sim_scored.copy()
+                                _sim_scored["x_wt_f"] = _x_max - _sim_scored["x_wt"]
+                                _sim_scored["y_wt_f"] = _y_max - _sim_scored["y_wt"]
+                                _sim_scored["x_ko_f"] = _x_max - _sim_scored["x_ko"]
+                                _sim_scored["y_ko_f"] = _y_max - _sim_scored["y_ko"]
                                 _pop_umap_wt = px.scatter(
-                                    _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
+                                    _sim_scored, x="x_wt_f", y="y_wt_f", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
                                     title=T['sim_wt'],
-                                    labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
+                                    labels={"x_wt_f": T['umap1'], "y_wt_f": T['umap2'], "pop_wt": T['population']},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_wt": _pt_pop_order},
                                 )
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                                _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                    xaxis=dict(autorange="reversed"))
+                                _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
                                 # KO simulation UMAP
                                 _pop_umap_ko = px.scatter(
-                                    _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
+                                    _sim_scored, x="x_ko_f", y="y_ko_f", color="pop_ko",
                                     color_discrete_map=_POP_COLORS,
                                     title=f"Simulation {_ko_label} (populations *)",
-                                    labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
+                                    labels={"x_ko_f": T['umap1'], "y_ko_f": T['umap2'], "pop_ko": T['population']},
                                     opacity=0.6, height=420, render_mode="svg",
                                     category_orders={"pop_ko": _pt_pop_order},
                                 )
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                                _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                    xaxis=dict(autorange="reversed"))
+                                _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
                                 _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
                                 _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                                 st.caption(
