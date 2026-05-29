@@ -1072,14 +1072,14 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
         ))
 
     fig.update_layout(
-        title=dict(text=f"{len(df):,} genes · {query_gene} program", font=dict(size=12, color="#ccc")),
+        title=dict(text=f"{len(df):,} genes · {query_gene} program", font=dict(size=12, color="#444")),
         height=430,
-        plot_bgcolor="#1a1a2e", paper_bgcolor="#1a1a2e",
-        font=dict(color="#cccccc"),
+        plot_bgcolor="white", paper_bgcolor="white",
+        font=dict(color="#333"),
         xaxis=dict(visible=False),
         yaxis=dict(visible=False),
-        legend=dict(itemsizing="constant", font=dict(size=10, color="#ccc"),
-                    bgcolor="rgba(0,0,0,0.5)", bordercolor="#555", borderwidth=1,
+        legend=dict(itemsizing="constant", font=dict(size=10, color="#333"),
+                    bgcolor="rgba(255,255,255,0.9)", bordercolor="#ddd", borderwidth=1,
                     x=0.01, y=0.99),
         margin=dict(l=5, r=5, t=36, b=5),
         hovermode="closest"
