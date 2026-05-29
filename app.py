@@ -1024,7 +1024,7 @@ def load_gene_umap2d(dataset="v1", _version="v2"):
 
 
 def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotations):
-    """Word2Vec-style 2D map of all genes, zoomed on the program neighborhood."""
+    """Word2Vec-style 2D map: full gene space, program genes highlighted."""
     df = gene_umap_df.copy()
 
     program_set = set(program_genes)
@@ -1036,46 +1036,28 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
     order = {"other": 0, "program": 1, "query": 2}
     df = df.sort_values("role", key=lambda s: s.map(order))
 
-    # Compute zoom window: program genes bounding box + 30% padding
-    prog_coords = df[df["role"].isin(["program", "query"])]
-    if len(prog_coords):
-        _pad = 3.0
-        x0 = prog_coords["umap_x"].min() - _pad
-        x1 = prog_coords["umap_x"].max() + _pad
-        y0 = prog_coords["umap_y"].min() - _pad
-        y1 = prog_coords["umap_y"].max() + _pad
-    else:
-        x0, x1 = df["umap_x"].min(), df["umap_x"].max()
-        y0, y1 = df["umap_y"].min(), df["umap_y"].max()
-
-    # Show only genes in or near the zoom window (keeps plot fast)
-    visible = df[
-        (df["umap_x"].between(x0 - 2, x1 + 2)) &
-        (df["umap_y"].between(y0 - 2, y1 + 2))
-    ]
-
     fig = go.Figure()
 
-    # Background genes in the window
-    bg = visible[visible["role"] == "other"]
+    # All background genes — tiny grey dots
+    bg = df[df["role"] == "other"]
     fig.add_trace(go.Scattergl(
         x=bg["umap_x"], y=bg["umap_y"], mode="markers",
-        marker=dict(size=4, color="#dddddd", opacity=0.6),
+        marker=dict(size=2, color="#d0d0d0", opacity=0.4),
         hovertext=bg["gene"], hoverinfo="text",
-        name="other genes", showlegend=False
+        showlegend=False
     ))
 
-    # Program genes — colored by cluster
-    prog = visible[visible["role"] == "program"]
+    # Program genes — colored by cluster, larger
+    prog = df[df["role"] == "program"]
     for ann, grp in prog.groupby("cluster_label"):
         fig.add_trace(go.Scattergl(
             x=grp["umap_x"], y=grp["umap_y"], mode="markers",
-            marker=dict(size=9, opacity=0.9),
+            marker=dict(size=8, opacity=0.9),
             hovertext=grp["gene"] + "  ·  " + ann,
             hoverinfo="text", name=ann
         ))
 
-    # Query gene — red star
+    # Query gene — red star on top
     q = df[df["role"] == "query"]
     if len(q):
         fig.add_trace(go.Scatter(
@@ -1084,19 +1066,18 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
             marker=dict(size=16, symbol="star", color="#e63946",
                         line=dict(width=1.5, color="white")),
             text=[query_gene], textposition="top center",
-            textfont=dict(size=12, color="#e63946", family="Arial Black"),
+            textfont=dict(size=11, color="#e63946", family="Arial Black"),
             hoverinfo="text", hovertext=[query_gene],
-            name=query_gene, showlegend=False
+            showlegend=False
         ))
 
     fig.update_layout(
-        title=dict(text=f"Gene space · {query_gene} neighborhood", font=dict(size=12)),
+        title=dict(text=f"All {len(df):,} genes · {query_gene} program highlighted", font=dict(size=12)),
         height=420,
-        plot_bgcolor="#fafafa", paper_bgcolor="white",
-        xaxis=dict(visible=False, range=[x0, x1]),
-        yaxis=dict(visible=False, range=[y0, y1]),
+        plot_bgcolor="#f8f8f8", paper_bgcolor="white",
+        xaxis=dict(visible=False), yaxis=dict(visible=False),
         legend=dict(itemsizing="constant", font=dict(size=10),
-                    bgcolor="rgba(255,255,255,0.85)", bordercolor="#ddd", borderwidth=1),
+                    bgcolor="rgba(255,255,255,0.9)", bordercolor="#ddd", borderwidth=1),
         margin=dict(l=5, r=5, t=36, b=5),
         hovermode="closest"
     )
