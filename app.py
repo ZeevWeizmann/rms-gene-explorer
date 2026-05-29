@@ -683,7 +683,7 @@ def load_grn_gene_list(grn_key="original"):
 
 
 @st.cache_resource
-def load_perturbation(grn_key="mki67"):
+def load_perturbation(grn_key="mki67", _version="v20260529"):
     """Load KO perturbation data for the given GRN model."""
     import os
     if grn_key == "tubb":
@@ -702,7 +702,8 @@ def load_perturbation(grn_key="mki67"):
     if os.path.exists(local):
         return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token,
+                           force_download=True)
     return pd.read_csv(path)
 
 
