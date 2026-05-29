@@ -1023,75 +1023,62 @@ def load_gene_umap2d(dataset="v1", _version="v2"):
     return pd.read_csv(path)
 
 
-def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, embeddings_arr, genes_list):
-    """True word2vec neighborhood map: PCA on just the query + top neighbors."""
-    from sklearn.decomposition import PCA
-    from sklearn.preprocessing import normalize as _normalize
+def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, embeddings_arr=None, genes_list=None):
+    """TF Projector-style: all genes grey, program genes highlighted in color."""
+    df = gene_umap_df.copy()
 
-    # Subset to genes we have embeddings for
-    valid = [g for g in map_genes if g in genes_list]
-    if len(valid) < 3:
-        return None
+    program_set = set(map_genes) - {query_gene}
+    df["role"] = "other"
+    df.loc[df["gene"].isin(program_set), "role"] = "program"
+    df.loc[df["gene"] == query_gene, "role"] = "query"
 
-    idxs = [genes_list.index(g) for g in valid]
-    X = _normalize(embeddings_arr[idxs], norm="l2")
-
-    # PCA on the neighborhood vectors only → distances reflect real similarity
-    n_comp = min(2, len(valid) - 1)
-    coords = PCA(n_components=n_comp, random_state=42).fit_transform(X)
-    if coords.shape[1] < 2:
-        coords = np.hstack([coords, np.zeros((len(coords), 1))])
-
-    # Build dataframe
-    gene_umap_sub = gene_umap_df[gene_umap_df["gene"].isin(valid)].set_index("gene")
-    rows = []
-    for i, g in enumerate(valid):
-        cluster_id = int(gene_umap_sub.loc[g, "cluster"]) if g in gene_umap_sub.index else -1
-        rows.append({
-            "gene": g,
-            "x": coords[i, 0],
-            "y": coords[i, 1],
-            "cluster_label": annotations.get(cluster_id, f"Cluster {cluster_id}"),
-            "role": "query" if g == query_gene else "program"
-        })
-    df = pd.DataFrame(rows)
+    order = {"other": 0, "program": 1, "query": 2}
+    df = df.sort_values("role", key=lambda s: s.map(order))
 
     fig = go.Figure()
 
-    # Program genes by cluster color
+    # All background genes — small grey dots
+    bg = df[df["role"] == "other"]
+    fig.add_trace(go.Scattergl(
+        x=bg["umap_x"], y=bg["umap_y"], mode="markers",
+        marker=dict(size=3, color="#bbbbbb", opacity=0.35),
+        hovertext=bg["gene"], hoverinfo="text",
+        showlegend=False
+    ))
+
+    # Program genes — orange, slightly larger
     prog = df[df["role"] == "program"]
-    for ann, grp in prog.groupby("cluster_label"):
-        fig.add_trace(go.Scatter(
-            x=grp["x"], y=grp["y"], mode="markers+text",
-            marker=dict(size=8, opacity=0.85),
-            text=grp["gene"], textposition="top center",
-            textfont=dict(size=8, color="#555"),
-            hovertext=grp["gene"] + "  ·  " + ann,
-            hoverinfo="text", name=ann
-        ))
+    fig.add_trace(go.Scattergl(
+        x=prog["umap_x"], y=prog["umap_y"], mode="markers",
+        marker=dict(size=7, color="#f4a261", opacity=0.9,
+                    line=dict(width=0.5, color="white")),
+        hovertext=prog["gene"], hoverinfo="text",
+        name=f"{query_gene} program", showlegend=True
+    ))
 
     # Query gene — red star
     q = df[df["role"] == "query"]
     if len(q):
         fig.add_trace(go.Scatter(
-            x=q["x"], y=q["y"],
+            x=q["umap_x"], y=q["umap_y"],
             mode="markers+text",
-            marker=dict(size=18, symbol="star", color="#e63946",
+            marker=dict(size=16, symbol="star", color="#e63946",
                         line=dict(width=1.5, color="white")),
             text=[query_gene], textposition="top center",
-            textfont=dict(size=12, color="#e63946", family="Arial Black"),
+            textfont=dict(size=11, color="#e63946", family="Arial Black"),
             hoverinfo="text", hovertext=[query_gene],
             showlegend=False
         ))
 
     fig.update_layout(
-        title=dict(text=f"{query_gene} · neighborhood (PCA of embeddings)", font=dict(size=12)),
-        height=460,
-        plot_bgcolor="white", paper_bgcolor="white",
-        xaxis=dict(visible=False, zeroline=False),
-        yaxis=dict(visible=False, zeroline=False),
-        legend=dict(itemsizing="constant", font=dict(size=10),
-                    bgcolor="rgba(255,255,255,0.9)", bordercolor="#ddd", borderwidth=1),
+        title=dict(text=f"{len(df):,} genes · {query_gene} program highlighted", font=dict(size=12)),
+        height=430,
+        plot_bgcolor="#1a1a2e", paper_bgcolor="#1a1a2e",
+        font=dict(color="#cccccc"),
+        xaxis=dict(visible=False), yaxis=dict(visible=False),
+        legend=dict(itemsizing="constant", font=dict(size=10, color="#ccc"),
+                    bgcolor="rgba(0,0,0,0.4)", bordercolor="#444", borderwidth=1,
+                    x=0.01, y=0.99),
         margin=dict(l=5, r=5, t=36, b=5),
         hovermode="closest"
     )
@@ -2574,8 +2561,7 @@ if query_gene:
         try:
             _gene_umap_df = load_gene_umap2d(dataset_key)
             fig_gene_map = build_gene_embedding_map(
-                _gene_umap_df, query_gene, map_genes, annotations,
-                embeddings_arr=embeddings, genes_list=genes
+                _gene_umap_df, query_gene, map_genes, annotations
             )
         except Exception:
             pass
