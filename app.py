@@ -1023,8 +1023,9 @@ def load_gene_umap2d(dataset="v1", _version="v2"):
     return pd.read_csv(path)
 
 
-def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotations, embeddings_arr=None, genes_list=None):
-    """PCA on neighborhood vectors — real distances between program genes."""
+def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotations,
+                             embeddings_arr=None, genes_list=None, sim_scores=None):
+    """Beautiful PCA neighborhood map — gradient by similarity, connection lines."""
     if embeddings_arr is None or genes_list is None:
         return None
     from sklearn.decomposition import PCA
@@ -1034,54 +1035,73 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
     if len(valid) < 3:
         return None
 
-    idxs  = [genes_list.index(g) for g in valid]
-    X     = _normalize(embeddings_arr[idxs], norm="l2")
+    idxs   = [genes_list.index(g) for g in valid]
+    X      = _normalize(embeddings_arr[idxs], norm="l2")
     coords = PCA(n_components=2, random_state=42).fit_transform(X)
 
-    # cluster labels from umap df
     lut = gene_umap_df.set_index("gene")["cluster"].to_dict()
     rows = []
     for i, g in enumerate(valid):
-        cid = int(lut.get(g, -1))
-        rows.append({
-            "gene": g, "x": coords[i, 0], "y": coords[i, 1],
-            "label": annotations.get(cid, ""),
-            "is_query": g == query_gene
-        })
+        sim = sim_scores.get(g, 0.95) if sim_scores else 0.95
+        rows.append({"gene": g, "x": float(coords[i,0]), "y": float(coords[i,1]),
+                     "sim": sim, "is_query": g == query_gene})
     df = pd.DataFrame(rows)
+
+    qrow = df[df["is_query"]].iloc[0]
+    prog = df[~df["is_query"]].sort_values("sim", ascending=False)
+
+    # Similarity → dot size + color intensity
+    s_min, s_max = prog["sim"].min(), prog["sim"].max()
+    def _norm(s):
+        return (s - s_min) / (s_max - s_min + 1e-9)
 
     fig = go.Figure()
 
-    prog = df[~df["is_query"]]
+    # Thin connection lines from query to each neighbor
+    for _, row in prog.iterrows():
+        alpha = 0.15 + 0.35 * _norm(row["sim"])
+        fig.add_trace(go.Scatter(
+            x=[qrow["x"], row["x"]], y=[qrow["y"], row["y"]],
+            mode="lines",
+            line=dict(color=f"rgba(180,180,180,{alpha:.2f})", width=1),
+            hoverinfo="skip", showlegend=False
+        ))
+
+    # Neighbor dots — color gradient deep blue → light blue by similarity
+    colors = [f"rgba({int(60+_norm(s)*160)},{int(100+_norm(s)*80)},{int(200-_norm(s)*80)},0.9)"
+              for s in prog["sim"]]
+    sizes  = [8 + 6 * _norm(s) for s in prog["sim"]]
+
     fig.add_trace(go.Scatter(
         x=prog["x"], y=prog["y"], mode="markers+text",
-        marker=dict(size=9, color="#f4a261", opacity=0.95,
-                    line=dict(width=1, color="white")),
+        marker=dict(size=sizes, color=colors, line=dict(width=1, color="white")),
         text=prog["gene"], textposition="top center",
-        textfont=dict(size=8, color="#888"),
-        hovertext=prog["gene"], hoverinfo="text",
-        showlegend=False
+        textfont=dict(size=8, color="#555"),
+        hovertext=prog["gene"] + " · " + prog["sim"].round(4).astype(str),
+        hoverinfo="text", showlegend=False
     ))
 
-    q = df[df["is_query"]]
+    # Query gene — large red star
     fig.add_trace(go.Scatter(
-        x=q["x"], y=q["y"], mode="markers+text",
-        marker=dict(size=16, symbol="star", color="#e63946",
-                    line=dict(width=1.5, color="white")),
+        x=[qrow["x"]], y=[qrow["y"]], mode="markers+text",
+        marker=dict(size=20, symbol="star", color="#e63946",
+                    line=dict(width=2, color="white")),
         text=[query_gene], textposition="top center",
-        textfont=dict(size=11, color="#e63946", family="Arial Black"),
+        textfont=dict(size=12, color="#e63946", family="Arial Black"),
         hoverinfo="text", hovertext=[query_gene],
         showlegend=False
     ))
 
     fig.update_layout(
-        title=dict(text=f"{query_gene} · nearest neighbors in embedding space", font=dict(size=12, color="#444")),
-        height=430,
+        title=dict(text=f"{query_gene} · nearest neighbors in embedding space",
+                   font=dict(size=12, color="#444")),
+        height=440,
         plot_bgcolor="white", paper_bgcolor="white",
         xaxis=dict(visible=False, zeroline=False),
         yaxis=dict(visible=False, zeroline=False),
-        margin=dict(l=5, r=5, t=36, b=5),
-        hovermode="closest"
+        margin=dict(l=10, r=10, t=40, b=10),
+        hovermode="closest",
+        showlegend=False
     )
     return fig
 
@@ -2557,13 +2577,16 @@ if query_gene:
             except Exception:
                 pass
 
-        # Gene embedding map (true word2vec: PCA on neighborhood vectors)
+        # Gene embedding map (PCA on neighborhood vectors)
         fig_gene_map = None
         try:
             _gene_umap_df = load_gene_umap2d(dataset_key)
+            # similarity scores for program_genes (skip query itself)
+            _prog_sims = {genes[i]: float(sims[i]) for i in sorted_idx}
             fig_gene_map = build_gene_embedding_map(
                 _gene_umap_df, query_gene, program_genes, annotations,
-                embeddings_arr=embeddings, genes_list=genes
+                embeddings_arr=embeddings, genes_list=genes,
+                sim_scores=_prog_sims
             )
         except Exception:
             pass
