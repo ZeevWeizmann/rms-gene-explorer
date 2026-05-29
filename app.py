@@ -481,43 +481,64 @@ div[data-testid="stSelectbox"] > div::before {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── Sticky search bar ─────────────────────────────────────────────
+# ── Sticky search bar (JS fixed-position approach) ────────────────
 st.markdown("""
-<style>
-/* Sticky wrapper injected by JS below */
-.search-sticky-wrapper {
-    position: sticky !important;
-    top: 0px !important;
-    z-index: 200 !important;
-    background: white !important;
-    padding-bottom: 6px !important;
-}
-</style>
 <script>
-(function stickySearch() {
-    function apply() {
-        const boxes = document.querySelectorAll('[data-testid="stSelectbox"]');
-        for (const box of boxes) {
+(function() {
+    function setup() {
+        const scrollEl = document.querySelector('[data-testid="stMain"]');
+        if (!scrollEl) { setTimeout(setup, 400); return; }
+
+        // Find the first stSelectbox NOT inside an expander or column
+        let searchBlock = null;
+        for (const box of document.querySelectorAll('[data-testid="stSelectbox"]')) {
             if (box.closest('[data-testid="stExpander"]') ||
                 box.closest('[data-testid="column"]') ||
                 box.closest('[data-testid="stColumn"]')) continue;
-            // Walk up to the stVerticalBlock that directly contains this selectbox
+            // Walk up to its stVerticalBlock wrapper
             let el = box;
             while (el && el.getAttribute && el.getAttribute('data-testid') !== 'stVerticalBlock') {
                 el = el.parentElement;
             }
-            if (el && !el.classList.contains('search-sticky-wrapper')) {
-                el.classList.add('search-sticky-wrapper');
-            }
-            break;
+            if (el) { searchBlock = el; break; }
         }
+        if (!searchBlock) { setTimeout(setup, 400); return; }
+
+        // Insert a spacer to prevent layout jump when element goes fixed
+        const spacer = document.createElement('div');
+        spacer.style.display = 'none';
+        searchBlock.parentElement.insertBefore(spacer, searchBlock);
+
+        const originalTop = searchBlock.getBoundingClientRect().top + scrollEl.scrollTop;
+
+        function onScroll() {
+            if (scrollEl.scrollTop > originalTop) {
+                const ref = (searchBlock.closest('.block-container') || scrollEl).getBoundingClientRect();
+                spacer.style.height  = searchBlock.offsetHeight + 'px';
+                spacer.style.display = 'block';
+                Object.assign(searchBlock.style, {
+                    position:  'fixed',
+                    top:       '0px',
+                    left:      ref.left + 'px',
+                    width:     ref.width + 'px',
+                    zIndex:    '1000',
+                    background:'white',
+                    padding:   '6px 1rem 8px',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
+                });
+            } else {
+                spacer.style.display = 'none';
+                ['position','top','left','width','zIndex','background','padding','boxShadow']
+                    .forEach(p => searchBlock.style[p] = '');
+            }
+        }
+
+        scrollEl.addEventListener('scroll', onScroll, { passive: true });
     }
-    // Run after Streamlit renders
-    setTimeout(apply, 400);
-    setTimeout(apply, 1200);
-    // Re-apply on DOM changes (rerenders)
-    const obs = new MutationObserver(() => apply());
-    obs.observe(document.body, { childList: true, subtree: false });
+
+    // Wait for Streamlit DOM to be ready
+    setTimeout(setup, 800);
+    setTimeout(setup, 2000);
 })();
 </script>
 """, unsafe_allow_html=True)
