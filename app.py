@@ -531,7 +531,7 @@ _components.html("""
                     searchBlock.style.zIndex     = '999980';
                     searchBlock.style.background = 'transparent';
                     searchBlock.style.padding    = '6px 0 8px';
-                    searchBlock.style.boxShadow  = '0 2px 10px rgba(0,0,0,0.08)';
+                    searchBlock.style.boxShadow  = 'none';
                 } else {
                     spacer.style.display = 'none';
                     searchBlock.style.cssText = '';
