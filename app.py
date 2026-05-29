@@ -1035,16 +1035,6 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
     order = {"other": 0, "program": 1, "query": 2}
     df = df.sort_values("role", key=lambda s: s.map(order))
 
-    # Zoom to the highlighted region with padding
-    highlighted = df[df["role"].isin(["program", "query"])]
-    pad = max(3.0, (highlighted["umap_x"].max() - highlighted["umap_x"].min()) * 0.6)
-    cx = highlighted["umap_x"].mean()
-    cy = highlighted["umap_y"].mean()
-    span_x = max(highlighted["umap_x"].max() - highlighted["umap_x"].min(), 4)
-    span_y = max(highlighted["umap_y"].max() - highlighted["umap_y"].min(), 4)
-    x0, x1 = cx - span_x / 2 - pad, cx + span_x / 2 + pad
-    y0, y1 = cy - span_y / 2 - pad, cy + span_y / 2 + pad
-
     fig = go.Figure()
 
     # All genes — grey (full space for context)
@@ -1086,8 +1076,8 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
         height=430,
         plot_bgcolor="#1a1a2e", paper_bgcolor="#1a1a2e",
         font=dict(color="#cccccc"),
-        xaxis=dict(visible=False, range=[x0, x1]),
-        yaxis=dict(visible=False, range=[y0, y1]),
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
         legend=dict(itemsizing="constant", font=dict(size=10, color="#ccc"),
                     bgcolor="rgba(0,0,0,0.5)", bordercolor="#555", borderwidth=1,
                     x=0.01, y=0.99),
