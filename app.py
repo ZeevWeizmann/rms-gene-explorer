@@ -2085,7 +2085,16 @@ def _render_msg_figures(msg, msg_id):
                                     _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
                                 except Exception:
                                     pass
-                                # WT simulation UMAP
+                                # WT/KO simulation UMAP — flip coords for models where UMAP is mirrored
+                                _needs_flip = _effective_grn_model in ("full_aurkb", "full_foxm1")
+                                if _needs_flip:
+                                    _sim_scored = _sim_scored.copy()
+                                    _xm = _sim_scored["x_wt"].max()
+                                    _ym = _sim_scored["y_wt"].max()
+                                    _sim_scored["x_wt"] = _xm - _sim_scored["x_wt"]
+                                    _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
+                                    _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
+                                    _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
                                 _pop_umap_wt = px.scatter(
                                     _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                                     color_discrete_map=_POP_COLORS,
