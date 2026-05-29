@@ -481,6 +481,47 @@ div[data-testid="stSelectbox"] > div::before {{
 </style>
 """, unsafe_allow_html=True)
 
+# ── Sticky search bar ─────────────────────────────────────────────
+st.markdown("""
+<style>
+/* Sticky wrapper injected by JS below */
+.search-sticky-wrapper {
+    position: sticky !important;
+    top: 0px !important;
+    z-index: 200 !important;
+    background: white !important;
+    padding-bottom: 6px !important;
+}
+</style>
+<script>
+(function stickySearch() {
+    function apply() {
+        const boxes = document.querySelectorAll('[data-testid="stSelectbox"]');
+        for (const box of boxes) {
+            if (box.closest('[data-testid="stExpander"]') ||
+                box.closest('[data-testid="column"]') ||
+                box.closest('[data-testid="stColumn"]')) continue;
+            // Walk up to the stVerticalBlock that directly contains this selectbox
+            let el = box;
+            while (el && el.getAttribute && el.getAttribute('data-testid') !== 'stVerticalBlock') {
+                el = el.parentElement;
+            }
+            if (el && !el.classList.contains('search-sticky-wrapper')) {
+                el.classList.add('search-sticky-wrapper');
+            }
+            break;
+        }
+    }
+    // Run after Streamlit renders
+    setTimeout(apply, 400);
+    setTimeout(apply, 1200);
+    // Re-apply on DOM changes (rerenders)
+    const obs = new MutationObserver(() => apply());
+    obs.observe(document.body, { childList: true, subtree: false });
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
     st.session_state["is_mobile"] = False   # default desktop, JS updates on rerun
