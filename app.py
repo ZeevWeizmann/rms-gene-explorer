@@ -1046,12 +1046,14 @@ def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, e
         showlegend=False
     ))
 
-    # Program genes — orange, slightly larger
+    # Program genes — bright, large, with white outline so they pop on dark bg
     prog = df[df["role"] == "program"]
     fig.add_trace(go.Scattergl(
-        x=prog["umap_x"], y=prog["umap_y"], mode="markers",
-        marker=dict(size=7, color="#f4a261", opacity=0.9,
-                    line=dict(width=0.5, color="white")),
+        x=prog["umap_x"], y=prog["umap_y"], mode="markers+text",
+        marker=dict(size=12, color="#f4a261", opacity=1.0,
+                    line=dict(width=1.5, color="white")),
+        text=prog["gene"], textposition="top center",
+        textfont=dict(size=8, color="#f4a261"),
         hovertext=prog["gene"], hoverinfo="text",
         name=f"{query_gene} program", showlegend=True
     ))
@@ -2561,7 +2563,7 @@ if query_gene:
         try:
             _gene_umap_df = load_gene_umap2d(dataset_key)
             fig_gene_map = build_gene_embedding_map(
-                _gene_umap_df, query_gene, map_genes, annotations
+                _gene_umap_df, query_gene, program_genes, annotations
             )
         except Exception:
             pass
