@@ -1023,11 +1023,11 @@ def load_gene_umap2d(dataset="v1", _version="v2"):
     return pd.read_csv(path)
 
 
-def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, embeddings_arr=None, genes_list=None):
-    """TF Projector-style: all genes grey, program genes highlighted in color."""
+def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotations, embeddings_arr=None, genes_list=None):
+    """TF Projector-style: all genes grey, only program genes highlighted."""
     df = gene_umap_df.copy()
 
-    program_set = set(map_genes) - {query_gene}
+    program_set = set(program_genes) - {query_gene}
     df["role"] = "other"
     df.loc[df["gene"].isin(program_set), "role"] = "program"
     df.loc[df["gene"] == query_gene, "role"] = "query"
@@ -1035,35 +1035,44 @@ def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, e
     order = {"other": 0, "program": 1, "query": 2}
     df = df.sort_values("role", key=lambda s: s.map(order))
 
+    # Zoom to the highlighted region with padding
+    highlighted = df[df["role"].isin(["program", "query"])]
+    pad = max(3.0, (highlighted["umap_x"].max() - highlighted["umap_x"].min()) * 0.6)
+    cx = highlighted["umap_x"].mean()
+    cy = highlighted["umap_y"].mean()
+    span_x = max(highlighted["umap_x"].max() - highlighted["umap_x"].min(), 4)
+    span_y = max(highlighted["umap_y"].max() - highlighted["umap_y"].min(), 4)
+    x0, x1 = cx - span_x / 2 - pad, cx + span_x / 2 + pad
+    y0, y1 = cy - span_y / 2 - pad, cy + span_y / 2 + pad
+
     fig = go.Figure()
 
-    # All background genes — small grey dots
+    # All genes — grey (full space for context)
     bg = df[df["role"] == "other"]
     fig.add_trace(go.Scattergl(
         x=bg["umap_x"], y=bg["umap_y"], mode="markers",
-        marker=dict(size=3, color="#bbbbbb", opacity=0.35),
+        marker=dict(size=3, color="#888888", opacity=0.25),
         hovertext=bg["gene"], hoverinfo="text",
         showlegend=False
     ))
 
-    # Program genes — bright, large, with white outline so they pop on dark bg
+    # Program genes — orange, labelled
     prog = df[df["role"] == "program"]
     fig.add_trace(go.Scattergl(
         x=prog["umap_x"], y=prog["umap_y"], mode="markers+text",
-        marker=dict(size=12, color="#f4a261", opacity=1.0,
+        marker=dict(size=11, color="#f4a261", opacity=1.0,
                     line=dict(width=1.5, color="white")),
         text=prog["gene"], textposition="top center",
         textfont=dict(size=8, color="#f4a261"),
         hovertext=prog["gene"], hoverinfo="text",
-        name=f"{query_gene} program", showlegend=True
+        name=f"{query_gene} program ({len(prog)})", showlegend=True
     ))
 
     # Query gene — red star
     q = df[df["role"] == "query"]
     if len(q):
         fig.add_trace(go.Scatter(
-            x=q["umap_x"], y=q["umap_y"],
-            mode="markers+text",
+            x=q["umap_x"], y=q["umap_y"], mode="markers+text",
             marker=dict(size=16, symbol="star", color="#e63946",
                         line=dict(width=1.5, color="white")),
             text=[query_gene], textposition="top center",
@@ -1073,13 +1082,14 @@ def build_gene_embedding_map(gene_umap_df, query_gene, map_genes, annotations, e
         ))
 
     fig.update_layout(
-        title=dict(text=f"{len(df):,} genes · {query_gene} program highlighted", font=dict(size=12)),
+        title=dict(text=f"{len(df):,} genes · {query_gene} program", font=dict(size=12, color="#ccc")),
         height=430,
         plot_bgcolor="#1a1a2e", paper_bgcolor="#1a1a2e",
         font=dict(color="#cccccc"),
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
+        xaxis=dict(visible=False, range=[x0, x1]),
+        yaxis=dict(visible=False, range=[y0, y1]),
         legend=dict(itemsizing="constant", font=dict(size=10, color="#ccc"),
-                    bgcolor="rgba(0,0,0,0.4)", bordercolor="#444", borderwidth=1,
+                    bgcolor="rgba(0,0,0,0.5)", bordercolor="#555", borderwidth=1,
                     x=0.01, y=0.99),
         margin=dict(l=5, r=5, t=36, b=5),
         hovermode="closest"
