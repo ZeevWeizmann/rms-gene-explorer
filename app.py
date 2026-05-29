@@ -1081,15 +1081,24 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
         hoverinfo="text", showlegend=False
     ))
 
-    # Query gene — large red star
+    # Query gene — 3D ball effect: large circle + small white highlight
     fig.add_trace(go.Scatter(
         x=[qrow["x"]], y=[qrow["y"]], mode="markers+text",
-        marker=dict(size=20, symbol="star", color="#e63946",
-                    line=dict(width=2, color="white")),
+        marker=dict(size=28, color="#e63946", symbol="circle",
+                    line=dict(width=3, color="#b71c2e"),
+                    gradient=dict(type="radial", color="rgba(255,180,180,0.9)")),
         text=[query_gene], textposition="top center",
         textfont=dict(size=12, color="#e63946", family="Arial Black"),
         hoverinfo="text", hovertext=[query_gene],
         showlegend=False
+    ))
+    # White highlight dot for 3D effect
+    fig.add_trace(go.Scatter(
+        x=[qrow["x"] - 0.015 * (coords[:,0].max() - coords[:,0].min())],
+        y=[qrow["y"] + 0.02  * (coords[:,1].max() - coords[:,1].min())],
+        mode="markers",
+        marker=dict(size=8, color="rgba(255,255,255,0.7)", symbol="circle"),
+        hoverinfo="skip", showlegend=False
     ))
 
     fig.update_layout(
@@ -2088,17 +2097,17 @@ def _render_msg_figures(msg, msg_id):
     """Render all figures for a single message."""
     if "df" in msg:
         if msg.get("fig_gene_map") is not None:
-            _tc, _mc = st.columns([1, 1])
+            _mc, _tc = st.columns([3, 2])
+            with _mc:
+                st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
+                                key=f"{msg_id}_gene_map")
             with _tc:
-                st.dataframe(msg["df"], use_container_width=True, height=420)
+                st.dataframe(msg["df"], use_container_width=True, height=440)
                 if "cluster_id" in msg:
                     summary = summaries.get(msg["cluster_id"], "")
                     if summary:
                         with st.popover(T['cluster_details']):
                             st.markdown(summary)
-            with _mc:
-                st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
-                                key=f"{msg_id}_gene_map")
         else:
             st.dataframe(msg["df"], use_container_width=True)
             if "cluster_id" in msg:
