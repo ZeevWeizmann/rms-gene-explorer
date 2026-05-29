@@ -188,7 +188,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
     },
     'fr': {
         # Search
-        'search_placeholder': '🔍 Sélectionnez un gène à explorer',
+        'search_placeholder': '🔍 Sélectionnez un gène pour explorer son programme',
         # Main sections
         'settings': 'Paramètres',
         'genes_from_data': 'Gènes depuis vos données',
@@ -1754,7 +1754,7 @@ st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 # Logo + title — centered, vertical stack
 st.markdown(f"""
 <div style='text-align:center; margin-bottom:18px;'>
-  <a href='/?reset=1' target='_self' style='text-decoration:none; cursor:pointer;'>
+  <a href='https://rmsexplorer.com' target='_self' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
