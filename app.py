@@ -2561,6 +2561,54 @@ with _about_expander:
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown(T['how_it_works_body'])
 
+    # ── SVG text translations (applied via .replace() to avoid f-string brace issues) ──
+    _svg_fr = {
+        # Trajectory diagram
+        "Temporal Co-expression Trajectory":  "Trajectoire de co-expression temporelle",
+        "cells × genes":                      "cellules × gènes",
+        "× 6 time points":                    "× 6 points temporels",
+        "per timepoint":                      "par point temporel",
+        "gene-gene graph":                    "graphe gène-gène",
+        "soft-threshold β=6":                 "seuillage doux β=6",
+        "shared weights":                     "poids partagés",
+        "align snapshots":                    "aligner les captures",
+        "to common frame":                    "sur cadre commun",
+        "gene shift + stable":                "décalage + stable",
+        "Regulatory Structure  (OmniPath + PPGN)": "Structure régulatrice  (OmniPath + PPGN)",
+        "expressed genes only":               "gènes exprimés uniquement",
+        "feedback loops · triangles":         "boucles rétro · triangles",
+        "regulatory motif":                   "motif régulateur",
+        "RAG retrieval":                      "récupération RAG",
+        # Arch diagram
+        "Data-driven Gene Program Retrieval": "Récupération du programme génique",
+        "🔍 Query Gene":                      "🔍 Gène requête",
+        "cells × genes × time":              "cellules × gènes × temps",
+        "cells × genes × t":                 "cellules × gènes × t",
+        "node → embedding":                   "nœud → plongement",
+        "vector DB · cosine sim":             "BD vectorielle · sim. cosinus",
+        "co-expression neighbors":            "voisins co-expression",
+        "(context-driven)":                   "(guidé par contexte)",
+        "Gene Program":                       "Programme génique",
+        "GRN Inference &amp; Perturbation Simulation": "Inférence GRN &amp; Simulation de perturbation",
+        "ODE mechanistic model":              "modèle mécaniste ODE",
+        "+ optimal transport":               "+ transport optimal",
+        "activation / repression":            "activation / répression",
+        "Perturbation":                       "Perturbation",
+        "Simulation":                         "Simulation",
+        "BIRC5 KO · propagate Δ":            "BIRC5 KO · propager Δ",
+        "program-augmented":                  "guidé par programme",
+        "Inferred GRN":                       "GRN inféré",
+        "Therapeutic":                        "Thérapeutique",
+        "Targets":                            "Cibles",
+        "co-targets · direct targets":        "co-cibles · cibles directes",
+        "reshape Waddington landscape":       "remodeler le paysage de Waddington",
+    }
+    def _svg_translate(svg):
+        if _cur_lang == 'fr':
+            for src, tgt in _svg_fr.items():
+                svg = svg.replace(src, tgt)
+        return svg
+
     _traj_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
 <defs>
   <style>
@@ -2791,6 +2839,7 @@ with _about_expander:
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#th)"/>
 
 </svg>"""
+    _traj_svg = _svg_translate(_traj_svg)
     _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
         <div style='width:100%'>{_traj_svg}</div>
@@ -3040,6 +3089,7 @@ with _about_expander:
 </svg>"""
 
 # Arch diagram goes into the slot at the TOP of "About this tool"
+_arch_svg = _svg_translate(_arch_svg)
 with _arch_diagram_slot:
     _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
