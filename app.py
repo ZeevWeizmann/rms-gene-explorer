@@ -1084,11 +1084,11 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
     # Query gene — 3D ball effect: large circle + small white highlight
     fig.add_trace(go.Scatter(
         x=[qrow["x"]], y=[qrow["y"]], mode="markers+text",
-        marker=dict(size=28, color="#e63946", symbol="circle",
-                    line=dict(width=3, color="#b71c2e"),
-                    gradient=dict(type="radial", color="rgba(255,180,180,0.9)")),
+        marker=dict(size=28, color="#1a6faf", symbol="circle",
+                    line=dict(width=3, color="#0d4a7a"),
+                    gradient=dict(type="radial", color="rgba(130,190,255,0.9)")),
         text=[query_gene], textposition="top center",
-        textfont=dict(size=12, color="#e63946", family="Arial Black"),
+        textfont=dict(size=12, color="#1a6faf", family="Arial Black"),
         hoverinfo="text", hovertext=[query_gene],
         showlegend=False
     ))
