@@ -2097,7 +2097,7 @@ def _render_msg_figures(msg, msg_id):
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                    xaxis=dict(autorange="reversed"), yaxis=dict(autorange="reversed"))
+                                    xaxis=dict(autorange="reversed"))
                                 # KO simulation UMAP
                                 _pop_umap_ko = px.scatter(
                                     _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
@@ -2110,7 +2110,7 @@ def _render_msg_figures(msg, msg_id):
                                 for _pp, _ps in _pt_pop_sizes.items():
                                     _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                                 _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                    xaxis=dict(autorange="reversed"), yaxis=dict(autorange="reversed"))
+                                    xaxis=dict(autorange="reversed"))
                                 _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
                                 _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                                 st.caption(
