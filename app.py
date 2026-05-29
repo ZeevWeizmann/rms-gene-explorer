@@ -2428,6 +2428,11 @@ if query_gene:
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
 
+        # For the gene map always use top-200 neighbors so dots are visible
+        _map_idx = np.argsort(sims)[::-1]
+        _map_idx = [i for i in _map_idx if genes[i] != query_gene][:200]
+        map_genes = [query_gene] + [genes[i] for i in _map_idx]
+
         # Always pick the right GRN model for THIS query gene (not the selector,
         # which lags one step behind because it's rendered before query processing)
         _q = query_gene.upper()
@@ -2556,7 +2561,7 @@ if query_gene:
             _gene_umap_df = load_gene_umap2d(dataset_key)
             if query_gene in _gene_umap_df["gene"].values:
                 fig_gene_map = build_gene_embedding_map(
-                    _gene_umap_df, query_gene, program_genes, annotations
+                    _gene_umap_df, query_gene, map_genes, annotations
                 )
         except Exception:
             pass
