@@ -1075,7 +1075,7 @@ def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotation
     ))
 
     fig.update_layout(
-        title=dict(text=f"{query_gene} · program proximity (PCA)", font=dict(size=12, color="#444")),
+        title=dict(text=f"{query_gene} · nearest neighbors in embedding space", font=dict(size=12, color="#444")),
         height=430,
         plot_bgcolor="white", paper_bgcolor="white",
         xaxis=dict(visible=False, zeroline=False),
