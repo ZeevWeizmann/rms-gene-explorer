@@ -491,6 +491,7 @@ _components.html("""
             var scrollEl = doc.querySelector('[data-testid="stMain"]');
             if (!scrollEl) { setTimeout(setup, 400); return; }
 
+            // Find first stSelectbox not in expander/column
             var searchBlock = null;
             var boxes = doc.querySelectorAll('[data-testid="stSelectbox"]');
             for (var i = 0; i < boxes.length; i++) {
@@ -506,32 +507,34 @@ _components.html("""
             }
             if (!searchBlock) { setTimeout(setup, 400); return; }
 
-            // Spacer to fill the gap when element goes fixed
+            // Height of Streamlit's own fixed header toolbar
+            var headerEl = doc.querySelector('[data-testid="stHeader"]');
+            var headerH = headerEl ? headerEl.offsetHeight : 0;
+
+            // Spacer to fill gap when element goes fixed
             var spacer = doc.createElement('div');
             spacer.style.display = 'none';
             searchBlock.parentElement.insertBefore(spacer, searchBlock);
 
-            var originalTop = searchBlock.getBoundingClientRect().top + scrollEl.scrollTop;
+            // Original distance from top of scroll container
+            var originalTop = searchBlock.offsetTop;
 
             scrollEl.addEventListener('scroll', function() {
-                if (scrollEl.scrollTop > originalTop) {
+                if (scrollEl.scrollTop > originalTop - headerH - 10) {
                     var ref = (searchBlock.closest('.block-container') || scrollEl).getBoundingClientRect();
                     spacer.style.height  = searchBlock.offsetHeight + 'px';
                     spacer.style.display = 'block';
                     searchBlock.style.position   = 'fixed';
-                    searchBlock.style.top        = '0px';
+                    searchBlock.style.top        = headerH + 'px';
                     searchBlock.style.left       = ref.left + 'px';
                     searchBlock.style.width      = ref.width + 'px';
-                    searchBlock.style.zIndex     = '1000';
+                    searchBlock.style.zIndex     = '999980';
                     searchBlock.style.background = 'white';
-                    searchBlock.style.padding    = '6px 1rem 8px';
+                    searchBlock.style.padding    = '6px 0 8px';
                     searchBlock.style.boxShadow  = '0 2px 10px rgba(0,0,0,0.08)';
                 } else {
                     spacer.style.display = 'none';
-                    searchBlock.style.position = searchBlock.style.top =
-                    searchBlock.style.left = searchBlock.style.width =
-                    searchBlock.style.zIndex = searchBlock.style.background =
-                    searchBlock.style.padding = searchBlock.style.boxShadow = '';
+                    searchBlock.style.cssText = '';
                 }
             }, { passive: true });
 
@@ -541,7 +544,7 @@ _components.html("""
     setTimeout(setup, 2000);
 })();
 </script>
-""", height=0)
+""", height=1)
 
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
