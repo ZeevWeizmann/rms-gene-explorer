@@ -529,7 +529,7 @@ _components.html("""
                     searchBlock.style.left       = ref.left + 'px';
                     searchBlock.style.width      = ref.width + 'px';
                     searchBlock.style.zIndex     = '999980';
-                    searchBlock.style.background = 'white';
+                    searchBlock.style.background = 'transparent';
                     searchBlock.style.padding    = '6px 0 8px';
                     searchBlock.style.boxShadow  = '0 2px 10px rgba(0,0,0,0.08)';
                 } else {
