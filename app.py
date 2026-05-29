@@ -328,7 +328,7 @@ if st.query_params.get("reset"):
 # ── Language detection (early — needed for CSS placeholder) ──────
 if 'lang' in st.query_params:
     st.session_state['_lang'] = st.query_params['lang']
-_cur_lang = st.session_state.get('_lang', 'en')
+_cur_lang = st.session_state.get('_lang', 'fr')
 T = _TRANSLATIONS[_cur_lang]
 
 # ── Detect mobile via JS → session_state ────────────────────────
