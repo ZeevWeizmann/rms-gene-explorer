@@ -1009,6 +1009,88 @@ def load_umap_expr():
     return pd.read_csv(path)
 
 
+@st.cache_resource
+def load_gene_umap2d(dataset="v1"):
+    """Load 2D UMAP projection of gene embeddings (word2vec-style map)."""
+    import os
+    f = "gcn_gene_umap2d.csv" if dataset == "v1" else "trajectory_gene_umap2d.csv"
+    local = os.path.join(LOCAL_DIR, f)
+    if os.path.exists(local):
+        return pd.read_csv(local)
+    token = st.secrets.get("HF_TOKEN", None)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    return pd.read_csv(path)
+
+
+def build_gene_embedding_map(gene_umap_df, query_gene, program_genes, annotations, cluster_colors=None):
+    """Word2Vec-style 2D map of all genes, highlighting the program."""
+    df = gene_umap_df.copy()
+
+    # Label each gene's role
+    program_set = set(program_genes)
+    df["role"] = "other"
+    df.loc[df["gene"].isin(program_set), "role"] = "program"
+    df.loc[df["gene"] == query_gene, "role"] = "query"
+
+    df["cluster_label"] = df["cluster"].apply(lambda c: annotations.get(int(c), f"Cluster {c}"))
+    df["size"] = df["role"].map({"other": 3, "program": 7, "query": 14})
+    df["opacity"] = df["role"].map({"other": 0.15, "program": 0.85, "query": 1.0})
+
+    # Sort so query is drawn on top
+    order = {"other": 0, "program": 1, "query": 2}
+    df = df.sort_values("role", key=lambda s: s.map(order))
+
+    fig = go.Figure()
+
+    # Background: all genes
+    bg = df[df["role"] == "other"]
+    fig.add_trace(go.Scattergl(
+        x=bg["umap_x"], y=bg["umap_y"],
+        mode="markers",
+        marker=dict(size=2, color="#cccccc", opacity=0.3),
+        hovertext=bg["gene"], hoverinfo="text",
+        name="All genes", showlegend=False
+    ))
+
+    # Program genes — colored by cluster annotation
+    prog = df[df["role"] == "program"]
+    for ann, grp in prog.groupby("cluster_label"):
+        fig.add_trace(go.Scattergl(
+            x=grp["umap_x"], y=grp["umap_y"],
+            mode="markers",
+            marker=dict(size=7, opacity=0.85),
+            hovertext=grp["gene"] + "<br>" + ann,
+            hoverinfo="text",
+            name=ann
+        ))
+
+    # Query gene — star
+    q = df[df["role"] == "query"]
+    if len(q):
+        fig.add_trace(go.Scatter(
+            x=q["umap_x"], y=q["umap_y"],
+            mode="markers+text",
+            marker=dict(size=14, symbol="star", color="#e63946",
+                        line=dict(width=1.5, color="white")),
+            text=[query_gene], textposition="top center",
+            textfont=dict(size=11, color="#e63946", family="Arial Black"),
+            hoverinfo="text", hovertext=[query_gene],
+            name=query_gene, showlegend=False
+        ))
+
+    fig.update_layout(
+        title=dict(text=f"Gene embedding space · {query_gene} program", font=dict(size=13)),
+        height=420,
+        plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(visible=False), yaxis=dict(visible=False),
+        legend=dict(itemsizing="constant", font=dict(size=11),
+                    bgcolor="rgba(255,255,255,0.8)", bordercolor="#eee", borderwidth=1),
+        margin=dict(l=10, r=10, t=40, b=10),
+        hovermode="closest"
+    )
+    return fig
+
+
 def build_foxm1_timecourse(pert_df, real_tc_df):
     """Compare simulation WT vs real data expression over time for key genes.
 
@@ -1990,12 +2072,25 @@ messages = st.session_state[f"messages_{dataset_key}"]
 def _render_msg_figures(msg, msg_id):
     """Render all figures for a single message."""
     if "df" in msg:
-        st.dataframe(msg["df"], use_container_width=True)
-        if "cluster_id" in msg:
-            summary = summaries.get(msg["cluster_id"], "")
-            if summary:
-                with st.popover(T['cluster_details']):
-                    st.markdown(summary)
+        if msg.get("fig_gene_map") is not None:
+            _tc, _mc = st.columns([1, 1])
+            with _tc:
+                st.dataframe(msg["df"], use_container_width=True, height=420)
+                if "cluster_id" in msg:
+                    summary = summaries.get(msg["cluster_id"], "")
+                    if summary:
+                        with st.popover(T['cluster_details']):
+                            st.markdown(summary)
+            with _mc:
+                st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
+                                key=f"{msg_id}_gene_map")
+        else:
+            st.dataframe(msg["df"], use_container_width=True)
+            if "cluster_id" in msg:
+                summary = summaries.get(msg["cluster_id"], "")
+                if summary:
+                    with st.popover(T['cluster_details']):
+                        st.markdown(summary)
     # Expression UMAP — full width, taller
     if msg.get("fig") is not None:
         fig_expr = msg["fig"]
@@ -2462,6 +2557,17 @@ if query_gene:
             except Exception:
                 pass
 
+        # Gene embedding map (word2vec-style)
+        fig_gene_map = None
+        try:
+            _gene_umap_df = load_gene_umap2d(dataset_key)
+            if query_gene in _gene_umap_df["gene"].values:
+                fig_gene_map = build_gene_embedding_map(
+                    _gene_umap_df, query_gene, program_genes, annotations
+                )
+        except Exception:
+            pass
+
         _DRUG_MAP = {
             "TUBB":   "💊 **Vincristine** (FDA-approved, RMS standard of care)",
             "BIRC5":  "💊 **YM155** / Sepantronium (clinical trials)",
@@ -2488,6 +2594,7 @@ if query_gene:
             "grn_topo": grn_topo,
             "grn_adj": grn_adj,
             "grn_model": _grn_model_q,
+            "fig_gene_map": fig_gene_map,
         })
         # Reset selectbox to placeholder (allows re-selecting the same gene next time)
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
