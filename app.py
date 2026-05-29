@@ -481,67 +481,67 @@ div[data-testid="stSelectbox"] > div::before {{
 </style>
 """, unsafe_allow_html=True)
 
-# ── Sticky search bar (JS fixed-position approach) ────────────────
-st.markdown("""
+# ── Sticky search bar via components.html (runs real JS in parent frame) ──
+_components.html("""
 <script>
 (function() {
     function setup() {
-        const scrollEl = document.querySelector('[data-testid="stMain"]');
-        if (!scrollEl) { setTimeout(setup, 400); return; }
+        try {
+            var doc = window.parent.document;
+            var scrollEl = doc.querySelector('[data-testid="stMain"]');
+            if (!scrollEl) { setTimeout(setup, 400); return; }
 
-        // Find the first stSelectbox NOT inside an expander or column
-        let searchBlock = null;
-        for (const box of document.querySelectorAll('[data-testid="stSelectbox"]')) {
-            if (box.closest('[data-testid="stExpander"]') ||
-                box.closest('[data-testid="column"]') ||
-                box.closest('[data-testid="stColumn"]')) continue;
-            // Walk up to its stVerticalBlock wrapper
-            let el = box;
-            while (el && el.getAttribute && el.getAttribute('data-testid') !== 'stVerticalBlock') {
-                el = el.parentElement;
+            var searchBlock = null;
+            var boxes = doc.querySelectorAll('[data-testid="stSelectbox"]');
+            for (var i = 0; i < boxes.length; i++) {
+                var box = boxes[i];
+                if (box.closest('[data-testid="stExpander"]') ||
+                    box.closest('[data-testid="column"]') ||
+                    box.closest('[data-testid="stColumn"]')) continue;
+                var el = box;
+                while (el && el.getAttribute && el.getAttribute('data-testid') !== 'stVerticalBlock') {
+                    el = el.parentElement;
+                }
+                if (el) { searchBlock = el; break; }
             }
-            if (el) { searchBlock = el; break; }
-        }
-        if (!searchBlock) { setTimeout(setup, 400); return; }
+            if (!searchBlock) { setTimeout(setup, 400); return; }
 
-        // Insert a spacer to prevent layout jump when element goes fixed
-        const spacer = document.createElement('div');
-        spacer.style.display = 'none';
-        searchBlock.parentElement.insertBefore(spacer, searchBlock);
+            // Spacer to fill the gap when element goes fixed
+            var spacer = doc.createElement('div');
+            spacer.style.display = 'none';
+            searchBlock.parentElement.insertBefore(spacer, searchBlock);
 
-        const originalTop = searchBlock.getBoundingClientRect().top + scrollEl.scrollTop;
+            var originalTop = searchBlock.getBoundingClientRect().top + scrollEl.scrollTop;
 
-        function onScroll() {
-            if (scrollEl.scrollTop > originalTop) {
-                const ref = (searchBlock.closest('.block-container') || scrollEl).getBoundingClientRect();
-                spacer.style.height  = searchBlock.offsetHeight + 'px';
-                spacer.style.display = 'block';
-                Object.assign(searchBlock.style, {
-                    position:  'fixed',
-                    top:       '0px',
-                    left:      ref.left + 'px',
-                    width:     ref.width + 'px',
-                    zIndex:    '1000',
-                    background:'white',
-                    padding:   '6px 1rem 8px',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
-                });
-            } else {
-                spacer.style.display = 'none';
-                ['position','top','left','width','zIndex','background','padding','boxShadow']
-                    .forEach(p => searchBlock.style[p] = '');
-            }
-        }
+            scrollEl.addEventListener('scroll', function() {
+                if (scrollEl.scrollTop > originalTop) {
+                    var ref = (searchBlock.closest('.block-container') || scrollEl).getBoundingClientRect();
+                    spacer.style.height  = searchBlock.offsetHeight + 'px';
+                    spacer.style.display = 'block';
+                    searchBlock.style.position   = 'fixed';
+                    searchBlock.style.top        = '0px';
+                    searchBlock.style.left       = ref.left + 'px';
+                    searchBlock.style.width      = ref.width + 'px';
+                    searchBlock.style.zIndex     = '1000';
+                    searchBlock.style.background = 'white';
+                    searchBlock.style.padding    = '6px 1rem 8px';
+                    searchBlock.style.boxShadow  = '0 2px 10px rgba(0,0,0,0.08)';
+                } else {
+                    spacer.style.display = 'none';
+                    searchBlock.style.position = searchBlock.style.top =
+                    searchBlock.style.left = searchBlock.style.width =
+                    searchBlock.style.zIndex = searchBlock.style.background =
+                    searchBlock.style.padding = searchBlock.style.boxShadow = '';
+                }
+            }, { passive: true });
 
-        scrollEl.addEventListener('scroll', onScroll, { passive: true });
+        } catch(e) { console.error('[sticky]', e); }
     }
-
-    // Wait for Streamlit DOM to be ready
     setTimeout(setup, 800);
     setTimeout(setup, 2000);
 })();
 </script>
-""", unsafe_allow_html=True)
+""", height=0)
 
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
