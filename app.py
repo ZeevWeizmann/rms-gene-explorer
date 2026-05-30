@@ -93,7 +93,7 @@ _TRANSLATIONS = {
         # Result tabs
         'gene_program': 'Gene Program',
         'assigned_cluster': 'Assigned cluster',
-        'ko_targets': 'Targets',
+        'ko_targets': 'Drug Targets',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
         'network_graph': 'Gene Network',
@@ -223,7 +223,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         # Result tabs
         'gene_program': 'Programme Génique',
         'assigned_cluster': 'Cluster assigné',
-        'ko_targets': 'Cibles',
+        'ko_targets': 'Cibles thérapeutiques',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
         'network_graph': 'Réseau Génique',
@@ -2077,8 +2077,8 @@ def _render_msg_figures(msg, msg_id):
         _tab_defs.append(("adjacency", T['adjacency_matrix']))
     if _has_pert:
         _ko_prefix = "" if _msg_grn_model == "full" else f"{_ko_gene_label} "
-        _tab_defs.append(("targets",      T['ko_targets']))
         _tab_defs.append(("perturbation", T['ko_perturbation']))
+        _tab_defs.append(("targets",      T['ko_targets']))
 
     if not _tab_defs:
         return
