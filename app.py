@@ -1546,20 +1546,10 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
                 xanchor="left" if val >= 0 else "right",
             ))
 
-    # Real expression values for top-20 genes (if available)
-    _real_vals = []
-    if real_expr_means:
-        for g in top20["gene"]:
-            _real_vals.append(real_expr_means.get(g, 0.0))
-    else:
-        _real_vals = [0.0] * len(top20)
-    _real_arr = np.array(_real_vals, dtype=float)
-    _real_max = float(_real_arr.max()) if _real_arr.max() > 0 else 1.0
-
-    # Hover text: log2FC + real expression
+    # Hover text
     _hover = [
-        f"<b>{g}</b><br>log₂FC: {lfc:.3f}<br>Real mean expr: {re:.3f}"
-        for g, lfc, re in zip(top20["gene"], top20["log2fc"], _real_arr)
+        f"<b>{g}</b><br>log₂FC: {lfc:.3f}"
+        for g, lfc in zip(top20["gene"], top20["log2fc"])
     ]
 
     bar_fig = go.Figure()
@@ -1569,43 +1559,11 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         x=top20["log2fc"], y=top20["gene"],
         orientation="h",
         marker_color=colors,
-        customdata=_real_arr,
         hovertext=_hover,
         hoverinfo="text",
         name="log₂FC",
         showlegend=False,
     ))
-
-    # ── Dot overlay (real expression, secondary x-axis on top) ──────
-    if real_expr_means:
-        # Normalise dot size: 6–20 px
-        _dot_sizes = 6 + 14 * (_real_arr / (_real_max + 1e-9))
-        bar_fig.add_trace(go.Scatter(
-            x=_real_arr, y=top20["gene"].tolist(),
-            mode="markers",
-            xaxis="x2",
-            marker=dict(
-                size=_dot_sizes.tolist(),
-                color=_real_arr.tolist(),
-                colorscale="YlOrRd",
-                cmin=0, cmax=_real_max,
-                showscale=True,
-                colorbar=dict(
-                    title=dict(text="Real expr", side="right"),
-                    thickness=10, len=0.6, x=1.04,
-                    tickfont=dict(size=11),
-                ),
-                line=dict(width=0.5, color="white"),
-                opacity=0.85,
-            ),
-            hovertext=[
-                f"<b>{g}</b><br>Real mean expr: {re:.3f}"
-                for g, re in zip(top20["gene"], _real_arr)
-            ],
-            hoverinfo="text",
-            name="Real expr",
-            showlegend=False,
-        ))
 
     bar_fig.update_layout(
         title=dict(
@@ -1623,13 +1581,6 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         yaxis=dict(
             tickfont=dict(size=13),
         ),
-        xaxis2=dict(
-            title=dict(text="Mean expression (real data)", font=dict(size=12, color="#999")),
-            overlaying="x", side="top",
-            range=[0, _real_max * 1.25],
-            showgrid=False,
-            tickfont=dict(size=11, color="#999"),
-        ) if real_expr_means else {},
         height=560, margin=dict(l=100, r=100, t=110, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
         annotations=annotations
