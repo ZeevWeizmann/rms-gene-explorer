@@ -2140,7 +2140,7 @@ def _render_msg_figures(msg, msg_id):
             _annot_label = msg.get("query_annotation", "")
             _cluster_summary = summaries.get(msg.get("cluster_id", ""), "") if "cluster_id" in msg else ""
             if msg.get("fig_gene_map") is not None:
-                _mc, _tc = st.columns([3, 2])
+                _mc, _tc = st.columns([5, 2])
                 with _mc:
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
