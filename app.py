@@ -1512,9 +1512,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
 
     colors = []
     for gene, val in zip(top20["gene"], top20["log2fc"]):
-        if gene in all_targets:
-            colors.append("#FF8C00")   # orange = potential target
-        elif val > 0:
+        if val > 0:
             colors.append("#D45F5F")   # red = up
         else:
             colors.append("#4C72B0")   # blue = down
