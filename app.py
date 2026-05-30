@@ -93,6 +93,7 @@ _TRANSLATIONS = {
         # Result tabs
         'gene_program': 'Gene Program',
         'assigned_cluster': 'Assigned cluster',
+        'ko_targets': 'Targets',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
         'network_graph': 'Gene Network',
@@ -222,6 +223,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         # Result tabs
         'gene_program': 'Programme Génique',
         'assigned_cluster': 'Cluster assigné',
+        'ko_targets': 'Cibles',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
         'network_graph': 'Réseau Génique',
@@ -2074,11 +2076,42 @@ def _render_msg_figures(msg, msg_id):
     if _has_adj:
         _tab_defs.append(("adjacency", T['adjacency_matrix']))
     if _has_pert:
-        _pert_tab_title = T['ko_perturbation'] if _msg_grn_model == "full" else f"{_ko_gene_label} {T['ko_perturbation']}"
-        _tab_defs.append(("perturbation", _pert_tab_title))
+        _ko_prefix = "" if _msg_grn_model == "full" else f"{_ko_gene_label} "
+        _tab_defs.append(("targets",      T['ko_targets']))
+        _tab_defs.append(("perturbation", T['ko_perturbation']))
 
     if not _tab_defs:
         return
+
+    # ── Pre-load perturbation data before tabs (shared between Targets + KO Simulation) ──
+    _pert_data = {}
+    if _has_pert:
+        try:
+            if _msg_grn_model == "full":
+                _full_ko_key = f"{msg_id}_full_ko_choice"
+                _full_ko_choice = st.radio(
+                    "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
+                    horizontal=True, key=_full_ko_key
+                )
+                _effective_grn_model = {
+                    "FOXM1": "full_foxm1",
+                    "AURKB": "full_aurkb",
+                }.get(_full_ko_choice, "full")
+                _ko_gene_label = _full_ko_choice
+            else:
+                _effective_grn_model = _msg_grn_model
+            pert_df = load_perturbation(_effective_grn_model)
+            q_gene  = msg.get("query_gene", "MKI67")
+            bar_fig, line_fig = build_perturbation_figures(
+                pert_df, q_gene, ko_gene=_ko_gene_label,
+                real_expr_means=load_real_expr_means())
+            _pert_data = {
+                "bar_fig": bar_fig, "line_fig": line_fig,
+                "effective_model": _effective_grn_model,
+                "ko_label": _ko_gene_label,
+            }
+        except Exception as _pe:
+            _pert_data = {"error": str(_pe)}
 
     _tab_keys   = [d[0] for d in _tab_defs]
     _tab_titles = [d[1] for d in _tab_defs]
@@ -2140,60 +2173,42 @@ def _render_msg_figures(msg, msg_id):
                     f.update_layout(height=CHART_H_SMALL)
                     col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
 
-    # ── Tab: KO Perturbation ──────────────────────────────────────────────────
+    # ── Tab: Targets (bar chart — top 20 affected genes) ─────────────────────
+    if "targets" in _tab_map:
+        with _tab_map["targets"]:
+            if "error" in _pert_data:
+                st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
+            elif _pert_data:
+                st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
+
+    # ── Tab: KO Simulation (line chart + populations) ────────────────────────
     if "perturbation" in _tab_map:
         with _tab_map["perturbation"]:
-            try:
-                # KO selector for Full program (same GRN, three KO choices)
-                if _msg_grn_model == "full":
-                    _full_ko_key = f"{msg_id}_full_ko_choice"
-                    _full_ko_choice = st.radio(
-                        "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
-                        horizontal=True, key=_full_ko_key
-                    )
-                    _effective_grn_model = {
-                        "FOXM1": "full_foxm1",
-                        "AURKB": "full_aurkb",
-                    }.get(_full_ko_choice, "full")
-                    _ko_gene_label = _full_ko_choice
-                else:
-                    _effective_grn_model = _msg_grn_model
-                pert_df = load_perturbation(_effective_grn_model)
-                q_gene  = msg.get("query_gene", "MKI67")
-                _real_means = load_real_expr_means()
-                bar_fig, line_fig = build_perturbation_figures(
-                    pert_df, q_gene, ko_gene=_ko_gene_label,
-                    real_expr_means=_real_means)
-                st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                # Population proportions + delta + UMAP
+            if "error" in _pert_data:
+                st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
+            elif _pert_data:
+                _effective_grn_model = _pert_data["effective_model"]
+                _ko_gene_label       = _pert_data["ko_label"]
+                st.plotly_chart(_pert_data["line_fig"], use_container_width=True, key=f"{msg_id}_pert_line")
                 if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1", "full_aurkb"):
                     try:
                         if _effective_grn_model == "foxm1":
-                            _sim_scored = load_foxm1_pop_sim()
-                            _ko_label   = "FOXM1 KO"
+                            _sim_scored = load_foxm1_pop_sim();   _ko_label = "FOXM1 KO"
                         elif _effective_grn_model == "tubb":
-                            _sim_scored = load_tubb_pop_sim()
-                            _ko_label   = "TUBB KO"
+                            _sim_scored = load_tubb_pop_sim();    _ko_label = "TUBB KO"
                         elif _effective_grn_model == "mki67":
-                            _sim_scored = load_mki67_pop_sim()
-                            _ko_label   = "BIRC5 KO"
+                            _sim_scored = load_mki67_pop_sim();   _ko_label = "BIRC5 KO"
                         elif _effective_grn_model == "full_foxm1":
-                            _sim_scored = load_full_foxm1_pop_sim()
-                            _ko_label   = "FOXM1 KO"
+                            _sim_scored = load_full_foxm1_pop_sim(); _ko_label = "FOXM1 KO"
                         elif _effective_grn_model == "full_aurkb":
-                            _sim_scored = load_full_aurkb_pop_sim()
-                            _ko_label   = "AURKB KO"
+                            _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
                         else:
-                            _sim_scored = load_full_pop_sim()
-                            _ko_label   = "HSPA1B KO"
-                        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
-                                       "intermediate": "#999999"}
-                        _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
-                        _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
-                        st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
-                        st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
-                        # UMAP: Real data | WT simulation | KO simulation
+                            _sim_scored = load_full_pop_sim();    _ko_label = "HSPA1B KO"
+                        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
+                        st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
+                                        use_container_width=True, key=f"{msg_id}_pop_prop")
+                        st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
+                                        use_container_width=True, key=f"{msg_id}_pop_delta")
                         _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
                         _pt_pop_order = ["quiescent", "proliferative", "intermediate"]
                         _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
@@ -2201,8 +2216,7 @@ def _render_msg_figures(msg, msg_id):
                             _pr = load_foxm1_pop_real()
                             _pop_umap_real = px.scatter(
                                 _pr, x="x", y="y", color="population",
-                                color_discrete_map=_POP_COLORS,
-                                title=T['real_data'],
+                                color_discrete_map=_POP_COLORS, title=T['real_data'],
                                 labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
                                 opacity=0.6, height=420, render_mode="svg",
                                 category_orders={"population": _pt_pop_order},
@@ -2216,16 +2230,14 @@ def _render_msg_figures(msg, msg_id):
                         _needs_flip = _effective_grn_model in ("full_aurkb", "full_foxm1")
                         if _needs_flip:
                             _sim_scored = _sim_scored.copy()
-                            _xm = _sim_scored["x_wt"].max()
-                            _ym = _sim_scored["y_wt"].max()
+                            _xm = _sim_scored["x_wt"].max(); _ym = _sim_scored["y_wt"].max()
                             _sim_scored["x_wt"] = _xm - _sim_scored["x_wt"]
                             _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
                             _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
                             _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
                         _pop_umap_wt = px.scatter(
                             _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
-                            color_discrete_map=_POP_COLORS,
-                            title=T['sim_wt'],
+                            color_discrete_map=_POP_COLORS, title=T['sim_wt'],
                             labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
                             opacity=0.6, height=420, render_mode="svg",
                             category_orders={"pop_wt": _pt_pop_order},
@@ -2249,16 +2261,14 @@ def _render_msg_figures(msg, msg_id):
                         st.caption(
                             "\\* **Populations scored by gene signatures:** "
                             "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
-                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91) · "
+                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile · "
                             "**Intermediate** — all remaining cells"
                         )
                     except Exception as _e:
                         st.info(f"{T['pop_unavail']}: {_e}")
-                _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)", "full_aurkb": "Full program (200 genes)"}
-                _prog = _prog_map.get(_effective_grn_model, "program")
-                st.caption(f"{T['sim_caption']} · {_prog} · {_ko_gene_label} {T['knocked_out']}")
-            except Exception as e:
-                st.info(f"{T['pert_unavail']}. ({e})")
+                _prog_map = {"tubb": "TUBB (201 genes)", "foxm1": "FOXM1 (198 genes)", "mki67": "MKI67 (201 genes)",
+                             "full": "Full (200 genes)", "full_foxm1": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
+                st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
 
     # ── Tab: Network graph GNN ────────────────────────────────────────────────
     if "network" in _tab_map:
