@@ -2041,8 +2041,6 @@ def _render_msg_figures(msg, msg_id):
         _tab_defs.append(("expression", T['expression']))
     if _has_grn:
         _tab_defs.append(("network", T['network_graph']))
-    if _has_adj:
-        _tab_defs.append(("adjacency", T['adjacency_matrix']))
     if _has_pert:
         _ko_prefix = "" if _msg_grn_model == "full" else f"{_ko_gene_label} "
         _tab_defs.append(("perturbation", T['ko_perturbation']))
@@ -2240,63 +2238,29 @@ def _render_msg_figures(msg, msg_id):
                              "full": "Full (200 genes)", "full_foxm1": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
                 st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
 
-    # ── Tab: Network graph GNN ────────────────────────────────────────────────
+    # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:
         with _tab_map["network"]:
             st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
-            topo = msg.get("grn_topo")
-            if topo is not None and not topo.empty:
-                with st.expander(T['network_topology'], expanded=True):
-                    n_fb = int(topo["Feedback loop"].sum())
-                    n_up = int((topo["Role"] == "upstream").sum())
-                    n_dn = int((topo["Role"] == "downstream").sum())
-                    n_fb_role = int((topo["Role"] == "feedback loop").sum())
-                    top_hub = topo[topo["Role"] != "query"].nlargest(1, "Total degree")
-                    c1, c2, c3, c4 = st.columns(4)
-                    c1.metric(T['upstream'], n_up)
-                    c2.metric(T['downstream'], n_dn)
-                    c3.metric(T['feedback'], n_fb_role)
-                    c4.metric(T['cycle_nodes'], n_fb)
-                    if not top_hub.empty:
-                        hub_name = top_hub.iloc[0]["Gene"]
-                        hub_deg  = int(top_hub.iloc[0]["Total degree"])
-                        st.info(f"{T['top_hub']}: **{hub_name}** (degree {hub_deg}) — "
-                                f"{T['most_connected']}")
-                    show_cols = ["Gene", "Role", "In-degree", "Out-degree",
-                                 "Total degree", "Feedback loop"]
-                    st.dataframe(
-                        topo[show_cols].reset_index(drop=True),
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "Feedback loop": st.column_config.CheckboxColumn("🔄 Cycle"),
-                        }
-                    )
-
-    # ── Tab: Adjacency matrix GNN ─────────────────────────────────────────────
-    if "adjacency" in _tab_map:
-        with _tab_map["adjacency"]:
-            adj_df, genes_list = msg["grn_adj"]
-            vals = adj_df.values.flatten()
-            nonzero = vals[np.abs(vals) > 1e-4]
-            if len(nonzero) > 0:
-                vmax = float(np.percentile(np.abs(nonzero), 95))
-            else:
-                vmax = float(adj_df.abs().values.max()) or 1.0
-            adj_fig = px.imshow(
-                adj_df,
-                color_continuous_scale="RdBu_r",
-                color_continuous_midpoint=0,
-                zmin=-vmax, zmax=vmax,
-                title="Adjacency matrix (red=activation, blue=repression, clipped at 95th percentile)",
-                height=600,
-                aspect="auto"
-            )
-            adj_fig.update_layout(
-                xaxis=dict(tickfont=dict(size=9)),
-                yaxis=dict(tickfont=dict(size=9))
-            )
-            st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
+            if _has_adj:
+                adj_df, genes_list = msg["grn_adj"]
+                vals = adj_df.values.flatten()
+                nonzero = vals[np.abs(vals) > 1e-4]
+                vmax = float(np.percentile(np.abs(nonzero), 95)) if len(nonzero) > 0 else (float(adj_df.abs().values.max()) or 1.0)
+                adj_fig = px.imshow(
+                    adj_df,
+                    color_continuous_scale="RdBu_r",
+                    color_continuous_midpoint=0,
+                    zmin=-vmax, zmax=vmax,
+                    title="Network weights (red=activation, blue=repression)",
+                    height=600,
+                    aspect="auto"
+                )
+                adj_fig.update_layout(
+                    xaxis=dict(tickfont=dict(size=9)),
+                    yaxis=dict(tickfont=dict(size=9))
+                )
+                st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
