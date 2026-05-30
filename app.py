@@ -2159,12 +2159,10 @@ def _render_msg_figures(msg, msg_id):
                 with _tc:
                     st.dataframe(
                         msg["df"],
-                        use_container_width=False,
-                        width=280,
+                        use_container_width=True,
                         height=440,
                         column_config={
-                            "Gene":       st.column_config.TextColumn("Gene",       width=120),
-                            "Similarity": st.column_config.NumberColumn("Similarity", width=90, format="%.2f"),
+                            "Similarity": st.column_config.NumberColumn("Similarity", format="%.2f"),
                         },
                     )
             else:
