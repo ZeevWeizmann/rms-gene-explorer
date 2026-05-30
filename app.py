@@ -1540,7 +1540,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
 
     bar_fig.update_layout(
         title=dict(
-            text=f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})",
+            text=f"Drug target candidates after {ko_gene} KO",
             font=dict(size=16),
         ),
         xaxis=dict(
