@@ -2533,8 +2533,8 @@ def _render_msg_figures(msg, msg_id):
                                         use_container_width=True, key=f"{msg_id}_pop_delta")
                         st.caption(
                             "\\* **Populations scored by gene signatures:** "
-                            "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
-                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile · "
+                            "**Proliferative** — CENPF z-score ≥ 70th percentile of WT · "
+                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile of WT · "
                             "**Intermediate** — all remaining cells"
                         )
 
@@ -2854,7 +2854,7 @@ if query_gene:
                 pass
 
         # Population panels — real data (panel 4) and simulation (panel 5)
-        # Quiescent = DNAJB1 z-score (top HSPA1B neighbour); Proliferative = mean(top-100 MKI67 neighbours)
+        # Quiescent = DNAJB1 z-score >= p70 WT; Proliferative = CENPF z-score >= p70 WT
         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
         _POP_ORDER  = ["quiescent", "proliferative", "intermediate"]  # intermediate drawn on top (largest group)
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
