@@ -2350,10 +2350,19 @@ elif selected_gene and selected_gene != _last_q_gene:
     st.session_state[f"last_selected_{dataset_key}"] = selected_gene
     _save_recent(dataset_key, selected_gene)
     query_gene = selected_gene
+elif not messages and not selected_gene:
+    # Session was reset (e.g. Streamlit Cloud timeout) — restore from URL param
+    _url_gene = st.query_params.get("gene", "")
+    if _url_gene and _url_gene.upper() in genes:
+        query_gene = _url_gene.upper()
+    else:
+        query_gene = None
 else:
     query_gene = None
 
 if query_gene:
+    # Persist gene in URL so session restores after Streamlit Cloud timeout
+    st.query_params["gene"] = query_gene.strip().upper()
     # Clear previous results — no history, each search is fresh
     st.session_state[f"messages_{dataset_key}"] = []
     messages = st.session_state[f"messages_{dataset_key}"]
