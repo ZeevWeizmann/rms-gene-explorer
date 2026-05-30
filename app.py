@@ -2522,19 +2522,6 @@ def _render_msg_figures(msg, msg_id):
                             font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
                         )
 
-                        # ── Row: Sim WT Time | Real pop | Sim WT pop | Sim KO pop
-                        _sim_time_fig  = msg.get("fig_sim_time")
-                        _real_pop_fig  = msg.get("fig_pop_real")
-                        _umap_row_cols = st.columns(4)
-                        if _sim_time_fig is not None:
-                            _sim_time_fig.update_layout(height=350)
-                            _umap_row_cols[0].plotly_chart(_sim_time_fig, use_container_width=True, key=f"{msg_id}_sim_time")
-                        if _real_pop_fig is not None:
-                            _real_pop_fig.update_layout(height=350)
-                            _umap_row_cols[1].plotly_chart(_real_pop_fig, use_container_width=True, key=f"{msg_id}_real_pop")
-                        _umap_row_cols[2].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
-                        _umap_row_cols[3].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
-
                         st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
                                         use_container_width=True, key=f"{msg_id}_pop_prop")
                         st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
@@ -2545,6 +2532,20 @@ def _render_msg_figures(msg, msg_id):
                             "**Quiescent** — DNAJB1 z-score ≥ 70th percentile · "
                             "**Intermediate** — all remaining cells"
                         )
+
+                        # ── Population maps expander (bottom) ────────────────
+                        _sim_time_fig = msg.get("fig_sim_time")
+                        _real_pop_fig = msg.get("fig_pop_real")
+                        with st.expander("Population maps (Time · WT · KO)", expanded=False):
+                            _umap_row_cols = st.columns(4)
+                            if _sim_time_fig is not None:
+                                _sim_time_fig.update_layout(height=350)
+                                _umap_row_cols[0].plotly_chart(_sim_time_fig, use_container_width=True, key=f"{msg_id}_sim_time")
+                            if _real_pop_fig is not None:
+                                _real_pop_fig.update_layout(height=350)
+                                _umap_row_cols[1].plotly_chart(_real_pop_fig, use_container_width=True, key=f"{msg_id}_real_pop")
+                            _umap_row_cols[2].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                            _umap_row_cols[3].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                     except Exception as _e:
                         st.info(f"{T['pop_unavail']}: {_e}")
                 _prog_map = {"tubb": "TUBB (201 genes)", "mki67": "MKI67 (201 genes)",
