@@ -2158,11 +2158,14 @@ def _render_msg_figures(msg, msg_id):
                 _tc_all_genes   = sorted(_tc_pert_df["gene"].unique().tolist())
                 _tc_default     = _pert_data.get("query_gene", "")
                 _tc_default_idx = _tc_all_genes.index(_tc_default) if _tc_default in _tc_all_genes else 0
+                st.caption("Gene expression over time")
                 _tc_sel_gene = st.selectbox(
                     "Gene expression over time",
                     options=_tc_all_genes,
                     index=_tc_default_idx,
                     key=f"{msg_id}_pert_gene_sel",
+                    label_visibility="collapsed",
+                    placeholder="",
                 )
                 _tc_gene_df = _tc_pert_df[_tc_pert_df["gene"] == _tc_sel_gene]
                 _tc_fig = go.Figure()
