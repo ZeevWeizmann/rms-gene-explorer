@@ -2391,11 +2391,6 @@ def _render_msg_figures(msg, msg_id):
                     st.info("No drug interactions found in DGIdb for these genes.")
                 else:
                     _d_highlight = {_d_ko_label, _d_query_gene}
-                    st.caption(
-                        f"Drug–gene interactions from **DGIdb** for **{_d_ko_label}** "
-                        f"and top-20 genes affected by KO  ·  "
-                        f"✓ = FDA-approved  ·  sorted by approval then score"
-                    )
                     def _drug_style(row):
                         is_query = row["Gene"] in _d_highlight
                         is_appr  = row["Approved"] == "✓"
