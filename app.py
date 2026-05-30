@@ -377,6 +377,50 @@ div[data-testid="stSelectbox"]:focus-within > div::before {
 div[data-testid="stExpander"] div[data-testid="stSelectbox"] > div::before {
     content: none !important;
 }
+/* ── Pipeline-style tabs ────────────────────────────────────────── */
+div[data-testid="stTabs"] [role="tablist"] {
+    gap: 2px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding-bottom: 0 !important;
+    flex-wrap: nowrap !important;
+}
+div[data-testid="stTabs"] [role="tab"] {
+    background: #f3f4f6 !important;
+    color: #6b7280 !important;
+    border-radius: 6px 6px 0 0 !important;
+    padding: 5px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    border: 1px solid #e5e7eb !important;
+    border-bottom: none !important;
+    margin-right: 0 !important;
+    transition: background 0.15s, color 0.15s !important;
+    white-space: nowrap !important;
+}
+div[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    background: white !important;
+    color: #2563EB !important;
+    border-top: 2px solid #2563EB !important;
+}
+div[data-testid="stTabs"] [role="tab"]:not(:first-child) {
+    border-left: none !important;
+}
+/* Arrows between tabs */
+div[data-testid="stTabs"] [role="tab"]:not(:last-child)::after {
+    content: "›" !important;
+    position: absolute !important;
+    right: -10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #d1d5db !important;
+    font-size: 1rem !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+div[data-testid="stTabs"] [role="tab"] {
+    position: relative !important;
+}
+
 /* Hide ::before for every selectbox that is NOT the main search bar */
 div[data-testid="stSelectbox"] + div[data-testid="stSelectbox"] > div::before,
 div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before,
@@ -2043,23 +2087,21 @@ def _render_msg_figures(msg, msg_id):
     _has_pert = _msg_grn_model in ("mki67", "tubb", "full")
     _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
 
-    # ── Build tab list dynamically ────────────────────────────────────────────
+    # ── Build tab list — always 5 slots, grey (empty) if no data ─────────────
     # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets
     # Program tab is auto-selected via JS on first render (see below)
-    _tab_defs = []  # list of (key, title) for tabs to show
-    if _has_expression:
-        _tab_defs.append(("expression", T['expression']))
-    if _has_gene_prog:
-        _tab_defs.append(("gene_prog", T['gene_program']))
-    if _has_grn:
-        _tab_defs.append(("network", T['network_graph']))
-    if _has_pert:
-        _ko_prefix = "" if _msg_grn_model == "full" else f"{_ko_gene_label} "
-        _tab_defs.append(("perturbation", T['ko_perturbation']))
-        _tab_defs.append(("targets",      T['ko_targets']))
-
-    if not _tab_defs:
+    _ALL_TAB_SLOTS = [
+        ("expression",   T['expression'],       _has_expression),
+        ("gene_prog",    T['gene_program'],      _has_gene_prog),
+        ("network",      T['network_graph'],     _has_grn),
+        ("perturbation", T['ko_perturbation'],   _has_pert),
+        ("targets",      T['ko_targets'],        _has_pert),
+    ]
+    # Only show tabs if at least one slot has data
+    if not any(has for _, _, has in _ALL_TAB_SLOTS):
         return
+    _tab_defs   = [(k, t) for k, t, _ in _ALL_TAB_SLOTS]
+    _tab_has    = {k: has for k, _, has in _ALL_TAB_SLOTS}
 
     # ── Pre-load perturbation data (radio rendered inside tabs, value read from session state) ──
     _pert_data = {}
@@ -2095,25 +2137,49 @@ def _render_msg_figures(msg, msg_id):
     _tabs = st.tabs(_tab_titles)
     _tab_map = dict(zip(_tab_keys, _tabs))
 
-    # ── Auto-select Program tab (index 1) on first render of this message ─────
+    # ── Mark empty tabs with hidden span + grey via JS ────────────────────────
+    # Build list of which tab indices have no data (for JS)
+    _empty_indices = [i for i, k in enumerate(_tab_keys) if not _tab_has.get(k)]
+    _prog_tab_idx  = _tab_keys.index("gene_prog") if "gene_prog" in _tab_keys else -1
+
+    # Put an invisible sentinel in empty tabs so we know they're empty
+    for _ek in _tab_keys:
+        if not _tab_has.get(_ek):
+            with _tab_map[_ek]:
+                st.markdown('<span class="tab-no-data"></span>', unsafe_allow_html=True)
+
     _tab_click_key = f"_tab_init_{msg_id}"
-    if "gene_prog" in _tab_map and not st.session_state.get(_tab_click_key):
+    if _prog_tab_idx >= 0 and not st.session_state.get(_tab_click_key):
         st.session_state[_tab_click_key] = True
-        _prog_tab_idx = _tab_keys.index("gene_prog")
-        _components.html(f"""<script>
-        (function() {{
-            function _clickProgramTab() {{
-                var lists = window.parent.document.querySelectorAll('[role="tablist"]');
-                if (!lists.length) {{ setTimeout(_clickProgramTab, 100); return; }}
-                var last = lists[lists.length - 1];
-                var btns = last.querySelectorAll('[role="tab"]');
-                if (btns.length > {_prog_tab_idx}) {{
-                    btns[{_prog_tab_idx}].click();
+    _components.html(f"""<script>
+    (function() {{
+        function _initTabs() {{
+            var doc = window.parent.document;
+            var lists = doc.querySelectorAll('[role="tablist"]');
+            if (!lists.length) {{ setTimeout(_initTabs, 100); return; }}
+            var last = lists[lists.length - 1];
+            var btns = last.querySelectorAll('[role="tab"]');
+
+            // Grey out empty tabs
+            var emptyIdx = {_empty_indices};
+            emptyIdx.forEach(function(i) {{
+                if (btns[i]) {{
+                    btns[i].style.opacity = '0.35';
+                    btns[i].style.pointerEvents = 'none';
                 }}
+            }});
+
+            // Auto-click Program tab on first render
+            var progIdx = {_prog_tab_idx};
+            var initKey = 'tab_inited_{msg_id}';
+            if (progIdx >= 0 && !sessionStorage.getItem(initKey)) {{
+                sessionStorage.setItem(initKey, '1');
+                if (btns[progIdx]) btns[progIdx].click();
             }}
-            setTimeout(_clickProgramTab, 250);
-        }})();
-        </script>""", height=0)
+        }}
+        setTimeout(_initTabs, 280);
+    }})();
+    </script>""", height=0)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
@@ -2125,23 +2191,6 @@ def _render_msg_figures(msg, msg_id):
                 with _mc:
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
-                    # ── Pipeline badge ─────────────────────────────────────
-                    _pipe_prog_color  = "#2563EB"
-                    _pipe_clust_color = "#16a34a" if _annot_label else "#d1d5db"
-                    _pipe_clust_text  = _annot_label if _annot_label else "No cluster assigned"
-                    _pipe_clust_fc    = "white" if _annot_label else "#9ca3af"
-                    st.markdown(f"""
-<div style="display:flex;align-items:center;gap:6px;margin:2px 0 6px 0;flex-wrap:wrap;">
-  <div style="background:{_pipe_prog_color};color:white;padding:4px 14px;
-              border-radius:20px;font-size:0.78rem;font-weight:500;white-space:nowrap;">
-    Gene Program
-  </div>
-  <div style="color:#d1d5db;font-size:1rem;line-height:1;">→</div>
-  <div style="background:{_pipe_clust_color};color:{_pipe_clust_fc};padding:4px 14px;
-              border-radius:20px;font-size:0.78rem;font-weight:500;white-space:nowrap;">
-    {_pipe_clust_text}
-  </div>
-</div>""", unsafe_allow_html=True)
                     if _cluster_summary:
                         with st.expander("Cluster details", expanded=False):
                             st.markdown(_cluster_summary)
