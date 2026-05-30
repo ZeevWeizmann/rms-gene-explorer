@@ -1692,7 +1692,13 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
 
     bar_fig.update_layout(
         title=dict(
-            text=f"Drug target candidates after {ko_gene} KO",
+            text=(
+                f"Drug target candidates after {ko_gene} KO"
+                f"<br><span style='font-size:12px;color:#888;font-weight:normal'>"
+                f"Gene expression change at t=80 (simulated KO vs WT) · "
+                f"orange = knocked-out gene · red = up-regulated · blue = down-regulated"
+                f"</span>"
+            ),
             font=dict(size=16),
         ),
         xaxis=dict(
@@ -1703,7 +1709,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         yaxis=dict(
             tickfont=dict(size=13),
         ),
-        height=560, margin=dict(l=100, r=100, t=110, b=40),
+        height=580, margin=dict(l=100, r=100, t=130, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
         annotations=annotations
     )
