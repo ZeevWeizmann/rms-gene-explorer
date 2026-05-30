@@ -1083,12 +1083,11 @@ def query_dgidb(genes: tuple) -> pd.DataFrame:
         return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
 
     gene_list = '", "'.join(expanded)
-    # first: 500 — fetch up to 500 interactions per gene (avoids default pagination cap)
     gql = f"""{{
         genes(names: ["{gene_list}"]) {{
             nodes {{
                 name
-                interactions(first: 500) {{
+                interactions {{
                     drug {{ name, approved }}
                     interactionScore
                     interactionTypes {{ type, directionality }}
