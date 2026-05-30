@@ -94,6 +94,7 @@ _TRANSLATIONS = {
         'gene_program': 'Program',
         'assigned_cluster': 'Assigned cluster',
         'ko_targets': 'Drug Targets',
+        'drugs': 'Drugs',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
         'network_graph': 'Regulatory Network',
@@ -224,6 +225,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'gene_program': 'Programme',
         'assigned_cluster': 'Cluster assigné',
         'ko_targets': 'Cibles thérapeutiques',
+        'drugs': 'Médicaments',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
         'network_graph': 'Réseau de Régulation',
@@ -1053,6 +1055,52 @@ def load_foxm1_real_timecourse():
     token = st.secrets.get("HF_TOKEN", None)
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
     return pd.read_csv(path)
+
+
+@st.cache_data(show_spinner=False, ttl=86400)
+def query_dgidb(genes: tuple) -> pd.DataFrame:
+    """Query DGIdb GraphQL API for drug-gene interactions (cached 24 h)."""
+    import requests
+    if not genes:
+        return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
+    gene_list = '", "'.join(genes)
+    gql = f"""{{
+        genes(names: ["{gene_list}"]) {{
+            nodes {{
+                name
+                interactions {{
+                    drug {{ name, approved }}
+                    interactionScore
+                    interactionTypes {{ type, directionality }}
+                }}
+            }}
+        }}
+    }}"""
+    try:
+        r = requests.post("https://dgidb.org/api/graphql",
+                          json={"query": gql}, timeout=20)
+        nodes = r.json().get("data", {}).get("genes", {}).get("nodes", [])
+        rows = []
+        for node in nodes:
+            for ia in node.get("interactions", []):
+                drug  = ia.get("drug", {}) or {}
+                types = [t["type"] for t in (ia.get("interactionTypes") or []) if t.get("type")]
+                score = ia.get("interactionScore") or 0
+                rows.append({
+                    "Gene":     node["name"],
+                    "Drug":     (drug.get("name") or "").title(),
+                    "Approved": "✓" if drug.get("approved") else "",
+                    "Type":     ", ".join(types),
+                    "Score":    round(float(score), 2),
+                })
+        df = pd.DataFrame(rows) if rows else pd.DataFrame(
+            columns=["Gene", "Drug", "Approved", "Type", "Score"])
+        # sort: approved first, then by score desc
+        if not df.empty:
+            df = df.sort_values(["Approved", "Score"], ascending=[False, False]).reset_index(drop=True)
+        return df
+    except Exception:
+        return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
 
 
 @st.cache_resource
@@ -2085,8 +2133,8 @@ def _render_msg_figures(msg, msg_id):
     _has_pert = _msg_grn_model in ("mki67", "tubb", "full")
     _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
 
-    # ── Build tab list — always 5 slots, grey (empty) if no data ─────────────
-    # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets
+    # ── Build tab list — always 6 slots, grey (empty) if no data ─────────────
+    # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets · Drugs
     # Program tab is auto-selected via JS on first render (see below)
     _ALL_TAB_SLOTS = [
         ("expression",   T['expression'],       _has_expression),
@@ -2094,6 +2142,7 @@ def _render_msg_figures(msg, msg_id):
         ("network",      T['network_graph'],     _has_grn),
         ("perturbation", T['ko_perturbation'],   _has_pert),
         ("targets",      T['ko_targets'],        _has_pert),
+        ("drugs",        T['drugs'],             _has_pert),
     ]
     # Only show tabs if at least one slot has data
     if not any(has for _, _, has in _ALL_TAB_SLOTS):
@@ -2257,6 +2306,59 @@ def _render_msg_figures(msg, msg_id):
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
                 st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
+
+    # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
+    if "drugs" in _tab_map:
+        with _tab_map["drugs"]:
+            if not _tab_has.get("drugs"):
+                st.empty()
+            elif "error" in _pert_data:
+                st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
+            elif _pert_data:
+                _d_pert_df  = _pert_data["pert_df"]
+                _d_ko_label = _pert_data["ko_label"]
+                # Top-20 most affected genes at last timepoint (excluding KO gene)
+                _d_times  = sorted(_d_pert_df["time"].unique())
+                _d_last_t = _d_times[-1]
+                _d_summ   = _d_pert_df[
+                    (_d_pert_df["time"] == _d_last_t) &
+                    (_d_pert_df["gene"] != _d_ko_label)
+                ].copy()
+                if "log2fc" not in _d_summ.columns:
+                    _d_summ["log2fc"] = np.log2(
+                        (_d_summ["mean_ko"] + 1e-9) / (_d_summ["mean_wt"] + 1e-9))
+                _d_summ["abs_lfc"] = _d_summ["log2fc"].abs()
+                _d_target_genes = tuple(
+                    _d_summ.nlargest(20, "abs_lfc")["gene"].tolist()
+                )
+                with st.spinner("Querying DGIdb…"):
+                    _drugs_df = query_dgidb(_d_target_genes)
+
+                if _drugs_df.empty:
+                    st.info("No drug interactions found in DGIdb for these genes.")
+                else:
+                    st.caption(
+                        f"Drug–gene interactions from **DGIdb** for top-20 genes "
+                        f"affected by **{_d_ko_label} KO**  ·  "
+                        f"✓ = FDA-approved  ·  sorted by approval then score"
+                    )
+                    # Style: highlight approved drugs in green
+                    def _drug_style(row):
+                        if row["Approved"] == "✓":
+                            return ["background-color:#dcfce7;color:#166534;font-weight:600"
+                                    if c in ("Drug", "Approved") else
+                                    "background-color:#dcfce7"
+                                    for c in row.index]
+                        return [""] * len(row)
+                    st.dataframe(
+                        _drugs_df.style.apply(_drug_style, axis=1),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Score": st.column_config.NumberColumn("Score", format="%.2f"),
+                            "Approved": st.column_config.TextColumn("✓ FDA"),
+                        },
+                    )
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
     if "perturbation" in _tab_map:
