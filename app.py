@@ -9,6 +9,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
 import json
 import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(__file__))
 
 # ── Recent searches (session + optional disk persistence) ─────────
 _RECENT_FILE = _os.path.join(_os.path.dirname(__file__), "recent_searches.json")
@@ -1059,6 +1061,132 @@ def load_foxm1_real_timecourse():
     token = st.secrets.get("HF_TOKEN", None)
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
     return pd.read_csv(path)
+
+
+# ── Online KO Simulation ──────────────────────────────────────────────────────
+
+@st.cache_resource(show_spinner=False)
+def load_grn_params():
+    """Load GRN model parameters for online KO simulation (~7 MB total)."""
+    import os
+    token = st.secrets.get("HF_TOKEN", None)
+    params = {}
+    files = [
+        "inter_t_simul", "basal_simul", "basal_t_simul",
+        "degradations_temporal", "ratios", "mixture_parameters", "pi_zinb",
+        "data_kon_beta_sub200", "data_prot_sub200", "data_kon_theta_sub200",
+        "data_times_sub200",
+    ]
+    for f in files:
+        fname = f"{f}.npy"
+        local = os.path.join(LOCAL_DIR, "grn_params", fname)
+        if os.path.exists(local):
+            params[f] = np.load(local)
+        else:
+            path = hf_hub_download(
+                repo_id=REPO_ID, filename=f"grn_params/{fname}",
+                repo_type="dataset", token=token
+            )
+            params[f] = np.load(path)
+    return params
+
+
+def run_online_ko(gene_name: str, gene_names: list, grn_params: dict):
+    """
+    Run online KO simulation for any gene.
+    Returns (X_wt, X_ko) — simulated expression matrices (n_cells × n_genes).
+    Uses 200 cells per timepoint (1200 total).
+    """
+    try:
+        from CardamomOT import NetworkModel
+    except ImportError:
+        raise ImportError("CardamomOT package not found")
+
+    p = grn_params
+    G = 200  # NetworkModel(G) → 200 = n_genes - 1
+
+    def _build_model(ko_idx=None):
+        model = NetworkModel(G)
+        model.inter_t    = p["inter_t_simul"].copy()
+        model.basal      = p["basal_simul"].copy()
+        model.basal_t    = p["basal_t_simul"].copy()
+        model.prot       = p["data_prot_sub200"].copy()
+        model.kon_theta  = p["data_kon_theta_sub200"].copy()
+        model.kon_beta   = p["data_kon_beta_sub200"].copy()
+        model.times_data = p["data_times_sub200"].copy()
+        model.d_t        = p["degradations_temporal"].copy()
+        model.ratios     = p["ratios"].copy()
+        if ko_idx is not None:
+            model.basal_t[:, ko_idx] = -100 - np.sum(model.inter_t[-1, :, ko_idx])
+            model.prot[:, ko_idx] = 0
+        return model
+
+    times = np.array([0., 16., 32., 48., 64., 80.])
+
+    # WT simulation
+    model_wt = _build_model()
+    model_wt.simulate_network(times)
+    kon_wt = model_wt.kon_theta  # (n_cells × n_genes+1)
+
+    # KO simulation
+    ko_idx = gene_names.index(gene_name)
+    model_ko = _build_model(ko_idx=ko_idx)
+    model_ko.simulate_network(times)
+    kon_ko = model_ko.kon_theta
+
+    # Convert kon_theta → RNA expression via NB + ZINB
+    mixture_params = p["mixture_parameters"]
+    c   = mixture_params[-1, :]   # (n_genes+1,)
+    kz  = mixture_params[:-1, :]  # (2, n_genes+1)
+    pi_zinb = p["pi_zinb"]        # (n_genes,)  — note: only 200 genes
+
+    def _sample_rna(kon):
+        n_cells = kon.shape[0]
+        n_genes = kon.shape[1] - 1  # exclude gene 0
+        kz_max = np.maximum(kz, 0)
+        mu = (np.max(kz_max, 0) * kon)[:, 1:]  # (n_cells, n_genes)
+        prob = (c[1:] / (c[1:] + 1))            # (n_genes,)
+        # Avoid negative binomial with bad params
+        n_nb = np.maximum(mu * prob / np.maximum(1 - prob, 1e-9), 1e-3)
+        rna = np.random.negative_binomial(
+            np.broadcast_to(n_nb, (n_cells, n_genes)).astype(np.float64),
+            np.broadcast_to(prob, (n_cells, n_genes))
+        ).astype(float)
+        # Zero inflation
+        pi_z = np.minimum(pi_zinb[:n_genes], 0.99)
+        zero_mask = np.random.uniform(0, 1, rna.shape) < pi_z
+        rna[zero_mask] = 0
+        return rna
+
+    X_wt = _sample_rna(kon_wt)
+    X_ko = _sample_rna(kon_ko)
+    return X_wt, X_ko
+
+
+def score_populations_online(X_wt, X_ko, gene_names):
+    """Score WT and KO cells into populations using CENPF/DNAJB1."""
+    cenpf_idx  = gene_names.index("CENPF")
+    dnajb1_idx = gene_names.index("DNAJB1")
+
+    c_wt = X_wt[:, cenpf_idx];  d_wt = X_wt[:, dnajb1_idx]
+    wt_cm = c_wt.mean(); wt_cs = c_wt.std() + 1e-9
+    wt_dm = d_wt.mean(); wt_ds = d_wt.std() + 1e-9
+
+    sp_wt = (c_wt - wt_cm) / wt_cs
+    sq_wt = (d_wt - wt_dm) / wt_ds
+    p70p  = np.percentile(sp_wt, 70)
+    p70q  = np.percentile(sq_wt, 70)
+
+    def _assign(sp, sq):
+        lbl = np.full(len(sp), "intermediate", dtype=object)
+        lbl[sp >= p70p] = "proliferative"
+        lbl[sq >= p70q] = "quiescent"
+        return pd.Series(lbl).value_counts(normalize=True).mul(100)
+
+    sp_ko = (X_ko[:, cenpf_idx] - wt_cm) / wt_cs
+    sq_ko = (X_ko[:, dnajb1_idx] - wt_dm) / wt_ds
+
+    return _assign(sp_wt, sq_wt), _assign(sp_ko, sq_ko)
 
 
 @st.cache_data(show_spinner=False, ttl=86400)
@@ -2552,6 +2680,54 @@ def _render_msg_figures(msg, msg_id):
                 _prog_map = {"tubb": "TUBB (201 genes)", "mki67": "MKI67 (201 genes)",
                              "full": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
                 st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
+
+                # ── Custom KO expander ────────────────────────────────────
+                with st.expander("🧪 Simulate any gene KO (online)", expanded=False):
+                    _all_sim_genes = sorted([g for g in genes if g != "HSPA1B" or True])
+                    _ko_sel = st.selectbox(
+                        "Select gene to knock out",
+                        options=_all_sim_genes,
+                        key=f"{msg_id}_custom_ko_gene",
+                        index=_all_sim_genes.index(_ko_gene_label) if _ko_gene_label in _all_sim_genes else 0,
+                    )
+                    _run_btn = st.button("▶ Run KO simulation", key=f"{msg_id}_run_ko_btn")
+                    _ck = f"{msg_id}_custom_ko_result"
+                    if _run_btn:
+                        with st.spinner(f"Simulating {_ko_sel} KO (~15–30 sec)…"):
+                            try:
+                                _grn_p = load_grn_params()
+                                _gene_names_list = genes  # list of 200 gene names
+                                _Xwt, _Xko = run_online_ko(_ko_sel, list(_gene_names_list), _grn_p)
+                                _pop_wt_r, _pop_ko_r = score_populations_online(_Xwt, _Xko, list(_gene_names_list))
+                                st.session_state[_ck] = {
+                                    "ko_gene": _ko_sel, "pop_wt": _pop_wt_r, "pop_ko": _pop_ko_r
+                                }
+                            except Exception as _e:
+                                st.error(f"Simulation error: {_e}")
+                    if _ck in st.session_state:
+                        _cr = st.session_state[_ck]
+                        _pops = ["proliferative", "quiescent", "intermediate"]
+                        _clrs = {"proliferative": "#e05a5a", "quiescent": "#4a7fc1", "intermediate": "#aaaaaa"}
+                        _wt_v = [_cr["pop_wt"].get(p, 0) for p in _pops]
+                        _ko_v = [_cr["pop_ko"].get(p, 0) for p in _pops]
+                        _delta = [_ko_v[i] - _wt_v[i] for i in range(3)]
+                        _cfig = go.Figure()
+                        for pi, pop in enumerate(_pops):
+                            _cfig.add_bar(name=pop, x=["WT sim", f"{_cr['ko_gene']} KO"],
+                                          y=[_wt_v[pi], _ko_v[pi]],
+                                          marker_color=_clrs[pop],
+                                          text=[f"{_wt_v[pi]:.1f}%",
+                                                f"{_delta[pi]:+.1f}%" if abs(_delta[pi]) > 0.1 else ""],
+                                          textposition="outside")
+                        _cfig.update_layout(
+                            barmode="group", height=350,
+                            title=f"Cell populations: WT vs {_cr['ko_gene']} KO",
+                            yaxis_title="% of cells", plot_bgcolor="white", paper_bgcolor="white",
+                            legend=dict(orientation="h", y=-0.15),
+                            margin=dict(t=50, b=60),
+                        )
+                        st.plotly_chart(_cfig, use_container_width=True, key=f"{msg_id}_custom_ko_fig")
+                        st.caption("⚠️ Based on 200 cells/timepoint subsample · CENPF/DNAJB1 scoring")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:

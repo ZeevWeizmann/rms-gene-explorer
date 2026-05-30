@@ -8,3 +8,8 @@ networkx
 anndata
 scanpy
 leidenalg
+numba
+joblib
+pot
+seaborn
+umap-learn
