@@ -377,6 +377,10 @@ div[data-testid="stSelectbox"]:focus-within > div::before {
 div[data-testid="stExpander"] div[data-testid="stSelectbox"] > div::before {
     content: none !important;
 }
+/* Hide ::before inside tab content (gene selector etc) */
+div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before {
+    content: none !important;
+}
 
 /* ── Google-style search selectbox ────────────────────────────── */
 div[data-testid="stSelectbox"] > label {
@@ -480,11 +484,14 @@ header[data-testid="stHeader"] [data-testid="stAppViewBlockContainer"] {
 </script>
 """, unsafe_allow_html=True)
 
-# ── Dynamic CSS: translated placeholder for search bar ───────────
+# ── Dynamic CSS: translated placeholder for search bar only ──────
 st.markdown(f"""
 <style>
 div[data-testid="stSelectbox"] > div::before {{
     content: "{T['search_placeholder']}";
+}}
+div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before {{
+    content: none !important;
 }}
 </style>
 """, unsafe_allow_html=True)
