@@ -2051,17 +2051,18 @@ def _render_msg_figures(msg, msg_id):
     _pert_data = {}
     if _has_pert:
         try:
-            _full_ko_key = f"{msg_id}_full_ko_choice"
+            q_gene = msg.get("query_gene", "MKI67")
             if _msg_grn_model == "full":
-                _full_ko_choice = st.session_state.get(_full_ko_key, "HSPA1B")
-                _effective_grn_model = {
-                    "AURKB": "full_aurkb",
-                }.get(_full_ko_choice, "full")
-                _ko_gene_label = _full_ko_choice
+                # auto-select KO model from query gene
+                if q_gene == "AURKB":
+                    _effective_grn_model = "full_aurkb"
+                    _ko_gene_label = "AURKB"
+                else:
+                    _effective_grn_model = "full"
+                    _ko_gene_label = "HSPA1B"
             else:
                 _effective_grn_model = _msg_grn_model
             pert_df = load_perturbation(_effective_grn_model)
-            q_gene  = msg.get("query_gene", "MKI67")
             bar_fig, _ = build_perturbation_figures(
                 pert_df, q_gene, ko_gene=_ko_gene_label,
                 real_expr_means=load_real_expr_means())
@@ -2071,8 +2072,6 @@ def _render_msg_figures(msg, msg_id):
                 "query_gene": q_gene,
                 "effective_model": _effective_grn_model,
                 "ko_label": _ko_gene_label,
-                "full_ko_key": _full_ko_key,
-                "is_full": _msg_grn_model == "full",
             }
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
@@ -2151,9 +2150,6 @@ def _render_msg_figures(msg, msg_id):
             if "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
-                if _pert_data.get("is_full"):
-                    st.radio("KO gene", ["HSPA1B", "AURKB"],
-                             horizontal=True, key=_pert_data["full_ko_key"])
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
 
