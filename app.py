@@ -424,8 +424,7 @@ div[data-testid="stTabs"] [role="tab"] {
 /* Hide ::before for every selectbox that is NOT the main search bar */
 div[data-testid="stSelectbox"] + div[data-testid="stSelectbox"] > div::before,
 div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before,
-div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before,
-div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div[data-testid="stSelectbox"] > div::before {
+div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before {
     content: none !important;
 }
 
@@ -538,8 +537,7 @@ div[data-testid="stSelectbox"] > div::before {{
     content: "{T['search_placeholder']}";
 }}
 div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before,
-div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before,
-div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div[data-testid="stSelectbox"] > div::before {{
+div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before {{
     content: none !important;
 }}
 </style>
