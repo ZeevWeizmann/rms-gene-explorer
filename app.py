@@ -2192,7 +2192,7 @@ def _render_msg_figures(msg, msg_id):
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
                     if _cluster_summary:
-                        with st.expander("Cluster details", expanded=False):
+                        with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
                             st.markdown(_cluster_summary)
                 with _tc:
                     st.dataframe(
