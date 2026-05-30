@@ -2439,6 +2439,8 @@ if query_gene:
             for i in sorted_idx
         ]
         df = pd.DataFrame(top_genes, columns=["Gene", "Similarity", "Cluster annotation"])
+        df = df[["Gene", "Similarity"]].copy()
+        df.index = range(1, len(df) + 1)
 
         query_cluster = int(clusters[idx])
         query_annotation = annotations.get(query_cluster, "")
