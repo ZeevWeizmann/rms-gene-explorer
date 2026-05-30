@@ -1607,14 +1607,28 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
     subtitle       = _def["subtitle"]
 
     # ── Figure 1: Top-20 most affected genes at last timepoint ──
-    # exclude the KO gene itself (trivial — we set it to 0 by design)
+    # exclude the KO gene itself (handled separately as the primary target)
     summary = pert_df[(pert_df["time"] == last_t) & (pert_df["gene"] != ko_gene)].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
     top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
 
+    # KO gene row — show at bottom (most negative), capped for readability
+    _ko_row = pert_df[(pert_df["time"] == last_t) & (pert_df["gene"] == ko_gene)]
+    _ko_lfc = float(_ko_row["log2fc"].iloc[0]) if not _ko_row.empty else -6.0
+    _ko_lfc_display = max(_ko_lfc, top20["log2fc"].min() - 1.0)  # don't let it blow out scale
+
+    # Prepend KO gene to top20 (at bottom of sorted list)
+    _ko_extra = pd.DataFrame([{
+        "gene": ko_gene, "log2fc": _ko_lfc_display,
+        "abs_log2fc": abs(_ko_lfc_display)
+    }])
+    top20_with_ko = pd.concat([top20[["gene","log2fc"]], _ko_extra[["gene","log2fc"]]])
+
     colors = []
-    for gene, val in zip(top20["gene"], top20["log2fc"]):
-        if val > 0:
+    for gene, val in zip(top20_with_ko["gene"], top20_with_ko["log2fc"]):
+        if gene == ko_gene:
+            colors.append("#F59E0B")   # amber = primary KO target
+        elif val > 0:
             colors.append("#D45F5F")   # red = up
         else:
             colors.append("#4C72B0")   # blue = down
@@ -1622,16 +1636,18 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
     annotations = []
 
     # Hover text
-    _hover = [
-        f"<b>{g}</b><br>log₂FC: {lfc:.3f}"
-        for g, lfc in zip(top20["gene"], top20["log2fc"])
-    ]
+    _hover = []
+    for g, lfc in zip(top20_with_ko["gene"], top20_with_ko["log2fc"]):
+        if g == ko_gene:
+            _hover.append(f"<b>{g}</b> ← KO target<br>log₂FC: {_ko_lfc:.3f}")
+        else:
+            _hover.append(f"<b>{g}</b><br>log₂FC: {lfc:.3f}")
 
     bar_fig = go.Figure()
 
     # ── Bar trace (log2FC, primary x-axis) ──────────────────────────
     bar_fig.add_trace(go.Bar(
-        x=top20["log2fc"], y=top20["gene"],
+        x=top20_with_ko["log2fc"], y=top20_with_ko["gene"],
         orientation="h",
         marker_color=colors,
         hovertext=_hover,
