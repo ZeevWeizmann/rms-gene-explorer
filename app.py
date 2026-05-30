@@ -2125,18 +2125,26 @@ def _render_msg_figures(msg, msg_id):
                 with _mc:
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
-                    if _annot_label:
-                        st.markdown(
-                            "<style>div[data-testid='stPopover'] button{border:none!important;"
-                            "background:transparent!important;color:#555;font-style:italic;"
-                            "padding:0;font-size:0.85rem;}</style>",
-                            unsafe_allow_html=True
-                        )
-                        with st.popover(f"{T['assigned_cluster']}: {_annot_label}"):
-                            if _cluster_summary:
-                                st.markdown(_cluster_summary)
-                            else:
-                                st.markdown(f"*{_annot_label}*")
+                    # ── Pipeline badge ─────────────────────────────────────
+                    _pipe_prog_color  = "#2563EB"
+                    _pipe_clust_color = "#16a34a" if _annot_label else "#d1d5db"
+                    _pipe_clust_text  = _annot_label if _annot_label else "No cluster assigned"
+                    _pipe_clust_fc    = "white" if _annot_label else "#9ca3af"
+                    st.markdown(f"""
+<div style="display:flex;align-items:center;gap:6px;margin:2px 0 6px 0;flex-wrap:wrap;">
+  <div style="background:{_pipe_prog_color};color:white;padding:4px 14px;
+              border-radius:20px;font-size:0.78rem;font-weight:500;white-space:nowrap;">
+    Gene Program
+  </div>
+  <div style="color:#d1d5db;font-size:1rem;line-height:1;">→</div>
+  <div style="background:{_pipe_clust_color};color:{_pipe_clust_fc};padding:4px 14px;
+              border-radius:20px;font-size:0.78rem;font-weight:500;white-space:nowrap;">
+    {_pipe_clust_text}
+  </div>
+</div>""", unsafe_allow_html=True)
+                    if _cluster_summary:
+                        with st.expander("Cluster details", expanded=False):
+                            st.markdown(_cluster_summary)
                 with _tc:
                     st.dataframe(
                         msg["df"],
