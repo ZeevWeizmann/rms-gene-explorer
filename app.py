@@ -2363,14 +2363,18 @@ def _render_msg_figures(msg, msg_id):
                             font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
                         )
 
-                        # ── Row: Sim WT Time | Sim WT pop | Sim KO pop ──────────
-                        _sim_time_fig = msg.get("fig_sim_time")
-                        _umap_row_cols = st.columns(3)
+                        # ── Row: Sim WT Time | Real pop | Sim WT pop | Sim KO pop
+                        _sim_time_fig  = msg.get("fig_sim_time")
+                        _real_pop_fig  = msg.get("fig_pop_real")
+                        _umap_row_cols = st.columns(4)
                         if _sim_time_fig is not None:
                             _sim_time_fig.update_layout(height=350)
                             _umap_row_cols[0].plotly_chart(_sim_time_fig, use_container_width=True, key=f"{msg_id}_sim_time")
-                        _umap_row_cols[1].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
-                        _umap_row_cols[2].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
+                        if _real_pop_fig is not None:
+                            _real_pop_fig.update_layout(height=350)
+                            _umap_row_cols[1].plotly_chart(_real_pop_fig, use_container_width=True, key=f"{msg_id}_real_pop")
+                        _umap_row_cols[2].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                        _umap_row_cols[3].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
 
                         st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
                                         use_container_width=True, key=f"{msg_id}_pop_prop")
@@ -2686,21 +2690,26 @@ if query_gene:
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q in ("tubb", "mki67", "full"):
+        if _grn_model_q in ("tubb", "mki67", "full", "full_aurkb"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
                     _pr, x="x", y="y",
                     color="population",
                     color_discrete_map=_POP_COLORS,
-                    title=f"{T['population']} — real data (DNAJB1 / MKI67-100)",
+                    title="",
                     labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
                     opacity=0.6, height=450, render_mode="svg",
                     category_orders={"population": _POP_ORDER},
                 )
                 for _pop, _sz in _POP_SIZES.items():
                     fig_pop_real.update_traces(marker=dict(size=_sz), selector=dict(name=_pop))
-                fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                fig_pop_real.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+                fig_pop_real.add_annotation(
+                    text="Real data · Populations", x=0.01, y=0.99, xref="paper", yref="paper",
+                    showarrow=False, xanchor="left", yanchor="top",
+                    font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+                )
             except Exception:
                 pass
         # Population sim — original GRN has no cell-cycle genes → skip
