@@ -2142,6 +2142,7 @@ def _render_msg_figures(msg, msg_id):
                         msg["df"],
                         use_container_width=True,
                         height=440,
+                        hide_index=True,
                         column_config={
                             "Similarity": st.column_config.NumberColumn("Similarity", format="%.2f"),
                         },
