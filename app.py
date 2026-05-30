@@ -748,7 +748,7 @@ def load_grn_gene_list(grn_key="original"):
 
 
 @st.cache_resource
-def load_perturbation(grn_key="mki67", _version="v20260529"):
+def load_perturbation(grn_key="mki67", version="v20260530"):
     """Load KO perturbation data for the given GRN model."""
     import os
     if grn_key == "tubb":
@@ -2419,10 +2419,16 @@ if query_gene:
             expr_vals = expr[_sample_idx, gene_idx].astype(float)
             umap_plot["expression"] = expr_vals
 
+            # Clip colorscale at 99th percentile so sparse high-expressors
+            # don't crush the rest of the scale into dark purple
+            _p99 = float(np.percentile(expr_vals[expr_vals > 0], 99)) if (expr_vals > 0).any() else 1.0
+            _cmax = max(_p99, float(expr_vals.max()) * 0.5)  # never below half the max
+
             fig = px.scatter(
                 umap_plot, x="x", y="y",
                 color="expression",
                 color_continuous_scale="Viridis",
+                range_color=[0, _cmax],
                 title=f"{query_gene} — {T['expression']} ({len(umap_plot):,} cells shown)",
                 labels={"x": T['umap1'], "y": T['umap2']},
                 opacity=0.6, height=450,
