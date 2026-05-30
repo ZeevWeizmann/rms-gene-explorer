@@ -90,10 +90,12 @@ _TRANSLATIONS = {
         'population': 'Population',
         'pop_shift': 'Population shift after {gene} KO (Δ%)',
         'delta_pct': 'Δ% (KO – WT)',
+        # Result tabs
+        'gene_program': 'Gene Program',
         # Network tabs
         'ko_perturbation': 'KO Perturbation',
-        'network_graph': 'Network graph',
-        'adjacency_matrix': 'Adjacency matrix',
+        'network_graph': 'Network graph GNN',
+        'adjacency_matrix': 'Adjacency matrix GNN',
         'network_topology': '📊 Network topology analysis',
         'upstream': 'Upstream regulators',
         'downstream': 'Downstream targets',
@@ -216,10 +218,12 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'population': 'Population',
         'pop_shift': 'Changement de population après KO de {gene} (Δ%)',
         'delta_pct': 'Δ% (KO – WT)',
+        # Result tabs
+        'gene_program': 'Programme Génique',
         # Network tabs
         'ko_perturbation': 'Perturbation KO',
-        'network_graph': 'Graphe du réseau',
-        'adjacency_matrix': "Matrice d'adjacence",
+        'network_graph': 'Graphe GNN',
+        'adjacency_matrix': "Matrice d'adjacence GNN",
         'network_topology': '📊 Analyse topologique du réseau',
         'upstream': 'Régulateurs en amont',
         'downstream': 'Cibles en aval',
@@ -2094,229 +2098,255 @@ if f"default_run_{dataset_key}" not in st.session_state:
 messages = st.session_state[f"messages_{dataset_key}"]
 
 def _render_msg_figures(msg, msg_id):
-    """Render all figures for a single message."""
-    if "df" in msg:
-        if msg.get("fig_gene_map") is not None:
-            _mc, _tc = st.columns([3, 2])
-            with _mc:
-                st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
-                                key=f"{msg_id}_gene_map")
-            with _tc:
-                st.dataframe(msg["df"], use_container_width=True, height=440)
+    """Render all figures for a single message using tabs."""
+    # ── Determine what content is available ──────────────────────────────────
+    _has_gene_prog = "df" in msg
+    _has_expression = msg.get("fig") is not None or any(
+        msg.get(k) is not None for k in ["fig_time", "fig_sim_time", "fig_celltype"]
+    )
+    _msg_grn_model = msg.get("grn_model")
+    _has_grn = msg.get("grn_fig") is not None
+    _has_adj = _has_grn and msg.get("grn_adj") is not None
+    _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
+    _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
+
+    # ── Build tab list dynamically ────────────────────────────────────────────
+    _tab_defs = []  # list of (key, title) for tabs to show
+    if _has_gene_prog:
+        _tab_defs.append(("gene_prog", f"🗂️ {T['gene_program']}"))
+    if _has_expression:
+        _tab_defs.append(("expression", f"📊 {T['expression']}"))
+    if _has_pert:
+        _pert_tab_title = f"🧬 {T['ko_perturbation']}" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} {T['ko_perturbation']}"
+        _tab_defs.append(("perturbation", _pert_tab_title))
+    if _has_grn:
+        _tab_defs.append(("network", T['network_graph']))
+    if _has_adj:
+        _tab_defs.append(("adjacency", T['adjacency_matrix']))
+
+    if not _tab_defs:
+        return
+
+    _tab_keys   = [d[0] for d in _tab_defs]
+    _tab_titles = [d[1] for d in _tab_defs]
+    _tabs = st.tabs(_tab_titles)
+    _tab_map = dict(zip(_tab_keys, _tabs))
+
+    # ── Tab: Gene Program ─────────────────────────────────────────────────────
+    if "gene_prog" in _tab_map:
+        with _tab_map["gene_prog"]:
+            if msg.get("fig_gene_map") is not None:
+                _mc, _tc = st.columns([3, 2])
+                with _mc:
+                    st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
+                                    key=f"{msg_id}_gene_map")
+                with _tc:
+                    st.dataframe(msg["df"], use_container_width=True, height=440)
+                    if "cluster_id" in msg:
+                        summary = summaries.get(msg["cluster_id"], "")
+                        if summary:
+                            with st.popover(T['cluster_details']):
+                                st.markdown(summary)
+            else:
+                st.dataframe(msg["df"], use_container_width=True)
                 if "cluster_id" in msg:
                     summary = summaries.get(msg["cluster_id"], "")
                     if summary:
                         with st.popover(T['cluster_details']):
                             st.markdown(summary)
-        else:
-            st.dataframe(msg["df"], use_container_width=True)
-            if "cluster_id" in msg:
-                summary = summaries.get(msg["cluster_id"], "")
-                if summary:
-                    with st.popover(T['cluster_details']):
-                        st.markdown(summary)
-    # Expression UMAP — full width, taller
-    if msg.get("fig") is not None:
-        fig_expr = msg["fig"]
-        fig_expr.update_layout(height=CHART_H)
-        st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-    # UMAPs — row 1: Time / Sim-time / Cell type
-    _row1_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
-    _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
-    if _row1:
-        cols = st.columns(1 if is_mobile else len(_row1))
-        for col, (k, f) in zip(cols, _row1):
-            f.update_layout(height=CHART_H_SMALL)
-            col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
-    # Population panels for foxm1/tubb/mki67 are shown inside perturbation tab
-    if "grn_fig" in msg and msg["grn_fig"] is not None:
-            _msg_grn_model = msg.get("grn_model")
-            _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
-            _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
-            _pert_tab_title = f"🧬 {T['ko_perturbation']}" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} {T['ko_perturbation']}"
-            if _has_pert:
-                _tab_results = st.tabs([_pert_tab_title, T['network_graph'], T['adjacency_matrix']])
-                tab_pert, tab_graph, tab_matrix = _tab_results
-            else:
-                _tab_results = st.tabs([T['network_graph'], T['adjacency_matrix']])
-                tab_graph, tab_matrix = _tab_results
-                tab_pert = None
-            with tab_graph:
-                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
-                topo = msg.get("grn_topo")
-                if topo is not None and not topo.empty:
-                    with st.expander(T['network_topology'], expanded=True):
-                        # summary metrics
-                        n_fb = int(topo["Feedback loop"].sum())
-                        n_up = int((topo["Role"] == "upstream").sum())
-                        n_dn = int((topo["Role"] == "downstream").sum())
-                        n_fb_role = int((topo["Role"] == "feedback loop").sum())
-                        top_hub = topo[topo["Role"] != "query"].nlargest(1, "Total degree")
-                        c1, c2, c3, c4 = st.columns(4)
-                        c1.metric(T['upstream'], n_up)
-                        c2.metric(T['downstream'], n_dn)
-                        c3.metric(T['feedback'], n_fb_role)
-                        c4.metric(T['cycle_nodes'], n_fb)
-                        if not top_hub.empty:
-                            hub_name = top_hub.iloc[0]["Gene"]
-                            hub_deg  = int(top_hub.iloc[0]["Total degree"])
-                            st.info(f"{T['top_hub']}: **{hub_name}** (degree {hub_deg}) — "
-                                    f"{T['most_connected']}")
-                        # table
-                        show_cols = ["Gene", "Role", "In-degree", "Out-degree",
-                                     "Total degree", "Feedback loop"]
-                        st.dataframe(
-                            topo[show_cols].reset_index(drop=True),
-                            use_container_width=True,
-                            hide_index=True,
-                            column_config={
-                                "Feedback loop": st.column_config.CheckboxColumn("🔄 Cycle"),
-                            }
-                        )
-            with tab_matrix:
-                if "grn_adj" in msg and msg["grn_adj"] is not None:
-                    adj_df, genes_list = msg["grn_adj"]
-                    vals = adj_df.values.flatten()
-                    nonzero = vals[np.abs(vals) > 1e-4]
-                    if len(nonzero) > 0:
-                        vmax = float(np.percentile(np.abs(nonzero), 95))
-                    else:
-                        vmax = float(adj_df.abs().values.max()) or 1.0
-                    adj_fig = px.imshow(
-                        adj_df,
-                        color_continuous_scale="RdBu_r",
-                        color_continuous_midpoint=0,
-                        zmin=-vmax, zmax=vmax,
-                        title="Adjacency matrix (red=activation, blue=repression, clipped at 95th percentile)",
-                        height=600,
-                        aspect="auto"
+
+    # ── Tab: Expression ───────────────────────────────────────────────────────
+    if "expression" in _tab_map:
+        with _tab_map["expression"]:
+            if msg.get("fig") is not None:
+                fig_expr = msg["fig"]
+                fig_expr.update_layout(height=CHART_H)
+                st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
+            _row1_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
+            _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
+            if _row1:
+                cols = st.columns(1 if is_mobile else len(_row1))
+                for col, (k, f) in zip(cols, _row1):
+                    f.update_layout(height=CHART_H_SMALL)
+                    col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+
+    # ── Tab: KO Perturbation ──────────────────────────────────────────────────
+    if "perturbation" in _tab_map:
+        with _tab_map["perturbation"]:
+            try:
+                # KO selector for Full program (same GRN, three KO choices)
+                if _msg_grn_model == "full":
+                    _full_ko_key = f"{msg_id}_full_ko_choice"
+                    _full_ko_choice = st.radio(
+                        "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
+                        horizontal=True, key=_full_ko_key
                     )
-                    adj_fig.update_layout(
-                        xaxis=dict(tickfont=dict(size=9)),
-                        yaxis=dict(tickfont=dict(size=9))
-                    )
-                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
-            if tab_pert is not None:
-                with tab_pert:
+                    _effective_grn_model = {
+                        "FOXM1": "full_foxm1",
+                        "AURKB": "full_aurkb",
+                    }.get(_full_ko_choice, "full")
+                    _ko_gene_label = _full_ko_choice
+                else:
+                    _effective_grn_model = _msg_grn_model
+                pert_df = load_perturbation(_effective_grn_model)
+                q_gene  = msg.get("query_gene", "MKI67")
+                _real_means = load_real_expr_means()
+                bar_fig, line_fig = build_perturbation_figures(
+                    pert_df, q_gene, ko_gene=_ko_gene_label,
+                    real_expr_means=_real_means)
+                st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
+                # Population proportions + delta + UMAP
+                if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1", "full_aurkb"):
                     try:
-                        # KO selector for Full program (same GRN, three KO choices)
-                        if _msg_grn_model == "full":
-                            _full_ko_key = f"{msg_id}_full_ko_choice"
-                            _full_ko_choice = st.radio(
-                                "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
-                                horizontal=True, key=_full_ko_key
-                            )
-                            _effective_grn_model = {
-                                "FOXM1": "full_foxm1",
-                                "AURKB": "full_aurkb",
-                            }.get(_full_ko_choice, "full")
-                            _ko_gene_label = _full_ko_choice
+                        if _effective_grn_model == "foxm1":
+                            _sim_scored = load_foxm1_pop_sim()
+                            _ko_label   = "FOXM1 KO"
+                        elif _effective_grn_model == "tubb":
+                            _sim_scored = load_tubb_pop_sim()
+                            _ko_label   = "TUBB KO"
+                        elif _effective_grn_model == "mki67":
+                            _sim_scored = load_mki67_pop_sim()
+                            _ko_label   = "BIRC5 KO"
+                        elif _effective_grn_model == "full_foxm1":
+                            _sim_scored = load_full_foxm1_pop_sim()
+                            _ko_label   = "FOXM1 KO"
+                        elif _effective_grn_model == "full_aurkb":
+                            _sim_scored = load_full_aurkb_pop_sim()
+                            _ko_label   = "AURKB KO"
                         else:
-                            _effective_grn_model = _msg_grn_model
-                        pert_df = load_perturbation(_effective_grn_model)
-                        q_gene  = msg.get("query_gene", "MKI67")
-                        _real_means = load_real_expr_means()
-                        bar_fig, line_fig = build_perturbation_figures(
-                            pert_df, q_gene, ko_gene=_ko_gene_label,
-                            real_expr_means=_real_means)
-                        st.plotly_chart(bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                        st.plotly_chart(line_fig, use_container_width=True, key=f"{msg_id}_pert_line")
-                        # Population proportions + delta + UMAP — foxm1, tubb, mki67, full, full_foxm1, full_aurkb
-                        if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1", "full_aurkb"):
-                            try:
-                                if _effective_grn_model == "foxm1":
-                                    _sim_scored = load_foxm1_pop_sim()
-                                    _ko_label   = "FOXM1 KO"
-                                elif _effective_grn_model == "tubb":
-                                    _sim_scored = load_tubb_pop_sim()
-                                    _ko_label   = "TUBB KO"
-                                elif _effective_grn_model == "mki67":
-                                    _sim_scored = load_mki67_pop_sim()
-                                    _ko_label   = "BIRC5 KO"
-                                elif _effective_grn_model == "full_foxm1":
-                                    _sim_scored = load_full_foxm1_pop_sim()
-                                    _ko_label   = "FOXM1 KO"
-                                elif _effective_grn_model == "full_aurkb":
-                                    _sim_scored = load_full_aurkb_pop_sim()
-                                    _ko_label   = "AURKB KO"
-                                else:
-                                    _sim_scored = load_full_pop_sim()
-                                    _ko_label   = "HSPA1B KO"
-                                _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
-                                               "intermediate": "#999999"}
-                                _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
-                                _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
-                                st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
-                                st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
-                                # UMAP: Real data | WT simulation | KO simulation
-                                _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
-                                _pt_pop_order = ["quiescent", "proliferative", "intermediate"]  # intermediate on top
-                                _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
-                                # Real data population UMAP
-                                try:
-                                    _pr = load_foxm1_pop_real()
-                                    _pop_umap_real = px.scatter(
-                                        _pr, x="x", y="y", color="population",
-                                        color_discrete_map=_POP_COLORS,
-                                        title=T['real_data'],
-                                        labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
-                                        opacity=0.6, height=420, render_mode="svg",
-                                        category_orders={"population": _pt_pop_order},
-                                    )
-                                    for _pp, _ps in _pt_pop_sizes.items():
-                                        _pop_umap_real.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                                    _pop_umap_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                                    _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
-                                except Exception:
-                                    pass
-                                # WT/KO simulation UMAP — flip coords for models where UMAP is mirrored
-                                _needs_flip = _effective_grn_model in ("full_aurkb", "full_foxm1")
-                                if _needs_flip:
-                                    _sim_scored = _sim_scored.copy()
-                                    _xm = _sim_scored["x_wt"].max()
-                                    _ym = _sim_scored["y_wt"].max()
-                                    _sim_scored["x_wt"] = _xm - _sim_scored["x_wt"]
-                                    _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
-                                    _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
-                                    _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
-                                _pop_umap_wt = px.scatter(
-                                    _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
-                                    color_discrete_map=_POP_COLORS,
-                                    title=T['sim_wt'],
-                                    labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
-                                    opacity=0.6, height=420, render_mode="svg",
-                                    category_orders={"pop_wt": _pt_pop_order},
-                                )
-                                for _pp, _ps in _pt_pop_sizes.items():
-                                    _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                                _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                                # KO simulation UMAP
-                                _pop_umap_ko = px.scatter(
-                                    _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
-                                    color_discrete_map=_POP_COLORS,
-                                    title=f"Simulation {_ko_label} (populations *)",
-                                    labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
-                                    opacity=0.6, height=420, render_mode="svg",
-                                    category_orders={"pop_ko": _pt_pop_order},
-                                )
-                                for _pp, _ps in _pt_pop_sizes.items():
-                                    _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                                _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                                _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
-                                _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
-                                st.caption(
-                                    "\\* **Populations scored by gene signatures:** "
-                                    "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
-                                    "**Quiescent** — DNAJB1 z-score ≥ 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91) · "
-                                    "**Intermediate** — all remaining cells"
-                                )
-                            except Exception as _e:
-                                st.info(f"{T['pop_unavail']}: {_e}")
-                        _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)", "full_aurkb": "Full program (200 genes)"}
-                        _prog = _prog_map.get(_effective_grn_model, "program")
-                        st.caption(f"{T['sim_caption']} · {_prog} · {_ko_gene_label} {T['knocked_out']}")
-                    except Exception as e:
-                        st.info(f"{T['pert_unavail']}. ({e})")
+                            _sim_scored = load_full_pop_sim()
+                            _ko_label   = "HSPA1B KO"
+                        _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf",
+                                       "intermediate": "#999999"}
+                        _prop_fig  = build_population_proportions_figure(_sim_scored, ko_label=_ko_label)
+                        _delta_fig = build_population_delta_figure(_sim_scored, ko_label=_ko_label)
+                        st.plotly_chart(_prop_fig,  use_container_width=True, key=f"{msg_id}_pop_prop")
+                        st.plotly_chart(_delta_fig, use_container_width=True, key=f"{msg_id}_pop_delta")
+                        # UMAP: Real data | WT simulation | KO simulation
+                        _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
+                        _pt_pop_order = ["quiescent", "proliferative", "intermediate"]
+                        _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
+                        try:
+                            _pr = load_foxm1_pop_real()
+                            _pop_umap_real = px.scatter(
+                                _pr, x="x", y="y", color="population",
+                                color_discrete_map=_POP_COLORS,
+                                title=T['real_data'],
+                                labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
+                                opacity=0.6, height=420, render_mode="svg",
+                                category_orders={"population": _pt_pop_order},
+                            )
+                            for _pp, _ps in _pt_pop_sizes.items():
+                                _pop_umap_real.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
+                            _pop_umap_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                            _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
+                        except Exception:
+                            pass
+                        _needs_flip = _effective_grn_model in ("full_aurkb", "full_foxm1")
+                        if _needs_flip:
+                            _sim_scored = _sim_scored.copy()
+                            _xm = _sim_scored["x_wt"].max()
+                            _ym = _sim_scored["y_wt"].max()
+                            _sim_scored["x_wt"] = _xm - _sim_scored["x_wt"]
+                            _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
+                            _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
+                            _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
+                        _pop_umap_wt = px.scatter(
+                            _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
+                            color_discrete_map=_POP_COLORS,
+                            title=T['sim_wt'],
+                            labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
+                            opacity=0.6, height=420, render_mode="svg",
+                            category_orders={"pop_wt": _pt_pop_order},
+                        )
+                        for _pp, _ps in _pt_pop_sizes.items():
+                            _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
+                        _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                        _pop_umap_ko = px.scatter(
+                            _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
+                            color_discrete_map=_POP_COLORS,
+                            title=f"Simulation {_ko_label} (populations *)",
+                            labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
+                            opacity=0.6, height=420, render_mode="svg",
+                            category_orders={"pop_ko": _pt_pop_order},
+                        )
+                        for _pp, _ps in _pt_pop_sizes.items():
+                            _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
+                        _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                        _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                        _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
+                        st.caption(
+                            "\\* **Populations scored by gene signatures:** "
+                            "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
+                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91) · "
+                            "**Intermediate** — all remaining cells"
+                        )
+                    except Exception as _e:
+                        st.info(f"{T['pop_unavail']}: {_e}")
+                _prog_map = {"tubb": "TUBB program (201 genes)", "foxm1": "FOXM1 program (198 genes)", "mki67": "MKI67 program (201 genes)", "full": "Full program (200 genes)", "full_foxm1": "Full program (200 genes)", "full_aurkb": "Full program (200 genes)"}
+                _prog = _prog_map.get(_effective_grn_model, "program")
+                st.caption(f"{T['sim_caption']} · {_prog} · {_ko_gene_label} {T['knocked_out']}")
+            except Exception as e:
+                st.info(f"{T['pert_unavail']}. ({e})")
+
+    # ── Tab: Network graph GNN ────────────────────────────────────────────────
+    if "network" in _tab_map:
+        with _tab_map["network"]:
+            st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+            topo = msg.get("grn_topo")
+            if topo is not None and not topo.empty:
+                with st.expander(T['network_topology'], expanded=True):
+                    n_fb = int(topo["Feedback loop"].sum())
+                    n_up = int((topo["Role"] == "upstream").sum())
+                    n_dn = int((topo["Role"] == "downstream").sum())
+                    n_fb_role = int((topo["Role"] == "feedback loop").sum())
+                    top_hub = topo[topo["Role"] != "query"].nlargest(1, "Total degree")
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric(T['upstream'], n_up)
+                    c2.metric(T['downstream'], n_dn)
+                    c3.metric(T['feedback'], n_fb_role)
+                    c4.metric(T['cycle_nodes'], n_fb)
+                    if not top_hub.empty:
+                        hub_name = top_hub.iloc[0]["Gene"]
+                        hub_deg  = int(top_hub.iloc[0]["Total degree"])
+                        st.info(f"{T['top_hub']}: **{hub_name}** (degree {hub_deg}) — "
+                                f"{T['most_connected']}")
+                    show_cols = ["Gene", "Role", "In-degree", "Out-degree",
+                                 "Total degree", "Feedback loop"]
+                    st.dataframe(
+                        topo[show_cols].reset_index(drop=True),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Feedback loop": st.column_config.CheckboxColumn("🔄 Cycle"),
+                        }
+                    )
+
+    # ── Tab: Adjacency matrix GNN ─────────────────────────────────────────────
+    if "adjacency" in _tab_map:
+        with _tab_map["adjacency"]:
+            adj_df, genes_list = msg["grn_adj"]
+            vals = adj_df.values.flatten()
+            nonzero = vals[np.abs(vals) > 1e-4]
+            if len(nonzero) > 0:
+                vmax = float(np.percentile(np.abs(nonzero), 95))
+            else:
+                vmax = float(adj_df.abs().values.max()) or 1.0
+            adj_fig = px.imshow(
+                adj_df,
+                color_continuous_scale="RdBu_r",
+                color_continuous_midpoint=0,
+                zmin=-vmax, zmax=vmax,
+                title="Adjacency matrix (red=activation, blue=repression, clipped at 95th percentile)",
+                height=600,
+                aspect="auto"
+            )
+            adj_fig.update_layout(
+                xaxis=dict(tickfont=dict(size=9)),
+                yaxis=dict(tickfont=dict(size=9))
+            )
+            st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
