@@ -2295,7 +2295,7 @@ def _render_msg_figures(msg, msg_id):
                     color_continuous_scale="RdBu_r",
                     color_continuous_midpoint=0,
                     zmin=-vmax, zmax=vmax,
-                    title="Network weights (red=activation, blue=repression)",
+                    title="Program network weights (red=activation, blue=repression)",
                     height=600,
                     aspect="auto"
                 )
