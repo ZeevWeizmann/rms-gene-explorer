@@ -2030,7 +2030,7 @@ def _render_msg_figures(msg, msg_id):
     # ── Determine what content is available ──────────────────────────────────
     _has_gene_prog = "df" in msg
     _has_expression = msg.get("fig") is not None or any(
-        msg.get(k) is not None for k in ["fig_time", "fig_sim_time", "fig_celltype"]
+        msg.get(k) is not None for k in ["fig_time", "fig_celltype"]
     )
     _msg_grn_model = msg.get("grn_model")
     _has_grn = msg.get("grn_fig") is not None
@@ -2135,7 +2135,7 @@ def _render_msg_figures(msg, msg_id):
                 fig_expr = msg["fig"]
                 fig_expr.update_layout(height=CHART_H)
                 st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-            _row1_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
+            _row1_keys = ["fig_time", "fig_celltype"]
             _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
             if _row1:
                 cols = st.columns(1 if is_mobile else len(_row1))
@@ -2195,6 +2195,16 @@ def _render_msg_figures(msg, msg_id):
                     legend=dict(orientation="h", y=1.12),
                 )
                 st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
+
+                # ── Time / Cell-type UMAPs (real + sim WT) ────────────────
+                _umap_row_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
+                _umap_row = [(k, msg.get(k)) for k in _umap_row_keys if msg.get(k) is not None]
+                if _umap_row:
+                    _umap_row_cols = st.columns(len(_umap_row))
+                    for _uc, (_, _uf) in zip(_umap_row_cols, _umap_row):
+                        _uf.update_layout(height=CHART_H_SMALL)
+                        _uc.plotly_chart(_uf, use_container_width=True)
+
                 if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
                     try:
                         if _effective_grn_model == "tubb":
