@@ -96,7 +96,7 @@ _TRANSLATIONS = {
         'ko_targets': 'Drug Targets',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
-        'network_graph': 'Gene Regulatory Network',
+        'network_graph': 'Regulatory Network',
         'adjacency_matrix': 'Network Weights',
         'network_topology': '📊 Network topology analysis',
         'upstream': 'Upstream regulators',
