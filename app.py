@@ -2205,8 +2205,20 @@ def _render_msg_figures(msg, msg_id):
                         with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
                             st.markdown(_cluster_summary)
                 with _tc:
-                    st.dataframe(
+                    _q = msg.get("query_gene", "")
+                    _df_show = pd.concat([
+                        pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
                         msg["df"],
+                    ], ignore_index=True)
+                    _styled = _df_show.style.apply(
+                        lambda row: [
+                            "background-color:#dbeafe;color:#1d4ed8;font-weight:700"
+                            if row.name == 0 else ""
+                        ] * len(row),
+                        axis=1,
+                    )
+                    st.dataframe(
+                        _styled,
                         use_container_width=True,
                         height=440,
                         hide_index=True,
