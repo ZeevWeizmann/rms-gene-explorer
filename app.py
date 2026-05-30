@@ -2231,7 +2231,9 @@ def _render_msg_figures(msg, msg_id):
     # ── Tab: Targets (bar chart — top 20 affected genes) ─────────────────────
     if "targets" in _tab_map:
         with _tab_map["targets"]:
-            if "error" in _pert_data:
+            if not _tab_has.get("targets"):
+                st.empty()
+            elif "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
                 st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
@@ -2239,7 +2241,9 @@ def _render_msg_figures(msg, msg_id):
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
     if "perturbation" in _tab_map:
         with _tab_map["perturbation"]:
-            if "error" in _pert_data:
+            if not _tab_has.get("perturbation"):
+                st.empty()
+            elif "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
                 _effective_grn_model = _pert_data["effective_model"]
@@ -2343,6 +2347,9 @@ def _render_msg_figures(msg, msg_id):
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:
         with _tab_map["network"]:
+          if not _tab_has.get("network"):
+            st.empty()
+          else:
             st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
             if _has_adj:
                 adj_df, genes_list = msg["grn_adj"]
