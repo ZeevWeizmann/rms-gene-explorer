@@ -1761,8 +1761,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
         ))
 
     fig.update_layout(
-        title=(f"GRN for {query_gene} — "
-               f"({'top hubs in program' if len(nodes_to_keep) > 1 and G.degree(query_gene) == 0 else f'{hops}-hop ego network'})  "
+        title=(f"{query_gene} — "
+               f"({'program hubs' if len(nodes_to_keep) > 1 and G.degree(query_gene) == 0 else f'{hops}-hop ego network'})  "
                f"(green=activation, red=repression | size=degree | ◆=feedback loop)"),
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
