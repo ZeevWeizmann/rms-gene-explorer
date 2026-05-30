@@ -91,7 +91,7 @@ _TRANSLATIONS = {
         'pop_shift': 'Population shift after {gene} KO (Δ%)',
         'delta_pct': 'Δ% (KO – WT)',
         # Result tabs
-        'gene_program': 'Gene Program',
+        'gene_program': 'Program',
         'assigned_cluster': 'Assigned cluster',
         'ko_targets': 'Drug Targets',
         # Network tabs
@@ -221,7 +221,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'pop_shift': 'Changement de population après KO de {gene} (Δ%)',
         'delta_pct': 'Δ% (KO – WT)',
         # Result tabs
-        'gene_program': 'Programme Génique',
+        'gene_program': 'Programme',
         'assigned_cluster': 'Cluster assigné',
         'ko_targets': 'Cibles thérapeutiques',
         # Network tabs
