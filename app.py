@@ -2154,26 +2154,14 @@ def _render_msg_figures(msg, msg_id):
     _components.html(f"""<script>
     (function() {{
         function _initTabs() {{
-            var doc = window.parent.document;
-
-            // Find THIS iframe in the parent document (not the last tablist on page)
-            var myIframe = null;
-            var iframes = doc.querySelectorAll('iframe');
-            for (var i = 0; i < iframes.length; i++) {{
-                try {{
-                    if (iframes[i].contentWindow === window) {{
-                        myIframe = iframes[i];
-                        break;
-                    }}
-                }} catch(e) {{}}
-            }}
+            // window.frameElement = the <iframe> element that contains this script
+            var myIframe = window.frameElement;
             if (!myIframe) {{ setTimeout(_initTabs, 100); return; }}
 
-            // Walk up DOM from this iframe to find the nearest ancestor that
-            // contains a tablist — that is OUR tablist for this message only.
+            // Walk up from this iframe to find the nearest ancestor containing a tablist
             var myTablist = null;
             var el = myIframe.parentElement;
-            while (el && el !== doc.body) {{
+            while (el) {{
                 var tl = el.querySelector('[role="tablist"]');
                 if (tl) {{ myTablist = tl; break; }}
                 el = el.parentElement;
@@ -2182,7 +2170,7 @@ def _render_msg_figures(msg, msg_id):
 
             var btns = myTablist.querySelectorAll('[role="tab"]');
 
-            // Grey out empty tabs (only if any)
+            // Grey out empty tabs
             var emptyIdx = {_empty_indices};
             emptyIdx.forEach(function(i) {{
                 if (btns[i]) {{
