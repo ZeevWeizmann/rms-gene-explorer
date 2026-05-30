@@ -950,7 +950,7 @@ def load_full_sim_umap_proj():
 
 
 @st.cache_resource
-def load_full_pop_sim():
+def load_full_pop_sim(version="v20260530b"):
     """Full program (200 genes) sim cells scored by population (WT + HSPA1B KO).
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
@@ -958,12 +958,12 @@ def load_full_pop_sim():
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token, force_download=True)
     return pd.read_csv(path)
 
 
 @st.cache_resource
-def load_full_foxm1_pop_sim():
+def load_full_foxm1_pop_sim(version="v20260530b"):
     """Full program (200 genes) sim cells scored by population (WT + FOXM1 KO).
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
@@ -971,12 +971,12 @@ def load_full_foxm1_pop_sim():
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token, force_download=True)
     return pd.read_csv(path)
 
 
 @st.cache_resource
-def load_full_aurkb_pop_sim():
+def load_full_aurkb_pop_sim(version="v20260530b"):
     """Full program (200 genes) sim cells scored by population (WT + AURKB KO).
     Columns: x_wt, y_wt, x_ko, y_ko, pop_wt, pop_ko, time."""
     import os
@@ -984,7 +984,7 @@ def load_full_aurkb_pop_sim():
     local = os.path.join(LOCAL_DIR, f)
     if os.path.exists(local): return pd.read_csv(local)
     token = st.secrets.get("HF_TOKEN", None)
-    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
+    path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token, force_download=True)
     return pd.read_csv(path)
 
 
