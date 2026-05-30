@@ -2155,12 +2155,34 @@ def _render_msg_figures(msg, msg_id):
     (function() {{
         function _initTabs() {{
             var doc = window.parent.document;
-            var lists = doc.querySelectorAll('[role="tablist"]');
-            if (!lists.length) {{ setTimeout(_initTabs, 100); return; }}
-            var last = lists[lists.length - 1];
-            var btns = last.querySelectorAll('[role="tab"]');
 
-            // Grey out empty tabs
+            // Find THIS iframe in the parent document (not the last tablist on page)
+            var myIframe = null;
+            var iframes = doc.querySelectorAll('iframe');
+            for (var i = 0; i < iframes.length; i++) {{
+                try {{
+                    if (iframes[i].contentWindow === window) {{
+                        myIframe = iframes[i];
+                        break;
+                    }}
+                }} catch(e) {{}}
+            }}
+            if (!myIframe) {{ setTimeout(_initTabs, 100); return; }}
+
+            // Walk up DOM from this iframe to find the nearest ancestor that
+            // contains a tablist — that is OUR tablist for this message only.
+            var myTablist = null;
+            var el = myIframe.parentElement;
+            while (el && el !== doc.body) {{
+                var tl = el.querySelector('[role="tablist"]');
+                if (tl) {{ myTablist = tl; break; }}
+                el = el.parentElement;
+            }}
+            if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
+
+            var btns = myTablist.querySelectorAll('[role="tab"]');
+
+            // Grey out empty tabs (only if any)
             var emptyIdx = {_empty_indices};
             emptyIdx.forEach(function(i) {{
                 if (btns[i]) {{
