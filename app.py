@@ -2248,8 +2248,18 @@ def _render_msg_figures(msg, msg_id):
     _tab_click_key = f"_tab_init_{msg_id}"
     if _prog_tab_idx >= 0 and not st.session_state.get(_tab_click_key):
         st.session_state[_tab_click_key] = True
-    _components.html(f"""<script>
+
+    # Only inject tab JS when there are actually empty tabs OR we need to auto-click.
+    # CRITICAL: When _empty_indices is empty (all tabs have data), we must NOT grey anything —
+    # old messages' JS components may re-run and find this tablist by DOM walk, causing
+    # tabs to get incorrectly disabled after switching genes.
+    _has_empty = len(_empty_indices) > 0
+    _js_code = f"""<script>
     (function() {{
+        var EMPTY_IDX = {_empty_indices};
+        var PROG_IDX  = {_prog_tab_idx};
+        var INIT_KEY  = 'tab_inited_{msg_id}';
+
         function _initTabs() {{
             // window.frameElement = the <iframe> element that contains this script
             var myIframe = window.frameElement;
@@ -2267,26 +2277,33 @@ def _render_msg_figures(msg, msg_id):
 
             var btns = myTablist.querySelectorAll('[role="tab"]');
 
-            // Grey out empty tabs
-            var emptyIdx = {_empty_indices};
-            emptyIdx.forEach(function(i) {{
-                if (btns[i]) {{
-                    btns[i].style.opacity = '0.35';
-                    btns[i].style.pointerEvents = 'none';
-                }}
+            // Always restore all tabs to full opacity first, then selectively grey.
+            // This ensures re-runs of old-message JS don't leave stale greying.
+            btns.forEach(function(b) {{
+                b.style.opacity = '';
+                b.style.pointerEvents = '';
             }});
 
-            // Auto-click Program tab on first render
-            var progIdx = {_prog_tab_idx};
-            var initKey = 'tab_inited_{msg_id}';
-            if (progIdx >= 0 && !sessionStorage.getItem(initKey)) {{
-                sessionStorage.setItem(initKey, '1');
-                if (btns[progIdx]) btns[progIdx].click();
+            // Grey out empty tabs (only when this message actually has empty tabs)
+            if (EMPTY_IDX.length > 0) {{
+                EMPTY_IDX.forEach(function(i) {{
+                    if (btns[i]) {{
+                        btns[i].style.opacity = '0.35';
+                        btns[i].style.pointerEvents = 'none';
+                    }}
+                }});
+            }}
+
+            // Auto-click Program tab on first render of this message
+            if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY)) {{
+                sessionStorage.setItem(INIT_KEY, '1');
+                if (btns[PROG_IDX]) btns[PROG_IDX].click();
             }}
         }}
-        setTimeout(_initTabs, 280);
+        setTimeout(_initTabs, 300);
     }})();
-    </script>""", height=0)
+    </script>"""
+    _components.html(_js_code, height=0)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
