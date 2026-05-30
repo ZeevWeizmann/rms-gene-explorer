@@ -2146,9 +2146,6 @@ def _render_msg_figures(msg, msg_id):
             if "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
-                if _pert_data.get("is_full"):
-                    st.radio("KO gene", ["HSPA1B", "FOXM1", "AURKB"],
-                             horizontal=True, key=_pert_data["full_ko_key"])
                 st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
