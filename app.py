@@ -166,20 +166,20 @@ Upload any `.h5ad` file for query of interest.
 **Population dynamics under knockout (Full program):**
 When querying a gene from the **Full program** (e.g. HSPA1B), the app runs a full CARDAMOM mechanistic simulation of HSPA1B knockout and tracks how the cell population composition changes over time.
 RMS tumours contain three co-existing cell states — **Proliferative**, **Quiescent**, and **Intermediate** — that are in dynamic equilibrium.
-Each state is scored from the scRNA-seq data using gene signatures: **DNAJB1 z-score** (top HSPA1B neighbour, sim=0.91) for quiescence; **mean of top-100 MKI67 neighbours** for proliferation. Cells in neither top-30% → intermediate.
+Each state is scored from the scRNA-seq data using two gene markers: **CENPF z-score** (Centromere Protein F, corr=0.81 with MKI67) for proliferation; **DNAJB1 z-score** (top HSPA1B co-expression neighbour, sim=0.91) for quiescence. Cells meeting neither threshold → intermediate.
 After KO, CARDAMOM propagates the perturbation through the GRN and re-simulates cell trajectories; the resulting shift in population fractions (Δ%) shows whether the knockout pushes cells toward or away from proliferation.
 This reveals not just which genes change in expression, but **how the Waddington landscape reorganises** — a key step toward identifying interventions that durably suppress the proliferative state rather than merely reducing a single gene's expression.
 
 **Gene program annotation (LLM):**
 Each retrieved gene program is automatically annotated by **Llama 3.1-8B** (via Nebius AI Studio) — the model receives the top co-expressed genes and generates a concise biological label (e.g. *"Mitotic Cell Proliferation"*, *"Cytoskeletal remodelling"*). This enables rapid biological interpretation of each program without manual curation.
 
-**Cell population scoring (DNAJB1 / MKI67-100):**
+**Cell population scoring (CENPF / DNAJB1):**
 Three co-existing RMS cell states are defined by gene expression thresholds applied uniformly to real data and all simulations:
-- **Proliferative** (red) — mean expression of top-100 MKI67 co-expression neighbours >= 70th percentile
-- **Quiescent** (blue) — DNAJB1 z-score >= 70th percentile (DNAJB1 is the top HSPA1B neighbour, cosine sim = 0.91)
+- **Proliferative** (red) — CENPF z-score ≥ 70th percentile of WT (CENPF is a centromere protein expressed specifically in G2/M; Pearson r = 0.81 with MKI67)
+- **Quiescent** (blue) — DNAJB1 z-score ≥ 70th percentile of WT (DNAJB1 is the top co-expression neighbour of HSPA1B, cosine sim = 0.91; marks stress-arrested cells)
 - **Intermediate** (grey) — all remaining cells
 
-DNAJB1/HSPA1B anti-correlate with the FOXM1 proliferative program; their upregulation marks cells exiting the cell cycle. The same scoring rule is applied to real data, WT simulation, and KO simulation — making population shifts directly comparable.
+In real data, this scoring captures a clear temporal transition: at t=0, 88% of cells are quiescent; by t=80, 84% are proliferative — passing through the intermediate state. The same thresholds are applied to WT and KO simulations, making population shifts directly comparable.
 
 ---
 
@@ -297,16 +297,16 @@ Importez n'importe quel fichier `.h5ad` pour votre gène d'intérêt.
 **Dynamique de population sous knockout (programme complet) :**
 Lors de l'interrogation d'un gène du **programme complet** (ex : HSPA1B), l'application exécute une simulation CARDAMOM du knockout de HSPA1B et suit l'évolution de la composition de la population cellulaire.
 Les tumeurs RMS contiennent trois états cellulaires coexistants — **Prolifératif**, **Quiescent** et **Intermédiaire** — en équilibre dynamique.
-Chaque état est scoré depuis les données scRNA-seq : **z-score DNAJB1** (top voisin HSPA1B, sim=0.91) pour la quiescence ; **moyenne des top-100 voisins MKI67** pour la prolifération.
+Chaque état est scoré depuis les données scRNA-seq : **z-score CENPF** (Centromere Protein F, r=0.81 avec MKI67) pour la prolifération ; **z-score DNAJB1** (top voisin HSPA1B, sim=0.91) pour la quiescence.
 Après KO, CARDAMOM propage la perturbation à travers le GRN et resimule les trajectoires cellulaires ; le décalage résultant (Δ%) montre si le knockout pousse les cellules vers ou hors de la prolifération.
 
 **Annotation des programmes géniques (LLM) :**
 Chaque programme génique est automatiquement annoté par **Llama 3.1-8B** (via Nebius AI Studio) — le modèle reçoit les gènes les plus co-exprimés et génère un label biologique concis (ex : *"Prolifération cellulaire mitotique"*, *"Remodelage du cytosquelette"*).
 
-**Scoring de population cellulaire (DNAJB1 / MKI67-100) :**
+**Scoring de population cellulaire (CENPF / DNAJB1) :**
 Trois états cellulaires RMS coexistants sont définis par des seuils d'expression appliqués uniformément aux données réelles et à toutes les simulations :
-- **Prolifératif** (rouge) — expression moyenne des top-100 voisins MKI67 >= 70e percentile
-- **Quiescent** (bleu) — z-score DNAJB1 >= 70e percentile
+- **Prolifératif** (rouge) — z-score CENPF ≥ 70e percentile du WT (protéine centromérique G2/M, r=0.81 avec MKI67)
+- **Quiescent** (bleu) — z-score DNAJB1 ≥ 70e percentile du WT (marqueur d'arrêt de stress)
 - **Intermédiaire** (gris) — toutes les cellules restantes
 
 ---
@@ -1373,7 +1373,7 @@ def build_foxm1_population_umap(pop_df):
 
     fig = make_subplots(
         rows=1, cols=3,
-        subplot_titles=["Cell types (DNAJB1 / MKI67-100)", "FOXM1 — WT simulation (DNAJB1 / MKI67-100)", "FOXM1 — KO simulation (DNAJB1 / MKI67-100)"],
+        subplot_titles=["Cell populations (CENPF / DNAJB1)", "FOXM1 — WT simulation (CENPF / DNAJB1)", "FOXM1 — KO simulation (CENPF / DNAJB1)"],
         horizontal_spacing=0.05,
     )
 
