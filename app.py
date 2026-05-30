@@ -96,7 +96,7 @@ _TRANSLATIONS = {
         'ko_targets': 'Drug Targets',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
-        'network_graph': 'Gene Network',
+        'network_graph': 'Gene Regulatory Network',
         'adjacency_matrix': 'Network Weights',
         'network_topology': '📊 Network topology analysis',
         'upstream': 'Upstream regulators',
@@ -226,7 +226,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'ko_targets': 'Cibles thérapeutiques',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
-        'network_graph': 'Réseau Génique',
+        'network_graph': 'Réseau de Régulation',
         'adjacency_matrix': "Poids du Réseau",
         'network_topology': '📊 Analyse topologique du réseau',
         'upstream': 'Régulateurs en amont',
