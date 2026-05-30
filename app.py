@@ -2062,11 +2062,13 @@ def _render_msg_figures(msg, msg_id):
                 _effective_grn_model = _msg_grn_model
             pert_df = load_perturbation(_effective_grn_model)
             q_gene  = msg.get("query_gene", "MKI67")
-            bar_fig, line_fig = build_perturbation_figures(
+            bar_fig, _ = build_perturbation_figures(
                 pert_df, q_gene, ko_gene=_ko_gene_label,
                 real_expr_means=load_real_expr_means())
             _pert_data = {
-                "bar_fig": bar_fig, "line_fig": line_fig,
+                "bar_fig": bar_fig,
+                "pert_df": pert_df,
+                "query_gene": q_gene,
                 "effective_model": _effective_grn_model,
                 "ko_label": _ko_gene_label,
                 "full_ko_key": _full_ko_key,
@@ -2154,7 +2156,39 @@ def _render_msg_figures(msg, msg_id):
                              horizontal=True, key=_pert_data["full_ko_key"])
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
-                st.plotly_chart(_pert_data["line_fig"], use_container_width=True, key=f"{msg_id}_pert_line")
+
+                # ── Interactive gene expression timecourse ─────────────────
+                _tc_pert_df     = _pert_data["pert_df"]
+                _tc_all_genes   = sorted(_tc_pert_df["gene"].unique().tolist())
+                _tc_default     = _pert_data.get("query_gene", "")
+                _tc_default_idx = _tc_all_genes.index(_tc_default) if _tc_default in _tc_all_genes else 0
+                _tc_sel_gene = st.selectbox(
+                    "Gene expression over time",
+                    options=_tc_all_genes,
+                    index=_tc_default_idx,
+                    key=f"{msg_id}_pert_gene_sel",
+                )
+                _tc_gene_df = _tc_pert_df[_tc_pert_df["gene"] == _tc_sel_gene]
+                _tc_fig = go.Figure()
+                if not _tc_gene_df.empty:
+                    _tc_fig.add_trace(go.Scatter(
+                        x=_tc_gene_df["time"], y=_tc_gene_df["mean_wt"],
+                        mode="lines+markers", name="WT",
+                        line=dict(color="#4C72B0", width=2)
+                    ))
+                    _tc_fig.add_trace(go.Scatter(
+                        x=_tc_gene_df["time"], y=_tc_gene_df["mean_ko"],
+                        mode="lines+markers", name=f"{_ko_gene_label} KO",
+                        line=dict(color="#D45F5F", width=2, dash="dash")
+                    ))
+                _tc_fig.update_layout(
+                    title=f"{_tc_sel_gene} — WT vs {_ko_gene_label} KO",
+                    xaxis_title="Time", yaxis_title="Mean expression",
+                    height=300, margin=dict(l=10, r=10, t=40, b=40),
+                    plot_bgcolor="white", paper_bgcolor="white",
+                    legend=dict(orientation="h", y=1.12),
+                )
+                st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
                 if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
                     try:
                         if _effective_grn_model == "tubb":
