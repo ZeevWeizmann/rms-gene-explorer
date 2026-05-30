@@ -2329,26 +2329,48 @@ def _render_msg_figures(msg, msg_id):
                             _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
                             _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
 
-                        # Build Sim WT population UMAP (goes as 4th in the row)
+                        # Build Sim WT population UMAP
                         _pop_umap_wt = px.scatter(
                             _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
-                            color_discrete_map=_POP_COLORS, title=T['sim_wt'],
+                            color_discrete_map=_POP_COLORS, title="",
                             labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
                             opacity=0.6, height=350, render_mode="svg",
                             category_orders={"pop_wt": _pt_pop_order},
                         )
                         for _pp, _ps in _pt_pop_sizes.items():
                             _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                        _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                        _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+                        _pop_umap_wt.add_annotation(
+                            text="Sim WT · Populations", x=0.01, y=0.99, xref="paper", yref="paper",
+                            showarrow=False, xanchor="left", yanchor="top",
+                            font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+                        )
 
-                        # ── Row: Time / Time(sim WT) / Cell Type / Sim WT pop ──
-                        _umap_row_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
-                        _umap_row = [(k, msg.get(k)) for k in _umap_row_keys if msg.get(k) is not None]
-                        _umap_row_cols = st.columns(len(_umap_row) + 1)
-                        for _uc, (_, _uf) in zip(_umap_row_cols, _umap_row):
-                            _uf.update_layout(height=350)
-                            _uc.plotly_chart(_uf, use_container_width=True)
-                        _umap_row_cols[-1].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                        # Build Sim KO population UMAP
+                        _pop_umap_ko = px.scatter(
+                            _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
+                            color_discrete_map=_POP_COLORS, title="",
+                            labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
+                            opacity=0.6, height=350, render_mode="svg",
+                            category_orders={"pop_ko": _pt_pop_order},
+                        )
+                        for _pp, _ps in _pt_pop_sizes.items():
+                            _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
+                        _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+                        _pop_umap_ko.add_annotation(
+                            text=f"Sim {_ko_label} · Populations", x=0.01, y=0.99, xref="paper", yref="paper",
+                            showarrow=False, xanchor="left", yanchor="top",
+                            font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+                        )
+
+                        # ── Row: Sim WT Time | Sim WT pop | Sim KO pop ──────────
+                        _sim_time_fig = msg.get("fig_sim_time")
+                        _umap_row_cols = st.columns(3)
+                        if _sim_time_fig is not None:
+                            _sim_time_fig.update_layout(height=350)
+                            _umap_row_cols[0].plotly_chart(_sim_time_fig, use_container_width=True, key=f"{msg_id}_sim_time")
+                        _umap_row_cols[1].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+                        _umap_row_cols[2].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
 
                         st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
                                         use_container_width=True, key=f"{msg_id}_pop_prop")
