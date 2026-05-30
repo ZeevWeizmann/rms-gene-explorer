@@ -377,8 +377,11 @@ div[data-testid="stSelectbox"]:focus-within > div::before {
 div[data-testid="stExpander"] div[data-testid="stSelectbox"] > div::before {
     content: none !important;
 }
-/* Hide ::before inside tab content (gene selector etc) */
-div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before {
+/* Hide ::before for every selectbox that is NOT the main search bar */
+div[data-testid="stSelectbox"] + div[data-testid="stSelectbox"] > div::before,
+div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before,
+div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before,
+div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div[data-testid="stSelectbox"] > div::before {
     content: none !important;
 }
 
@@ -490,7 +493,9 @@ st.markdown(f"""
 div[data-testid="stSelectbox"] > div::before {{
     content: "{T['search_placeholder']}";
 }}
-div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before {{
+div[data-testid="stTabsContent"] div[data-testid="stSelectbox"] > div::before,
+div[data-testid="stTabPanel"] div[data-testid="stSelectbox"] > div::before,
+div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] div[data-testid="stSelectbox"] > div::before {{
     content: none !important;
 }}
 </style>
