@@ -1519,34 +1519,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         else:
             colors.append("#4C72B0")   # blue = down
 
-    # Arrow annotations — label differs by target type
-    # "overexpressed" qualifier only added if real mean expression is substantial
-    _OVEREXPR_THRESH = 0.3   # log-normalised mean expression threshold
     annotations = []
-    for gene, val in zip(top20["gene"].tolist(), top20["log2fc"].tolist()):
-        if gene in all_targets:
-            if gene in direct_targets:
-                _re = real_expr_means.get(gene, 0.0) if real_expr_means else 0.0
-                if _re >= _OVEREXPR_THRESH:
-                    label = "◀ direct target (overexpressed)"
-                else:
-                    label = "◀ direct target (low expr in data)"
-                ax_offset = -30
-            else:
-                label = "co-target ▶" if val >= 0 else "◀ co-target"
-                ax_offset = 30 if val >= 0 else -30
-            annotations.append(dict(
-                x=val, y=gene,
-                xref="x", yref="y",
-                text=label,
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor="#FF8C00",
-                arrowwidth=1.5,
-                ax=ax_offset, ay=0,
-                font=dict(color="#FF8C00", size=11),
-                xanchor="left" if val >= 0 else "right",
-            ))
 
     # Hover text
     _hover = [
@@ -1569,10 +1542,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
 
     bar_fig.update_layout(
         title=dict(
-            text=(
-                f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})<br>"
-                f"<sup style='color:#FF8C00'>{subtitle}</sup>"
-            ),
+            text=f"Top 20 genes affected by {ko_gene} KO (t={int(last_t)})",
             font=dict(size=16),
         ),
         xaxis=dict(
