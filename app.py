@@ -2044,11 +2044,13 @@ def _render_msg_figures(msg, msg_id):
     _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
 
     # ── Build tab list dynamically ────────────────────────────────────────────
+    # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets
+    # Program tab is auto-selected via JS on first render (see below)
     _tab_defs = []  # list of (key, title) for tabs to show
-    if _has_gene_prog:
-        _tab_defs.append(("gene_prog", T['gene_program']))
     if _has_expression:
         _tab_defs.append(("expression", T['expression']))
+    if _has_gene_prog:
+        _tab_defs.append(("gene_prog", T['gene_program']))
     if _has_grn:
         _tab_defs.append(("network", T['network_graph']))
     if _has_pert:
@@ -2092,6 +2094,26 @@ def _render_msg_figures(msg, msg_id):
     _tab_titles = [d[1] for d in _tab_defs]
     _tabs = st.tabs(_tab_titles)
     _tab_map = dict(zip(_tab_keys, _tabs))
+
+    # ── Auto-select Program tab (index 1) on first render of this message ─────
+    _tab_click_key = f"_tab_init_{msg_id}"
+    if "gene_prog" in _tab_map and not st.session_state.get(_tab_click_key):
+        st.session_state[_tab_click_key] = True
+        _prog_tab_idx = _tab_keys.index("gene_prog")
+        _components.html(f"""<script>
+        (function() {{
+            function _clickProgramTab() {{
+                var lists = window.parent.document.querySelectorAll('[role="tablist"]');
+                if (!lists.length) {{ setTimeout(_clickProgramTab, 100); return; }}
+                var last = lists[lists.length - 1];
+                var btns = last.querySelectorAll('[role="tab"]');
+                if (btns.length > {_prog_tab_idx}) {{
+                    btns[{_prog_tab_idx}].click();
+                }}
+            }}
+            setTimeout(_clickProgramTab, 250);
+        }})();
+        </script>""", height=0)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
