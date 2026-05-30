@@ -2159,7 +2159,7 @@ def _render_msg_figures(msg, msg_id):
             elif _pert_data:
                 if _pert_data.get("is_full"):
                     st.radio("KO gene", ["HSPA1B", "FOXM1", "AURKB"],
-                             horizontal=True, key=f"{_pert_data['full_ko_key']}_sim")
+                             horizontal=True, key=_pert_data["full_ko_key"])
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
                 st.plotly_chart(_pert_data["line_fig"], use_container_width=True, key=f"{msg_id}_pert_line")
