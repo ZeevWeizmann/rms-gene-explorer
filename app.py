@@ -2142,22 +2142,28 @@ def _render_msg_figures(msg, msg_id):
                 with _mc:
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
-                    if _cluster_summary and _annot_label:
+                    if _annot_label:
                         st.markdown(
-                            f"<style>div[data-testid='stPopover'] button{{border:none!important;"
-                            f"background:transparent!important;color:#555;font-style:italic;"
-                            f"padding:0;font-size:0.85rem;}}</style>",
+                            "<style>div[data-testid='stPopover'] button{border:none!important;"
+                            "background:transparent!important;color:#555;font-style:italic;"
+                            "padding:0;font-size:0.85rem;}</style>",
                             unsafe_allow_html=True
                         )
                         with st.popover(f"ℹ️ {_annot_label}"):
-                            st.markdown(_cluster_summary)
+                            if _cluster_summary:
+                                st.markdown(_cluster_summary)
+                            else:
+                                st.markdown(f"*{_annot_label}*")
                 with _tc:
                     st.dataframe(msg["df"], use_container_width=True, height=440)
             else:
                 st.dataframe(msg["df"], use_container_width=True)
-                if _cluster_summary and _annot_label:
+                if _annot_label:
                     with st.popover(f"ℹ️ {_annot_label}"):
-                        st.markdown(_cluster_summary)
+                        if _cluster_summary:
+                            st.markdown(_cluster_summary)
+                        else:
+                            st.markdown(f"*{_annot_label}*")
 
     # ── Tab: Expression ───────────────────────────────────────────────────────
     if "expression" in _tab_map:
