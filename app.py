@@ -1904,13 +1904,11 @@ n_cells = umap_df.shape[0]
 _orig_gene_set   = load_grn_gene_list("original")
 _mki67_gene_set  = load_grn_gene_list("mki67")
 _tubb_gene_set   = load_grn_gene_list("tubb")
-_foxm1_gene_set  = load_grn_gene_list("foxm1")
 _full_gene_set   = load_grn_gene_list("full")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
     "Full program (200 genes)":               ("full",     _full_gene_set),
-    "FOXM1 program (198 genes, FOXM1 KO)":    ("foxm1",    _foxm1_gene_set),
     "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
     "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
     "Original (159 genes)":                    ("original", _orig_gene_set),
@@ -1944,7 +1942,7 @@ else:
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _foxm1_gene_set | _full_gene_set
+grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _full_gene_set
 
 def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
@@ -2030,8 +2028,8 @@ def _render_msg_figures(msg, msg_id):
     _msg_grn_model = msg.get("grn_model")
     _has_grn = msg.get("grn_fig") is not None
     _has_adj = _has_grn and msg.get("grn_adj") is not None
-    _has_pert = _msg_grn_model in ("mki67", "tubb", "foxm1", "full")
-    _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "foxm1": "FOXM1", "full": "HSPA1B", "full_foxm1": "FOXM1"}.get(_msg_grn_model, "")
+    _has_pert = _msg_grn_model in ("mki67", "tubb", "full")
+    _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
 
     # ── Build tab list dynamically ────────────────────────────────────────────
     _tab_defs = []  # list of (key, title) for tabs to show
@@ -2057,7 +2055,6 @@ def _render_msg_figures(msg, msg_id):
             if _msg_grn_model == "full":
                 _full_ko_choice = st.session_state.get(_full_ko_key, "HSPA1B")
                 _effective_grn_model = {
-                    "FOXM1": "full_foxm1",
                     "AURKB": "full_aurkb",
                 }.get(_full_ko_choice, "full")
                 _ko_gene_label = _full_ko_choice
@@ -2153,21 +2150,17 @@ def _render_msg_figures(msg, msg_id):
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
                 if _pert_data.get("is_full"):
-                    st.radio("KO gene", ["HSPA1B", "FOXM1", "AURKB"],
+                    st.radio("KO gene", ["HSPA1B", "AURKB"],
                              horizontal=True, key=_pert_data["full_ko_key"])
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
                 st.plotly_chart(_pert_data["line_fig"], use_container_width=True, key=f"{msg_id}_pert_line")
-                if _effective_grn_model in ("foxm1", "tubb", "mki67", "full", "full_foxm1", "full_aurkb"):
+                if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
                     try:
-                        if _effective_grn_model == "foxm1":
-                            _sim_scored = load_foxm1_pop_sim();   _ko_label = "FOXM1 KO"
-                        elif _effective_grn_model == "tubb":
+                        if _effective_grn_model == "tubb":
                             _sim_scored = load_tubb_pop_sim();    _ko_label = "TUBB KO"
                         elif _effective_grn_model == "mki67":
                             _sim_scored = load_mki67_pop_sim();   _ko_label = "BIRC5 KO"
-                        elif _effective_grn_model == "full_foxm1":
-                            _sim_scored = load_full_foxm1_pop_sim(); _ko_label = "FOXM1 KO"
                         elif _effective_grn_model == "full_aurkb":
                             _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
                         else:
@@ -2195,7 +2188,7 @@ def _render_msg_figures(msg, msg_id):
                             _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
                         except Exception:
                             pass
-                        _needs_flip = _effective_grn_model in ("full_aurkb", "full_foxm1")
+                        _needs_flip = _effective_grn_model == "full_aurkb"
                         if _needs_flip:
                             _sim_scored = _sim_scored.copy()
                             _xm = _sim_scored["x_wt"].max(); _ym = _sim_scored["y_wt"].max()
@@ -2234,8 +2227,8 @@ def _render_msg_figures(msg, msg_id):
                         )
                     except Exception as _e:
                         st.info(f"{T['pop_unavail']}: {_e}")
-                _prog_map = {"tubb": "TUBB (201 genes)", "foxm1": "FOXM1 (198 genes)", "mki67": "MKI67 (201 genes)",
-                             "full": "Full (200 genes)", "full_foxm1": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
+                _prog_map = {"tubb": "TUBB (201 genes)", "mki67": "MKI67 (201 genes)",
+                             "full": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
                 st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
@@ -2473,7 +2466,6 @@ if query_gene:
         # Sim cells projected via UMAP transform (fit on real data, embedding
         # replaced with original Scanpy UMAP, then transform applied to sim cells)
         _sim_proj_loaders = {
-            "foxm1": load_foxm1_sim_umap_proj,
             "mki67": load_mki67_sim_umap_proj,
             "tubb":  load_tubb_sim_umap_proj,
             "full":  load_full_sim_umap_proj,
@@ -2503,15 +2495,13 @@ if query_gene:
                 pass
 
         # Population panels — real data (panel 4) and simulation (panel 5)
-        # Real data: shown for foxm1 + original models
-        # Simulation: foxm1 only (only model with scored sim CSV)
         # Quiescent = DNAJB1 z-score (top HSPA1B neighbour); Proliferative = mean(top-100 MKI67 neighbours)
         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
         _POP_ORDER  = ["quiescent", "proliferative", "intermediate"]  # intermediate drawn on top (largest group)
         _POP_SIZES  = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
         fig_pop_real = None
         fig_pop_sim  = None
-        if _grn_model_q in ("foxm1", "tubb", "mki67", "full"):
+        if _grn_model_q in ("tubb", "mki67", "full"):
             try:
                 _pr = load_foxm1_pop_real()
                 fig_pop_real = px.scatter(
@@ -2529,11 +2519,9 @@ if query_gene:
             except Exception:
                 pass
         # Population sim — original GRN has no cell-cycle genes → skip
-        if _grn_model_q in ("foxm1", "tubb", "mki67", "full"):
+        if _grn_model_q in ("tubb", "mki67", "full"):
             try:
-                if _grn_model_q == "foxm1":
-                    _ps = load_foxm1_pop_sim()
-                elif _grn_model_q == "tubb":
+                if _grn_model_q == "tubb":
                     _ps = load_tubb_pop_sim()
                 elif _grn_model_q == "mki67":
                     _ps = load_mki67_pop_sim()
