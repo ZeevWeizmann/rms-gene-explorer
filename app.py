@@ -2391,7 +2391,7 @@ if query_gene:
                 color="expression",
                 color_continuous_scale="Viridis",
                 range_color=[0, _cmax],
-                title=f"{query_gene} — {T['expression']} ({len(umap_plot):,} cells shown)",
+                title=query_gene,
                 labels={"x": T['umap1'], "y": T['umap2']},
                 opacity=0.6, height=450,
                 render_mode="svg"
