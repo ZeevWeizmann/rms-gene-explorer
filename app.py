@@ -2391,22 +2391,9 @@ def _render_msg_figures(msg, msg_id):
                     st.info("No drug interactions found in DGIdb for these genes.")
                 else:
                     _d_highlight = {_d_ko_label, _d_query_gene}
-                    st.caption("Drug–gene interactions from **DGIdb** · 🟢 green = FDA-approved · white = experimental")
-                    def _drug_style(row):
-                        is_query = row["Gene"] in _d_highlight
-                        is_appr  = row["Approved"] == "✓"
-                        if is_query and is_appr:
-                            return ["background-color:#fef08a;color:#713f12;font-weight:700"] * len(row)
-                        if is_query:
-                            return ["background-color:#dbeafe;color:#1d4ed8;font-weight:700"] * len(row)
-                        if is_appr:
-                            return ["background-color:#dcfce7;color:#166534;font-weight:600"
-                                    if c in ("Drug", "Approved") else
-                                    "background-color:#dcfce7"
-                                    for c in row.index]
-                        return [""] * len(row)
+                    st.caption("Drug–gene interactions from **DGIdb**")
                     st.dataframe(
-                        _drugs_df.style.apply(_drug_style, axis=1),
+                        _drugs_df,
                         use_container_width=True,
                         hide_index=True,
                         column_config={
