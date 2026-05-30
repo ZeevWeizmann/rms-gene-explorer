@@ -2359,7 +2359,6 @@ for _mi, msg in enumerate(messages):
         continue  # gene name is already shown in the assistant message header — no duplication
     # assistant message — plain container, no chat bubble icons
     with st.container():
-        st.write(msg["content"])
         if "fig" in msg:
             if _mi == _last_asst_idx:
                 # Latest result — render everything
@@ -2369,6 +2368,8 @@ for _mi, msg in enumerate(messages):
                 _gene_lbl = msg.get("query_gene", "")
                 with st.expander(f"{T['show_results']} {_gene_lbl}", expanded=False):
                     _render_msg_figures(msg, id(msg))
+        else:
+            st.write(msg["content"])
 
 if st.session_state.get(f"default_run_{dataset_key}"):
     st.session_state[f"default_run_{dataset_key}"] = False
