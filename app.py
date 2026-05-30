@@ -2201,15 +2201,6 @@ def _render_msg_figures(msg, msg_id):
                 )
                 st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
 
-                # ── Time / Cell-type UMAPs (real + sim WT) ────────────────
-                _umap_row_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
-                _umap_row = [(k, msg.get(k)) for k in _umap_row_keys if msg.get(k) is not None]
-                if _umap_row:
-                    _umap_row_cols = st.columns(len(_umap_row))
-                    for _uc, (_, _uf) in zip(_umap_row_cols, _umap_row):
-                        _uf.update_layout(height=CHART_H_SMALL)
-                        _uc.plotly_chart(_uf, use_container_width=True)
-
                 if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
                     try:
                         if _effective_grn_model == "tubb":
@@ -2221,28 +2212,8 @@ def _render_msg_figures(msg, msg_id):
                         else:
                             _sim_scored = load_full_pop_sim();    _ko_label = "HSPA1B KO"
                         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
-                        st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
-                                        use_container_width=True, key=f"{msg_id}_pop_prop")
-                        st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
-                                        use_container_width=True, key=f"{msg_id}_pop_delta")
-                        _umap_col1, _umap_col2, _umap_col3 = st.columns(3)
                         _pt_pop_order = ["quiescent", "proliferative", "intermediate"]
                         _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
-                        try:
-                            _pr = load_foxm1_pop_real()
-                            _pop_umap_real = px.scatter(
-                                _pr, x="x", y="y", color="population",
-                                color_discrete_map=_POP_COLORS, title=T['real_data'],
-                                labels={"x": T['umap1'], "y": T['umap2'], "population": T['population']},
-                                opacity=0.6, height=420, render_mode="svg",
-                                category_orders={"population": _pt_pop_order},
-                            )
-                            for _pp, _ps in _pt_pop_sizes.items():
-                                _pop_umap_real.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                            _pop_umap_real.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                            _umap_col1.plotly_chart(_pop_umap_real, use_container_width=True, key=f"{msg_id}_pop_umap_real")
-                        except Exception:
-                            pass
                         _needs_flip = _effective_grn_model == "full_aurkb"
                         if _needs_flip:
                             _sim_scored = _sim_scored.copy()
@@ -2251,29 +2222,32 @@ def _render_msg_figures(msg, msg_id):
                             _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
                             _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
                             _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
+
+                        # Build Sim WT population UMAP (goes as 4th in the row)
                         _pop_umap_wt = px.scatter(
                             _sim_scored, x="x_wt", y="y_wt", color="pop_wt",
                             color_discrete_map=_POP_COLORS, title=T['sim_wt'],
                             labels={"x_wt": T['umap1'], "y_wt": T['umap2'], "pop_wt": T['population']},
-                            opacity=0.6, height=420, render_mode="svg",
+                            opacity=0.6, height=350, render_mode="svg",
                             category_orders={"pop_wt": _pt_pop_order},
                         )
                         for _pp, _ps in _pt_pop_sizes.items():
                             _pop_umap_wt.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
                         _pop_umap_wt.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                        _pop_umap_ko = px.scatter(
-                            _sim_scored, x="x_ko", y="y_ko", color="pop_ko",
-                            color_discrete_map=_POP_COLORS,
-                            title=f"Simulation {_ko_label} (populations *)",
-                            labels={"x_ko": T['umap1'], "y_ko": T['umap2'], "pop_ko": T['population']},
-                            opacity=0.6, height=420, render_mode="svg",
-                            category_orders={"pop_ko": _pt_pop_order},
-                        )
-                        for _pp, _ps in _pt_pop_sizes.items():
-                            _pop_umap_ko.update_traces(marker=dict(size=_ps), selector=dict(name=_pp))
-                        _pop_umap_ko.update_layout(plot_bgcolor="white", paper_bgcolor="white")
-                        _umap_col2.plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
-                        _umap_col3.plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
+
+                        # ── Row: Time / Time(sim WT) / Cell Type / Sim WT pop ──
+                        _umap_row_keys = ["fig_time", "fig_sim_time", "fig_celltype"]
+                        _umap_row = [(k, msg.get(k)) for k in _umap_row_keys if msg.get(k) is not None]
+                        _umap_row_cols = st.columns(len(_umap_row) + 1)
+                        for _uc, (_, _uf) in zip(_umap_row_cols, _umap_row):
+                            _uf.update_layout(height=350)
+                            _uc.plotly_chart(_uf, use_container_width=True)
+                        _umap_row_cols[-1].plotly_chart(_pop_umap_wt, use_container_width=True, key=f"{msg_id}_pop_umap_wt")
+
+                        st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
+                                        use_container_width=True, key=f"{msg_id}_pop_prop")
+                        st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
+                                        use_container_width=True, key=f"{msg_id}_pop_delta")
                         st.caption(
                             "\\* **Populations scored by gene signatures:** "
                             "**Proliferative** — mean expression of top-100 MKI67 co-expression neighbours ≥ 70th percentile · "
