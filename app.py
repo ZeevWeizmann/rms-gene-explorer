@@ -2522,39 +2522,59 @@ if query_gene:
                 color="expression",
                 color_continuous_scale="Viridis",
                 range_color=[0, _cmax],
-                title=f"{query_gene} — {T['expression']}",
+                title="",
                 labels={"x": T['umap1'], "y": T['umap2']},
                 opacity=0.6, height=450,
                 render_mode="svg"
             )
             fig.update_traces(marker=dict(size=3))
-            fig.update_layout(coloraxis_colorbar=dict(title=T['expression']),
-                              plot_bgcolor="white", paper_bgcolor="white")
+            fig.update_layout(
+                coloraxis_colorbar=dict(title=T['expression']),
+                plot_bgcolor="white", paper_bgcolor="white",
+                margin=dict(t=10),
+            )
+            fig.add_annotation(
+                text=f"<b>{query_gene}</b>",
+                x=0.01, y=0.99, xref="paper", yref="paper",
+                showarrow=False, xanchor="left", yanchor="top",
+                font=dict(size=14, color="#333"),
+                bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+            )
 
         if "time" in umap_df.columns:
             fig_time = px.scatter(
                 umap_plot, x="x", y="y",
                 color=umap_plot["time"].astype(str),
-                title=T['time'],
+                title="",
                 labels={"x": T['umap1'], "y": T['umap2'], "color": T['time']},
                 opacity=0.6, height=450,
                 render_mode="svg",
                 category_orders={"color": [str(t) for t in sorted(umap_df["time"].unique())]}
             )
             fig_time.update_traces(marker=dict(size=3))
-            fig_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            fig_time.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+            fig_time.add_annotation(
+                text="All cells · Time", x=0.01, y=0.99, xref="paper", yref="paper",
+                showarrow=False, xanchor="left", yanchor="top",
+                font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+            )
 
         if "cell_type" in umap_df.columns:
             fig_celltype = px.scatter(
                 umap_plot, x="x", y="y",
                 color="cell_type",
-                title=T['cell_type'],
+                title="",
                 labels={"x": T['umap1'], "y": T['umap2'], "color": T['cell_type']},
                 opacity=0.6, height=450,
                 render_mode="svg"
             )
             fig_celltype.update_traces(marker=dict(size=3))
-            fig_celltype.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+            fig_celltype.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+            fig_celltype.add_annotation(
+                text="All cells · Cell type", x=0.01, y=0.99, xref="paper", yref="paper",
+                showarrow=False, xanchor="left", yanchor="top",
+                font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+            )
 
         program_genes = [query_gene] + [genes[i] for i in sorted_idx]
 
@@ -2621,14 +2641,19 @@ if query_gene:
                 fig_sim_time = px.scatter(
                     _proj, x=_xcol, y=_ycol,
                     color=_proj[_tcol].astype(int).astype(str),
-                    title=T['time_sim'],
+                    title="",
                     labels={_xcol: T['umap1'], _ycol: T['umap2'], "color": T['time']},
                     opacity=0.6, height=450,
                     render_mode="svg",
                     category_orders={"color": _t_order},
                 )
                 fig_sim_time.update_traces(marker=dict(size=3))
-                fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white")
+                fig_sim_time.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=10))
+                fig_sim_time.add_annotation(
+                    text="Sim WT · Time", x=0.01, y=0.99, xref="paper", yref="paper",
+                    showarrow=False, xanchor="left", yanchor="top",
+                    font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
+                )
             except Exception:
                 pass
 
