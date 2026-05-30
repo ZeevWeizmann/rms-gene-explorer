@@ -1059,16 +1059,36 @@ def load_foxm1_real_timecourse():
 
 @st.cache_data(show_spinner=False, ttl=86400)
 def query_dgidb(genes: tuple) -> pd.DataFrame:
-    """Query DGIdb GraphQL API for drug-gene interactions (cached 24 h)."""
+    """Query DGIdb GraphQL API for drug-gene interactions (cached 24 h).
+
+    Uses pagination (first: 500) to get all interactions per gene.
+    Also expands TUBB → known isoforms so vincristine / taxanes appear.
+    """
     import requests
-    if not genes:
+
+    # DGIdb stores tubulin interactions under specific isoforms
+    _ALIASES = {
+        "TUBB":  ["TUBB", "TUBB1", "TUBB2A", "TUBB2B", "TUBB3", "TUBB4A", "TUBB4B"],
+        "TUBA1A":["TUBA1A", "TUBA1B", "TUBA1C"],
+    }
+    expanded = []
+    seen = set()
+    for g in genes:
+        for alias in _ALIASES.get(g, [g]):
+            if alias not in seen:
+                expanded.append(alias)
+                seen.add(alias)
+
+    if not expanded:
         return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
-    gene_list = '", "'.join(genes)
+
+    gene_list = '", "'.join(expanded)
+    # first: 500 — fetch up to 500 interactions per gene (avoids default pagination cap)
     gql = f"""{{
         genes(names: ["{gene_list}"]) {{
             nodes {{
                 name
-                interactions {{
+                interactions(first: 500) {{
                     drug {{ name, approved }}
                     interactionScore
                     interactionTypes {{ type, directionality }}
@@ -1078,26 +1098,37 @@ def query_dgidb(genes: tuple) -> pd.DataFrame:
     }}"""
     try:
         r = requests.post("https://dgidb.org/api/graphql",
-                          json={"query": gql}, timeout=20)
+                          json={"query": gql}, timeout=30)
         nodes = r.json().get("data", {}).get("genes", {}).get("nodes", [])
         rows = []
         for node in nodes:
+            # map alias back to the canonical gene name that was queried
+            canonical = next(
+                (g for g, aliases in _ALIASES.items() if node["name"] in aliases),
+                node["name"]
+            )
             for ia in node.get("interactions", []):
                 drug  = ia.get("drug", {}) or {}
                 types = [t["type"] for t in (ia.get("interactionTypes") or []) if t.get("type")]
                 score = ia.get("interactionScore") or 0
+                drug_name = (drug.get("name") or "").title()
+                if not drug_name:
+                    continue
                 rows.append({
-                    "Gene":     node["name"],
-                    "Drug":     (drug.get("name") or "").title(),
+                    "Gene":     canonical,
+                    "Drug":     drug_name,
                     "Approved": "✓" if drug.get("approved") else "",
                     "Type":     ", ".join(types),
                     "Score":    round(float(score), 2),
                 })
         df = pd.DataFrame(rows) if rows else pd.DataFrame(
             columns=["Gene", "Drug", "Approved", "Type", "Score"])
-        # sort: approved first, then by score desc
         if not df.empty:
-            df = df.sort_values(["Approved", "Score"], ascending=[False, False]).reset_index(drop=True)
+            # deduplicate same drug–gene pair (keep highest score)
+            df = (df.sort_values("Score", ascending=False)
+                    .drop_duplicates(subset=["Gene", "Drug"])
+                    .sort_values(["Approved", "Score"], ascending=[False, False])
+                    .reset_index(drop=True))
         return df
     except Exception:
         return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
