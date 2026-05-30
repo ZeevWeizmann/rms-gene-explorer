@@ -1695,8 +1695,8 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
             text=(
                 f"Drug target candidates after {ko_gene} KO"
                 f"<br><span style='font-size:12px;color:#888;font-weight:normal'>"
-                f"Gene expression change at t=80 (simulated KO vs WT) · "
-                f"orange = knocked-out gene · red = up-regulated · blue = down-regulated"
+                f"Top genes by fold-change of expression at t=80 in KO vs WT simulation · "
+                f"orange = knocked-out gene · red = higher in KO · blue = lower in KO"
                 f"</span>"
             ),
             font=dict(size=16),
