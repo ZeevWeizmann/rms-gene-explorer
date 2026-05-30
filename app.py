@@ -92,7 +92,7 @@ _TRANSLATIONS = {
         'delta_pct': 'Δ% (KO – WT)',
         # Result tabs
         'gene_program': 'Gene Program',
-        'gene_program_cluster': 'Gene program cluster',
+        'assigned_cluster': 'Assigned cluster',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
         'network_graph': 'Gene Network',
@@ -221,7 +221,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'delta_pct': 'Δ% (KO – WT)',
         # Result tabs
         'gene_program': 'Programme Génique',
-        'gene_program_cluster': 'Cluster du programme génique',
+        'assigned_cluster': 'Cluster assigné',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
         'network_graph': 'Réseau Génique',
@@ -2151,7 +2151,7 @@ def _render_msg_figures(msg, msg_id):
                             "padding:0;font-size:0.85rem;}</style>",
                             unsafe_allow_html=True
                         )
-                        with st.popover(T['gene_program_cluster']):
+                        with st.popover(f"{T['assigned_cluster']}: {_annot_label}"):
                             if _cluster_summary:
                                 st.markdown(_cluster_summary)
                             else:
