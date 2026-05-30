@@ -93,7 +93,7 @@ _TRANSLATIONS = {
         # Result tabs
         'gene_program': 'Program',
         'assigned_cluster': 'Assigned cluster',
-        'ko_targets': 'Targets',
+        'ko_targets': 'Drug Targets',
         # Network tabs
         'ko_perturbation': 'KO Simulation',
         'network_graph': 'Regulatory Network',
@@ -223,7 +223,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         # Result tabs
         'gene_program': 'Programme',
         'assigned_cluster': 'Cluster assigné',
-        'ko_targets': 'Cibles',
+        'ko_targets': 'Cibles thérapeutiques',
         # Network tabs
         'ko_perturbation': 'Simulation KO',
         'network_graph': 'Réseau de Régulation',
