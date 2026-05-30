@@ -2113,16 +2113,16 @@ def _render_msg_figures(msg, msg_id):
     # ── Build tab list dynamically ────────────────────────────────────────────
     _tab_defs = []  # list of (key, title) for tabs to show
     if _has_gene_prog:
-        _tab_defs.append(("gene_prog", f"🗂️ {T['gene_program']}"))
+        _tab_defs.append(("gene_prog", T['gene_program']))
     if _has_expression:
-        _tab_defs.append(("expression", f"📊 {T['expression']}"))
-    if _has_pert:
-        _pert_tab_title = f"🧬 {T['ko_perturbation']}" if _msg_grn_model == "full" else f"🧬 {_ko_gene_label} {T['ko_perturbation']}"
-        _tab_defs.append(("perturbation", _pert_tab_title))
+        _tab_defs.append(("expression", T['expression']))
     if _has_grn:
         _tab_defs.append(("network", T['network_graph']))
     if _has_adj:
         _tab_defs.append(("adjacency", T['adjacency_matrix']))
+    if _has_pert:
+        _pert_tab_title = T['ko_perturbation'] if _msg_grn_model == "full" else f"{_ko_gene_label} {T['ko_perturbation']}"
+        _tab_defs.append(("perturbation", _pert_tab_title))
 
     if not _tab_defs:
         return
