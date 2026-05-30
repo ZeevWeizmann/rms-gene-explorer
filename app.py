@@ -2051,16 +2051,13 @@ def _render_msg_figures(msg, msg_id):
     if not _tab_defs:
         return
 
-    # ── Pre-load perturbation data before tabs (shared between Targets + KO Simulation) ──
+    # ── Pre-load perturbation data (radio rendered inside tabs, value read from session state) ──
     _pert_data = {}
     if _has_pert:
         try:
+            _full_ko_key = f"{msg_id}_full_ko_choice"
             if _msg_grn_model == "full":
-                _full_ko_key = f"{msg_id}_full_ko_choice"
-                _full_ko_choice = st.radio(
-                    "KO gene", ["HSPA1B", "FOXM1", "AURKB"],
-                    horizontal=True, key=_full_ko_key
-                )
+                _full_ko_choice = st.session_state.get(_full_ko_key, "HSPA1B")
                 _effective_grn_model = {
                     "FOXM1": "full_foxm1",
                     "AURKB": "full_aurkb",
@@ -2077,6 +2074,8 @@ def _render_msg_figures(msg, msg_id):
                 "bar_fig": bar_fig, "line_fig": line_fig,
                 "effective_model": _effective_grn_model,
                 "ko_label": _ko_gene_label,
+                "full_ko_key": _full_ko_key,
+                "is_full": _msg_grn_model == "full",
             }
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
@@ -2147,6 +2146,9 @@ def _render_msg_figures(msg, msg_id):
             if "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
+                if _pert_data.get("is_full"):
+                    st.radio("KO gene", ["HSPA1B", "FOXM1", "AURKB"],
+                             horizontal=True, key=_pert_data["full_ko_key"])
                 st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
@@ -2155,6 +2157,9 @@ def _render_msg_figures(msg, msg_id):
             if "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
+                if _pert_data.get("is_full"):
+                    st.radio("KO gene", ["HSPA1B", "FOXM1", "AURKB"],
+                             horizontal=True, key=f"{_pert_data['full_ko_key']}_sim")
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
                 st.plotly_chart(_pert_data["line_fig"], use_container_width=True, key=f"{msg_id}_pert_line")
