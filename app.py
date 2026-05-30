@@ -2157,7 +2157,16 @@ def _render_msg_figures(msg, msg_id):
                             else:
                                 st.markdown(f"*{_annot_label}*")
                 with _tc:
-                    st.dataframe(msg["df"], use_container_width=True, height=440)
+                    st.dataframe(
+                        msg["df"],
+                        use_container_width=False,
+                        width=280,
+                        height=440,
+                        column_config={
+                            "Gene":       st.column_config.TextColumn("Gene",       width=120),
+                            "Similarity": st.column_config.NumberColumn("Similarity", width=90, format="%.2f"),
+                        },
+                    )
             else:
                 st.dataframe(msg["df"], use_container_width=True)
                 if _annot_label:
@@ -2440,6 +2449,7 @@ if query_gene:
         ]
         df = pd.DataFrame(top_genes, columns=["Gene", "Similarity", "Cluster annotation"])
         df = df[["Gene", "Similarity"]].copy()
+        df["Similarity"] = df["Similarity"].round(2)
         df.index = range(1, len(df) + 1)
 
         query_cluster = int(clusters[idx])
