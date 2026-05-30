@@ -2135,25 +2135,29 @@ def _render_msg_figures(msg, msg_id):
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
         with _tab_map["gene_prog"]:
+            _annot_label = msg.get("query_annotation", "")
+            _cluster_summary = summaries.get(msg.get("cluster_id", ""), "") if "cluster_id" in msg else ""
             if msg.get("fig_gene_map") is not None:
                 _mc, _tc = st.columns([3, 2])
                 with _mc:
                     st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
                                     key=f"{msg_id}_gene_map")
+                    if _cluster_summary and _annot_label:
+                        st.markdown(
+                            f"<style>div[data-testid='stPopover'] button{{border:none!important;"
+                            f"background:transparent!important;color:#555;font-style:italic;"
+                            f"padding:0;font-size:0.85rem;}}</style>",
+                            unsafe_allow_html=True
+                        )
+                        with st.popover(f"ℹ️ {_annot_label}"):
+                            st.markdown(_cluster_summary)
                 with _tc:
                     st.dataframe(msg["df"], use_container_width=True, height=440)
-                    if "cluster_id" in msg:
-                        summary = summaries.get(msg["cluster_id"], "")
-                        if summary:
-                            with st.popover(T['cluster_details']):
-                                st.markdown(summary)
             else:
                 st.dataframe(msg["df"], use_container_width=True)
-                if "cluster_id" in msg:
-                    summary = summaries.get(msg["cluster_id"], "")
-                    if summary:
-                        with st.popover(T['cluster_details']):
-                            st.markdown(summary)
+                if _cluster_summary and _annot_label:
+                    with st.popover(f"ℹ️ {_annot_label}"):
+                        st.markdown(_cluster_summary)
 
     # ── Tab: Expression ───────────────────────────────────────────────────────
     if "expression" in _tab_map:
@@ -2652,6 +2656,7 @@ if query_gene:
             "content": _content,
             "df": df,
             "cluster_id": query_cluster,
+            "query_annotation": query_annotation,
             "query_gene": query_gene,
             "fig": fig,
             "fig_time": fig_time,
