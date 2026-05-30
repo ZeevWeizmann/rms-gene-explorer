@@ -2342,10 +2342,11 @@ def _render_msg_figures(msg, msg_id):
             _row1_keys = ["fig_time", "fig_celltype"]
             _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
             if _row1:
-                cols = st.columns(1 if is_mobile else len(_row1))
-                for col, (k, f) in zip(cols, _row1):
-                    f.update_layout(height=CHART_H_SMALL)
-                    col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+                with st.expander("Reference maps (Time · Cell type)", expanded=False):
+                    cols = st.columns(1 if is_mobile else len(_row1))
+                    for col, (k, f) in zip(cols, _row1):
+                        f.update_layout(height=CHART_H_SMALL)
+                        col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
 
     # ── Tab: Targets (bar chart — top 20 affected genes) ─────────────────────
     if "targets" in _tab_map:
