@@ -2355,6 +2355,11 @@ elif not messages and not selected_gene:
     _url_gene = st.query_params.get("gene", "")
     if _url_gene and _url_gene.upper() in genes:
         query_gene = _url_gene.upper()
+        st.session_state[f"last_selected_{dataset_key}"] = query_gene
+        # Clear selectbox widget state so it resets to placeholder after restore
+        _sb_key = f"selectbox_{dataset_key}_v{st.session_state.get(_sel_ver_key, 0)}"
+        if _sb_key in st.session_state:
+            del st.session_state[_sb_key]
     else:
         query_gene = None
 else:
