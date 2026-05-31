@@ -100,7 +100,7 @@ _TRANSLATIONS = {
         'drugs': 'Drugs',
         # Network tabs
         'ko_perturbation': 'Perturbation Simulation',
-        'network_graph': 'Regulatory Network',
+        'network_graph': 'Regulatory Interactions',
         'adjacency_matrix': 'Network Weights',
         'network_topology': '📊 Network topology analysis',
         'upstream': 'Upstream regulators',
