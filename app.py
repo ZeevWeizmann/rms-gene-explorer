@@ -1138,17 +1138,32 @@ def score_populations_online(kon_wt, kon_ko, gene_names):
     return _assign(kon_wt), _assign(kon_ko)
 
 
-def top_de_genes_online(kon_wt, kon_ko, gene_names, top_n=15):
+def top_de_genes_online(kon_wt, kon_ko, gene_names, grn_params, top_n=15):
     """
-    Return top up/down genes by mean kon_theta fold-change (KO vs WT).
-    Returns DataFrame with columns: gene, delta_kon, direction.
+    Return top differentially expressed genes by mean expected-RNA change (KO vs WT).
+
+    Expected RNA for gene i = max_kz[i] * kon[i] / c[i]   (NB mean, col 0 = stimulus)
+    Returns DataFrame with columns: gene, delta_expr, delta_kon, direction.
     """
-    delta = kon_ko[:, 1:].mean(0) - kon_wt[:, 1:].mean(0)  # shape (200,)
-    order = np.argsort(np.abs(delta))[::-1][:top_n]
+    mixture = grn_params["mixture_parameters"]  # (3, 201)
+    kz_raw  = mixture[:-1, :]                   # (2, 201)
+    max_kz  = np.maximum(np.max(kz_raw, axis=0), 1e-6)  # (201,)
+    c_disp  = mixture[2, :]                     # (201,)  dispersion / rate
+
+    # Expected RNA: shape (n_cells, 201)
+    expr_wt = (kon_wt * max_kz) / np.maximum(c_disp, 1e-6)
+    expr_ko = (kon_ko * max_kz) / np.maximum(c_disp, 1e-6)
+
+    # Delta expression for the 200 genes (skip stimulus col 0)
+    delta_expr = expr_ko[:, 1:].mean(0) - expr_wt[:, 1:].mean(0)  # (200,)
+    delta_kon  = kon_ko[:, 1:].mean(0)  - kon_wt[:, 1:].mean(0)   # (200,)
+
+    order = np.argsort(np.abs(delta_expr))[::-1][:top_n]
     return pd.DataFrame({
-        "gene":      [gene_names[i] for i in order],
-        "delta_kon": [float(delta[i]) for i in order],
-        "direction": ["up" if delta[i] > 0 else "down" for i in order],
+        "gene":       [gene_names[i] for i in order],
+        "delta_expr": [float(delta_expr[i]) for i in order],
+        "delta_kon":  [float(delta_kon[i])  for i in order],
+        "direction":  ["up" if delta_expr[i] > 0 else "down" for i in order],
     })
 
 
@@ -2668,7 +2683,7 @@ def _render_msg_figures(msg, msg_id):
                                 _gene_names_list = _grn_p.get("gene_names", list(genes))
                                 _kon_wt, _kon_ko = run_online_ko(_ko_sel, _gene_names_list, _grn_p)
                                 _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list)
-                                _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, top_n=15)
+                                _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p, top_n=15)
                                 st.session_state[_ck] = {
                                     "ko_gene": _ko_sel,
                                     "pop_wt": _pop_wt_r,
@@ -2707,29 +2722,29 @@ def _render_msg_figures(msg, msg_id):
                         )
                         st.plotly_chart(_cfig, use_container_width=True, key=f"{msg_id}_custom_ko_fig")
 
-                        # ── Top differentially active genes chart ──
+                        # ── Top differentially expressed genes chart ──
                         if "de_df" in _cr and _cr["de_df"] is not None and len(_cr["de_df"]) > 0:
                             _de = _cr["de_df"].copy()
                             _de_clrs = ["#e05a5a" if d == "up" else "#4a7fc1" for d in _de["direction"]]
                             _de_fig = go.Figure(go.Bar(
-                                x=_de["delta_kon"],
+                                x=_de["delta_expr"],
                                 y=_de["gene"],
                                 orientation="h",
                                 marker_color=_de_clrs,
-                                text=[f"{v:+.4f}" for v in _de["delta_kon"]],
+                                text=[f"{v:+.2f}" for v in _de["delta_expr"]],
                                 textposition="outside",
                             ))
                             _de_fig.update_layout(
                                 height=420,
-                                title=f"Top genes by Δkon activity ({_cr['ko_gene']} KO vs WT)",
-                                xaxis_title="Δ mean kon (KO − WT)",
+                                title=f"Top differentially expressed genes ({_cr['ko_gene']} KO vs WT)",
+                                xaxis_title="Δ expected expression (KO − WT, UMI)",
                                 yaxis=dict(autorange="reversed"),
                                 plot_bgcolor="white", paper_bgcolor="white",
                                 margin=dict(t=50, b=40, l=100),
                             )
                             st.plotly_chart(_de_fig, use_container_width=True, key=f"{msg_id}_custom_ko_de_fig")
 
-                        st.caption("Scored from kon (transcriptional activity) · CENPF=proliferative, DNAJB1=quiescent")
+                        st.caption("Population scoring: CENPF kon ↑ → proliferative, DNAJB1 kon ↑ → quiescent · Expression = E[RNA] = max_kz × kon / c")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:
