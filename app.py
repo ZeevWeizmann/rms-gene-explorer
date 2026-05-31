@@ -2675,7 +2675,7 @@ def _render_msg_figures(msg, msg_id):
                 st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
 
                 # ── Custom KO expander ────────────────────────────────────
-                with st.expander("🧪 Simulate any gene KO (online)", expanded=False):
+                with st.expander("Simulate any gene KO (online)", expanded=False):
                     # Use simulation GRN gene list (200 genes) if already loaded
                     _grn_p_pre = load_grn_params()
                     _sim_gene_list = _grn_p_pre.get("gene_names", None)
