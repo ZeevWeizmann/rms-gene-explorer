@@ -1072,7 +1072,7 @@ def load_grn_params():
     token = st.secrets.get("HF_TOKEN", None)
     params = {}
     files = [
-        "inter_t_simul", "basal_simul", "basal_t_simul",
+        "inter_simul", "inter_t_simul", "basal_simul", "basal_t_simul",
         "degradations_temporal", "ratios", "mixture_parameters", "pi_zinb",
         "data_kon_beta_sub200", "data_prot_sub200", "data_kon_theta_sub200",
         "data_times_sub200",
@@ -1094,99 +1094,52 @@ def load_grn_params():
 def run_online_ko(gene_name: str, gene_names: list, grn_params: dict):
     """
     Run online KO simulation for any gene.
-    Returns (X_wt, X_ko) — simulated expression matrices (n_cells × n_genes).
-    Uses 200 cells per timepoint (1200 total).
+    Returns (kon_wt, kon_ko) — raw kon_theta arrays, shape (n_cells, 201).
+    Uses 200 cells/timepoint, deterministic ODE (~20 s total).
+    Uses the standalone simulate_ko.py — no ot/seaborn import needed.
     """
-    try:
-        from CardamomOT import NetworkModel
-    except ImportError:
-        raise ImportError("CardamomOT package not found")
-
-    p = grn_params
-    G = 200  # NetworkModel(G) → 200 = n_genes - 1
-
-    def _build_model(ko_idx=None):
-        model = NetworkModel(G)
-        model.inter_t    = p["inter_t_simul"].copy()
-        model.basal      = p["basal_simul"].copy()
-        model.basal_t    = p["basal_t_simul"].copy()
-        model.prot       = p["data_prot_sub200"].copy()
-        model.kon_theta  = p["data_kon_theta_sub200"].copy()
-        model.kon_beta   = p["data_kon_beta_sub200"].copy()
-        model.times_data = p["data_times_sub200"].copy()
-        model.d_t        = p["degradations_temporal"].copy()
-        model.ratios     = p["ratios"].copy()
-        if ko_idx is not None:
-            model.basal_t[:, ko_idx] = -100 - np.sum(model.inter_t[-1, :, ko_idx])
-            model.prot[:, ko_idx] = 0
-        return model
-
-    times = np.array([0., 16., 32., 48., 64., 80.])
-
-    # WT simulation
-    model_wt = _build_model()
-    model_wt.simulate_network(times)
-    kon_wt = model_wt.kon_theta  # (n_cells × n_genes+1)
-
-    # KO simulation
-    ko_idx = gene_names.index(gene_name)
-    model_ko = _build_model(ko_idx=ko_idx)
-    model_ko.simulate_network(times)
-    kon_ko = model_ko.kon_theta
-
-    # Convert kon_theta → RNA expression via NB + ZINB
-    mixture_params = p["mixture_parameters"]
-    c   = mixture_params[-1, :]   # (n_genes+1,)
-    kz  = mixture_params[:-1, :]  # (2, n_genes+1)
-    pi_zinb = p["pi_zinb"]        # (n_genes,)  — note: only 200 genes
-
-    def _sample_rna(kon):
-        n_cells = kon.shape[0]
-        n_genes = kon.shape[1] - 1  # exclude gene 0
-        kz_max = np.maximum(kz, 0)
-        mu = (np.max(kz_max, 0) * kon)[:, 1:]  # (n_cells, n_genes)
-        prob = (c[1:] / (c[1:] + 1))            # (n_genes,)
-        # Avoid negative binomial with bad params
-        n_nb = np.maximum(mu * prob / np.maximum(1 - prob, 1e-9), 1e-3)
-        rna = np.random.negative_binomial(
-            np.broadcast_to(n_nb, (n_cells, n_genes)).astype(np.float64),
-            np.broadcast_to(prob, (n_cells, n_genes))
-        ).astype(float)
-        # Zero inflation
-        pi_z = np.minimum(pi_zinb[:n_genes], 0.99)
-        zero_mask = np.random.uniform(0, 1, rna.shape) < pi_z
-        rna[zero_mask] = 0
-        return rna
-
-    X_wt = _sample_rna(kon_wt)
-    X_ko = _sample_rna(kon_ko)
-    return X_wt, X_ko
+    from simulate_ko import simulate_ko_kon as _sim_kon
+    return _sim_kon(gene_name, gene_names, grn_params)
 
 
-def score_populations_online(X_wt, X_ko, gene_names):
-    """Score WT and KO cells into populations using CENPF/DNAJB1."""
-    cenpf_idx  = gene_names.index("CENPF")
-    dnajb1_idx = gene_names.index("DNAJB1")
+def score_populations_online(kon_wt, kon_ko, gene_names):
+    """
+    Score cell populations from kon_theta directly (no RNA sampling).
+    CENPF  kon high → proliferative; DNAJB1 kon high → quiescent.
+    Thresholds = 70th percentile of WT kon values.
+    kon_wt, kon_ko : shape (n_cells, 201) — col 0 = stimulus, cols 1-200 = genes.
+    """
+    cenpf_col  = gene_names.index("CENPF")  + 1   # +1 for stimulus col
+    dnajb1_col = gene_names.index("DNAJB1") + 1
 
-    c_wt = X_wt[:, cenpf_idx];  d_wt = X_wt[:, dnajb1_idx]
-    wt_cm = c_wt.mean(); wt_cs = c_wt.std() + 1e-9
-    wt_dm = d_wt.mean(); wt_ds = d_wt.std() + 1e-9
+    c_wt = kon_wt[:, cenpf_col]
+    d_wt = kon_wt[:, dnajb1_col]
+    p70p = np.percentile(c_wt, 70)
+    p70q = np.percentile(d_wt, 70)
 
-    sp_wt = (c_wt - wt_cm) / wt_cs
-    sq_wt = (d_wt - wt_dm) / wt_ds
-    p70p  = np.percentile(sp_wt, 70)
-    p70q  = np.percentile(sq_wt, 70)
-
-    def _assign(sp, sq):
-        lbl = np.full(len(sp), "intermediate", dtype=object)
-        lbl[sp >= p70p] = "proliferative"
-        lbl[sq >= p70q] = "quiescent"
+    def _assign(kon):
+        c = kon[:, cenpf_col]
+        d = kon[:, dnajb1_col]
+        lbl = np.full(len(c), "intermediate", dtype=object)
+        lbl[c >= p70p] = "proliferative"
+        lbl[d >= p70q] = "quiescent"
         return pd.Series(lbl).value_counts(normalize=True).mul(100)
 
-    sp_ko = (X_ko[:, cenpf_idx] - wt_cm) / wt_cs
-    sq_ko = (X_ko[:, dnajb1_idx] - wt_dm) / wt_ds
+    return _assign(kon_wt), _assign(kon_ko)
 
-    return _assign(sp_wt, sq_wt), _assign(sp_ko, sq_ko)
+
+def top_de_genes_online(kon_wt, kon_ko, gene_names, top_n=15):
+    """
+    Return top up/down genes by mean kon_theta fold-change (KO vs WT).
+    Returns DataFrame with columns: gene, delta_kon, direction.
+    """
+    delta = kon_ko[:, 1:].mean(0) - kon_wt[:, 1:].mean(0)  # shape (200,)
+    order = np.argsort(np.abs(delta))[::-1][:top_n]
+    return pd.DataFrame({
+        "gene":      [gene_names[i] for i in order],
+        "delta_kon": [float(delta[i]) for i in order],
+        "direction": ["up" if delta[i] > 0 else "down" for i in order],
+    })
 
 
 @st.cache_data(show_spinner=False, ttl=86400)
@@ -2693,17 +2646,22 @@ def _render_msg_figures(msg, msg_id):
                     _run_btn = st.button("▶ Run KO simulation", key=f"{msg_id}_run_ko_btn")
                     _ck = f"{msg_id}_custom_ko_result"
                     if _run_btn:
-                        with st.spinner(f"Simulating {_ko_sel} KO (~15–30 sec)…"):
+                        with st.spinner(f"Simulating {_ko_sel} KO (~20 sec)…"):
                             try:
                                 _grn_p = load_grn_params()
-                                _gene_names_list = genes  # list of 200 gene names
-                                _Xwt, _Xko = run_online_ko(_ko_sel, list(_gene_names_list), _grn_p)
-                                _pop_wt_r, _pop_ko_r = score_populations_online(_Xwt, _Xko, list(_gene_names_list))
+                                _gene_names_list = list(genes)
+                                _kon_wt, _kon_ko = run_online_ko(_ko_sel, _gene_names_list, _grn_p)
+                                _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list)
+                                _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, top_n=15)
                                 st.session_state[_ck] = {
-                                    "ko_gene": _ko_sel, "pop_wt": _pop_wt_r, "pop_ko": _pop_ko_r
+                                    "ko_gene": _ko_sel,
+                                    "pop_wt": _pop_wt_r,
+                                    "pop_ko": _pop_ko_r,
+                                    "de_df": _de_df,
                                 }
                             except Exception as _e:
-                                st.error(f"Simulation error: {_e}")
+                                import traceback
+                                st.error(f"Simulation error: {_e}\n{traceback.format_exc()}")
                     if _ck in st.session_state:
                         _cr = st.session_state[_ck]
                         _pops = ["proliferative", "quiescent", "intermediate"]
@@ -2711,14 +2669,19 @@ def _render_msg_figures(msg, msg_id):
                         _wt_v = [_cr["pop_wt"].get(p, 0) for p in _pops]
                         _ko_v = [_cr["pop_ko"].get(p, 0) for p in _pops]
                         _delta = [_ko_v[i] - _wt_v[i] for i in range(3)]
+
+                        # ── Population fractions chart ──
                         _cfig = go.Figure()
                         for pi, pop in enumerate(_pops):
-                            _cfig.add_bar(name=pop, x=["WT sim", f"{_cr['ko_gene']} KO"],
-                                          y=[_wt_v[pi], _ko_v[pi]],
-                                          marker_color=_clrs[pop],
-                                          text=[f"{_wt_v[pi]:.1f}%",
-                                                f"{_delta[pi]:+.1f}%" if abs(_delta[pi]) > 0.1 else ""],
-                                          textposition="outside")
+                            _cfig.add_bar(
+                                name=pop,
+                                x=["WT sim", f"{_cr['ko_gene']} KO"],
+                                y=[_wt_v[pi], _ko_v[pi]],
+                                marker_color=_clrs[pop],
+                                text=[f"{_wt_v[pi]:.1f}%",
+                                      f"{_ko_v[pi]:.1f}% ({_delta[pi]:+.1f}%)" if abs(_delta[pi]) > 0.1 else f"{_ko_v[pi]:.1f}%"],
+                                textposition="outside",
+                            )
                         _cfig.update_layout(
                             barmode="group", height=350,
                             title=f"Cell populations: WT vs {_cr['ko_gene']} KO",
@@ -2727,7 +2690,30 @@ def _render_msg_figures(msg, msg_id):
                             margin=dict(t=50, b=60),
                         )
                         st.plotly_chart(_cfig, use_container_width=True, key=f"{msg_id}_custom_ko_fig")
-                        st.caption("⚠️ Based on 200 cells/timepoint subsample · CENPF/DNAJB1 scoring")
+
+                        # ── Top differentially active genes chart ──
+                        if "de_df" in _cr and _cr["de_df"] is not None and len(_cr["de_df"]) > 0:
+                            _de = _cr["de_df"].copy()
+                            _de_clrs = ["#e05a5a" if d == "up" else "#4a7fc1" for d in _de["direction"]]
+                            _de_fig = go.Figure(go.Bar(
+                                x=_de["delta_kon"],
+                                y=_de["gene"],
+                                orientation="h",
+                                marker_color=_de_clrs,
+                                text=[f"{v:+.4f}" for v in _de["delta_kon"]],
+                                textposition="outside",
+                            ))
+                            _de_fig.update_layout(
+                                height=420,
+                                title=f"Top genes by Δkon activity ({_cr['ko_gene']} KO vs WT)",
+                                xaxis_title="Δ mean kon (KO − WT)",
+                                yaxis=dict(autorange="reversed"),
+                                plot_bgcolor="white", paper_bgcolor="white",
+                                margin=dict(t=50, b=40, l=100),
+                            )
+                            st.plotly_chart(_de_fig, use_container_width=True, key=f"{msg_id}_custom_ko_de_fig")
+
+                        st.caption("Scored from kon (transcriptional activity) · CENPF=proliferative, DNAJB1=quiescent")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:
