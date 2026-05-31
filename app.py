@@ -2753,10 +2753,11 @@ def _render_msg_figures(msg, msg_id):
                         },
                     )
                     st.caption(
-                        "\\* **Score** — DGIdb interaction score: weighted sum across all sources "
-                        "reporting this drug–gene interaction. Database sources (DrugBank, ChEMBL, etc.) "
-                        "contribute more weight than individual publications. "
-                        "See [DGIdb scoring](https://dgidb.org/faq) for details."
+                        "\\* **Score** — [DGIdb Interaction Score](https://dgidb.org/about/overview/interaction-score): "
+                        "static evidence-based score for each drug–gene pair, independent of the search context. "
+                        "Combines evidence scores (number and quality of supporting sources) with a "
+                        "promiscuity penalty — drugs or genes involved in many interactions receive lower scores. "
+                        "Higher score = better-supported, more specific interaction."
                     )
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
