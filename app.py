@@ -2947,10 +2947,10 @@ def _render_msg_figures(msg, msg_id):
                         yaxis=dict(tickfont=dict(size=9)),
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
-                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}")
+                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
             if _live_grn_fig is not None:
                 with st.expander("Gene Regulatory Interactions", expanded=True):
-                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}")
+                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
