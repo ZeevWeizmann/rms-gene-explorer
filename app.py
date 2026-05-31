@@ -2539,18 +2539,12 @@ def _render_msg_figures(msg, msg_id):
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
 
-    # ── Pre-fetch DGIdb once for program genes + KO-affected genes ────────────
-    # Builds a combined gene list so both the Gene Program indicator column and
-    # the Drugs tab table share a single (cached) DGIdb call.
+    # ── Pre-compute DGIdb for KO-affected genes (same tuple Drugs tab always used) ─
     _pre_drugs_df      = pd.DataFrame()
     _pre_drug_gene_set = set()
-    _pre_d_all_genes   = ()   # KO-affected genes tuple for the Drugs tab
-    try:
-        # Program genes (up to program_size, from message cache)
-        _pre_all_sim   = msg.get("all_similar", [])
-        _pre_prog_list = [_q_gene] + [g for g, _ in _pre_all_sim[:program_size]]
-        # KO-affected genes (top-20 by |log2FC| at last timepoint)
-        if _pert_data and "error" not in _pert_data:
+    _pre_d_all_genes   = ()
+    if _pert_data and "error" not in _pert_data:
+        try:
             _pre_pdf    = _pert_data["pert_df"]
             _pre_ko_lbl = _pert_data["ko_label"]
             _pre_qg     = _pert_data.get("query_gene", "")
@@ -2567,14 +2561,11 @@ def _render_msg_figures(msg, msg_id):
             _pre_d_all_genes = tuple(dict.fromkeys(
                 [_pre_ko_lbl, _pre_qg] + _pre_top20
             ))
-        # Union of both sets, deduplicated
-        _pre_combined = tuple(dict.fromkeys(_pre_prog_list + list(_pre_d_all_genes)))
-        if _pre_combined:
-            _pre_drugs_df = query_dgidb(_pre_combined)
+            _pre_drugs_df = query_dgidb(_pre_d_all_genes)
             if not _pre_drugs_df.empty:
                 _pre_drug_gene_set = set(_pre_drugs_df["Gene"].unique())
-    except Exception:
-        pass
+        except Exception:
+            pass
 
     _tab_keys   = [d[0] for d in _tab_defs]
     _tab_titles = [d[1] for d in _tab_defs]
