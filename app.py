@@ -127,6 +127,13 @@ _TRANSLATIONS = {
         'sim_caption': 'Simulation: CARDAMOM mechanistic model',
         'pop_unavail': 'Population shift unavailable',
         'pert_unavail': 'Perturbation data not available',
+        'dgidb_caption': 'Drug–gene interactions from **[DGIdb](https://dgidb.org)**',
+        'dgidb_score_note': ('\\* **Score** — [DGIdb Interaction Score](https://dgidb.org/about/overview/interaction-score): '
+                             'static evidence-based score for each drug–gene pair, independent of the search context. '
+                             'Combines evidence scores (number and quality of supporting sources) with a '
+                             'promiscuity penalty — drugs or genes involved in many interactions receive lower scores. '
+                             'Higher score = better-supported, more specific interaction.'),
+        'no_drugs_found': 'No drug interactions found in DGIdb for these genes.',
         'loading_data': 'Loading data...',
         'loading_grn': 'Loading GRN...',
         # Misc UI
@@ -259,6 +266,13 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'sim_caption': 'Simulation : modèle mécaniste CARDAMOM',
         'pop_unavail': 'Changement de population non disponible',
         'pert_unavail': 'Données de perturbation non disponibles',
+        'dgidb_caption': 'Interactions médicament–gène depuis **[DGIdb](https://dgidb.org)**',
+        'dgidb_score_note': ('\\* **Score** — [Score d\'interaction DGIdb](https://dgidb.org/about/overview/interaction-score) : '
+                             'score statique basé sur les preuves pour chaque paire médicament–gène, indépendant du contexte de recherche. '
+                             'Combine les scores de preuves (nombre et qualité des sources) avec une '
+                             'pénalité de promiscuité — les médicaments ou gènes impliqués dans de nombreuses interactions reçoivent un score plus faible. '
+                             'Score élevé = interaction mieux étayée et plus spécifique.'),
+        'no_drugs_found': 'Aucune interaction médicamenteuse trouvée dans DGIdb pour ces gènes.',
         'loading_data': 'Chargement des données...',
         'loading_grn': 'Chargement du GRN...',
         # Misc UI
@@ -2734,10 +2748,10 @@ def _render_msg_figures(msg, msg_id):
                     _drugs_df = query_dgidb(_d_all_genes)
 
                 if _drugs_df.empty:
-                    st.info("No drug interactions found in DGIdb for these genes.")
+                    st.info(T['no_drugs_found'])
                 else:
                     _d_highlight = {_d_ko_label, _d_query_gene}
-                    st.caption("Drug–gene interactions from **[DGIdb](https://dgidb.org)**")
+                    st.caption(T['dgidb_caption'])
                     def _style_drug_rows(row):
                         if row["Gene"] in _d_highlight:
                             return ["background-color: #dbeeff; color: #1a4a7a; font-weight: 600"] * len(row)
@@ -2752,13 +2766,7 @@ def _render_msg_figures(msg, msg_id):
                             "Score": st.column_config.NumberColumn("Score *", format="%.2f"),
                         },
                     )
-                    st.caption(
-                        "\\* **Score** — [DGIdb Interaction Score](https://dgidb.org/about/overview/interaction-score): "
-                        "static evidence-based score for each drug–gene pair, independent of the search context. "
-                        "Combines evidence scores (number and quality of supporting sources) with a "
-                        "promiscuity penalty — drugs or genes involved in many interactions receive lower scores. "
-                        "Higher score = better-supported, more specific interaction."
-                    )
+                    st.caption(T['dgidb_score_note'])
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
     if "perturbation" in _tab_map:
