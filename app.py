@@ -1244,7 +1244,7 @@ def query_dgidb(genes: tuple) -> pd.DataFrame:
                 rows.append({
                     "Gene":     canonical,
                     "Drug":     drug_name,
-                    "Approved": bool(drug.get("approved")),
+                    "Approved": "✅" if drug.get("approved") else "",
                     "Type":     ", ".join(types),
                     "Score":    round(float(score), 2),
                 })
@@ -2590,7 +2590,7 @@ def _render_msg_figures(msg, msg_id):
                         hide_index=True,
                         column_config={
                             "Score": st.column_config.NumberColumn("Score", format="%.2f"),
-                            "Approved": st.column_config.CheckboxColumn("FDA ✓"),
+                            "Approved": st.column_config.TextColumn("FDA"),
                         },
                     )
 
