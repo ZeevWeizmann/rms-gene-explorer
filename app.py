@@ -2737,7 +2737,7 @@ def _render_msg_figures(msg, msg_id):
                     st.info("No drug interactions found in DGIdb for these genes.")
                 else:
                     _d_highlight = {_d_ko_label, _d_query_gene}
-                    st.caption("Drug–gene interactions from **DGIdb**")
+                    st.caption("Drug–gene interactions from **[DGIdb](https://dgidb.org)**")
                     def _style_drug_rows(row):
                         if row["Gene"] in _d_highlight:
                             return ["background-color: #dbeeff; color: #1a4a7a; font-weight: 600"] * len(row)
@@ -2749,7 +2749,14 @@ def _render_msg_figures(msg, msg_id):
                         hide_index=True,
                         column_config={
                             "Approved": st.column_config.TextColumn("FDA"),
+                            "Score": st.column_config.NumberColumn("Score *", format="%.2f"),
                         },
+                    )
+                    st.caption(
+                        "\\* **Score** — DGIdb interaction score: weighted sum across all sources "
+                        "reporting this drug–gene interaction. Database sources (DrugBank, ChEMBL, etc.) "
+                        "contribute more weight than individual publications. "
+                        "See [DGIdb scoring](https://dgidb.org/faq) for details."
                     )
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
