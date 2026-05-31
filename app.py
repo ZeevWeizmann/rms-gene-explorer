@@ -2694,31 +2694,32 @@ def _render_msg_figures(msg, msg_id):
           if not _tab_has.get("network"):
             st.empty()
           else:
-            st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+            with st.expander(T['network_graph'], expanded=True):
+                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
             if _has_adj:
-                adj_df, genes_list = msg["grn_adj"]
-                # Apply signed log1p transform: sign(x) * log1p(|x|)
-                import numpy as _np2
-                adj_slp = adj_df.copy()
-                adj_slp[:] = _np2.sign(adj_df.values) * _np2.log1p(_np2.abs(adj_df.values))
-                vals = adj_slp.values.flatten()
-                nonzero = vals[_np2.abs(vals) > 1e-4]
-                vmax = float(_np2.percentile(_np2.abs(nonzero), 95)) if len(nonzero) > 0 else 1.0
-                adj_fig = px.imshow(
-                    adj_slp,
-                    color_continuous_scale="RdYlGn",   # red=repression, yellow=0, green=activation
-                    color_continuous_midpoint=0,
-                    zmin=-vmax, zmax=vmax,
-                    title="Program network weights (signed log1p)",
-                    height=600,
-                    aspect="auto"
-                )
-                adj_fig.update_layout(
-                    xaxis=dict(tickfont=dict(size=9)),
-                    yaxis=dict(tickfont=dict(size=9)),
-                    coloraxis_colorbar=dict(title="signed<br>log1p"),
-                )
-                st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
+                with st.expander(T['adjacency_matrix'], expanded=False):
+                    adj_df, genes_list = msg["grn_adj"]
+                    import numpy as _np2
+                    adj_slp = adj_df.copy()
+                    adj_slp[:] = _np2.sign(adj_df.values) * _np2.log1p(_np2.abs(adj_df.values))
+                    vals = adj_slp.values.flatten()
+                    nonzero = vals[_np2.abs(vals) > 1e-4]
+                    vmax = float(_np2.percentile(_np2.abs(nonzero), 95)) if len(nonzero) > 0 else 1.0
+                    adj_fig = px.imshow(
+                        adj_slp,
+                        color_continuous_scale="RdYlGn",
+                        color_continuous_midpoint=0,
+                        zmin=-vmax, zmax=vmax,
+                        title="Network weights (signed log1p)",
+                        height=600,
+                        aspect="auto"
+                    )
+                    adj_fig.update_layout(
+                        xaxis=dict(tickfont=dict(size=9)),
+                        yaxis=dict(tickfont=dict(size=9)),
+                        coloraxis_colorbar=dict(title="signed<br>log1p"),
+                    )
+                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
