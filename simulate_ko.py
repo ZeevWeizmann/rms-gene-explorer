@@ -431,9 +431,19 @@ def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict):
 
     Returns (kon_wt, kon_ko) — shape (n_cells, 201) including stimulus col 0.
     Use this when you want gene-level fold-change without stochastic RNA sampling.
+
+    gene_names is ignored if grn_params contains "gene_names" (preferred).
     """
+    # Use the simulation-internal gene list if available (200 GRN genes, cols 1..200)
+    sim_gene_names = grn_params.get("gene_names", gene_names)
+    if gene_name not in sim_gene_names:
+        raise ValueError(
+            f"Gene '{gene_name}' not found in the simulation GRN "
+            f"({len(sim_gene_names)} genes). "
+            f"Available genes include: {sim_gene_names[:10]}..."
+        )
     times = np.array([0., 16., 32., 48., 64., 80.])
     kon_wt = _run_simulation(grn_params, times, ko_idx=None)
-    ko_idx = gene_names.index(gene_name) + 1
+    ko_idx = sim_gene_names.index(gene_name) + 1   # +1 to skip stimulus col 0
     kon_ko = _run_simulation(grn_params, times, ko_idx=ko_idx)
     return kon_wt, kon_ko

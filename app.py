@@ -1088,6 +1088,16 @@ def load_grn_params():
                 repo_type="dataset", token=token
             )
             params[f] = np.load(path)
+    # Load gene names (200 GRN genes, matching indices 1..200 in simulation arrays)
+    local_gn = os.path.join(LOCAL_DIR, "grn_params", "gene_names_simul.csv")
+    if os.path.exists(local_gn):
+        params["gene_names"] = pd.read_csv(local_gn)["gene"].tolist()
+    else:
+        gn_path = hf_hub_download(
+            repo_id=REPO_ID, filename="grn_params/gene_names_simul.csv",
+            repo_type="dataset", token=token
+        )
+        params["gene_names"] = pd.read_csv(gn_path)["gene"].tolist()
     return params
 
 
@@ -2636,7 +2646,13 @@ def _render_msg_figures(msg, msg_id):
 
                 # ── Custom KO expander ────────────────────────────────────
                 with st.expander("🧪 Simulate any gene KO (online)", expanded=False):
-                    _all_sim_genes = sorted([g for g in genes if g != "HSPA1B" or True])
+                    # Use simulation GRN gene list (200 genes) if already loaded
+                    _grn_p_pre = load_grn_params()
+                    _sim_gene_list = _grn_p_pre.get("gene_names", None)
+                    if _sim_gene_list:
+                        _all_sim_genes = sorted(_sim_gene_list)
+                    else:
+                        _all_sim_genes = sorted(genes)
                     _ko_sel = st.selectbox(
                         "Select gene to knock out",
                         options=_all_sim_genes,
@@ -2648,8 +2664,8 @@ def _render_msg_figures(msg, msg_id):
                     if _run_btn:
                         with st.spinner(f"Simulating {_ko_sel} KO (~20 sec)…"):
                             try:
-                                _grn_p = load_grn_params()
-                                _gene_names_list = list(genes)
+                                _grn_p = _grn_p_pre  # already loaded above
+                                _gene_names_list = _grn_p.get("gene_names", list(genes))
                                 _kon_wt, _kon_ko = run_online_ko(_ko_sel, _gene_names_list, _grn_p)
                                 _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list)
                                 _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, top_n=15)
