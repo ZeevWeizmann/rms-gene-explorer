@@ -311,7 +311,7 @@ def _simulate_trajectories_unitary(
 # High-level simulate_network wrapper
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_simulation(p, times, ko_idx=None, stochastic=True):
+def _run_simulation(p, times, ko_idx=None, stochastic=True, max_cells=100):
     """
     Simulate the GRN network for WT (ko_idx=None) or KO (ko_idx=int).
 
@@ -321,11 +321,12 @@ def _run_simulation(p, times, ko_idx=None, stochastic=True):
     times      : sorted 1-D array, e.g. [0,16,32,48,64,80]
     ko_idx     : gene column index (0=stimulus, 1..200=genes) to knock out
     stochastic : True = PDMP (matches pre-computed results), False = ODE (faster)
+    max_cells  : cap number of cells at t=0 to limit runtime
 
     Returns
     -------
     kon_theta : np.ndarray, shape (N*len(times), 201)
-    N         : int, number of cells at t=0
+    N         : int, number of cells used at t=0
     """
     inter_t   = p["inter_t_simul"].copy()       # (5, 201, 201, 1)
     basal     = p["basal_simul"].copy()          # (201, 1)
@@ -356,6 +357,7 @@ def _run_simulation(p, times, ko_idx=None, stochastic=True):
 
     times_train = np.sort(np.unique(times_data))
     N = int(np.sum(times_data == times_train[0]))
+    N = min(N, max_cells)   # cap for speed
 
     prot_init     = prot[:N, :]
     kon_beta_init = kon_beta[:N, :]
@@ -427,19 +429,26 @@ def simulate_ko(gene_name: str, gene_names: list, grn_params: dict):
     return _sample_rna(kon_wt), _sample_rna(kon_ko)
 
 
-def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict):
+def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict,
+                    wt_kon_cache: dict = None):
     """
     Run a CardamomOT KO simulation (PDMP, matching pre-computed results) and
     return kon_theta values at the final timepoint (t=80).
+
+    Parameters
+    ----------
+    wt_kon_cache : optional dict with key "wt_kon" → pre-computed WT kon array.
+                   If provided, WT simulation is skipped (saves ~50% of runtime).
+                   Caller should populate this after the first call:
+                       cache = {}
+                       wt, ko = simulate_ko_kon(gene, names, params, cache)
+                       # cache["wt_kon"] is now set for subsequent calls
 
     Returns
     -------
     kon_wt, kon_ko : np.ndarray, shape (N_cells_t0, 201) — last timepoint only.
                      Col 0 = stimulus, cols 1..200 = genes.
-
-    gene_names is ignored if grn_params contains "gene_names" (preferred).
     """
-    # Use the simulation-internal gene list if available (200 GRN genes, cols 1..200)
     sim_gene_names = grn_params.get("gene_names", gene_names)
     if gene_name not in sim_gene_names:
         raise ValueError(
@@ -448,8 +457,21 @@ def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict):
             f"Available genes include: {sim_gene_names[:10]}..."
         )
     times = np.array([0., 16., 32., 48., 64., 80.])
-    kon_wt_all, N = _run_simulation(grn_params, times, ko_idx=None, stochastic=True)
-    ko_idx = sim_gene_names.index(gene_name) + 1   # +1 to skip stimulus col 0
-    kon_ko_all, _ = _run_simulation(grn_params, times, ko_idx=ko_idx, stochastic=True)
-    # Return only the final timepoint (t=80)
-    return kon_wt_all[-N:, :], kon_ko_all[-N:, :]
+
+    # ── WT (cached across KO runs) ────────────────────────────────────────────
+    if wt_kon_cache is not None and "wt_kon" in wt_kon_cache:
+        kon_wt = wt_kon_cache["wt_kon"]
+        N = kon_wt.shape[0]
+    else:
+        kon_wt_all, N = _run_simulation(grn_params, times, ko_idx=None,
+                                        stochastic=True, max_cells=100)
+        kon_wt = kon_wt_all[-N:, :]
+        if wt_kon_cache is not None:
+            wt_kon_cache["wt_kon"] = kon_wt
+
+    # ── KO ───────────────────────────────────────────────────────────────────
+    ko_idx = sim_gene_names.index(gene_name) + 1
+    kon_ko_all, N2 = _run_simulation(grn_params, times, ko_idx=ko_idx,
+                                     stochastic=True, max_cells=N)
+    kon_ko = kon_ko_all[-N2:, :]
+    return kon_wt, kon_ko
