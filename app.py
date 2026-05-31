@@ -629,7 +629,8 @@ LOGO_W        = 55  if is_mobile else 90
 
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
-CARDAMOM_DIR = os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
+def _get_cardamom_dir():
+    return os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
 
 @st.cache_resource
 def load_data(dataset="v1"):
@@ -1070,16 +1071,17 @@ def load_foxm1_real_timecourse():
 
 @st.cache_resource
 def build_ko_registry():
-    """Scan CARDAMOM_DIR for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
+    """Scan cardamomOT dir for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
     import re
     registry = {}
-    if not os.path.isdir(CARDAMOM_DIR):
+    _cdir = _get_cardamom_dir()
+    if not os.path.isdir(_cdir):
         return registry
     pattern = re.compile(
         r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
     )
     prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
-    for fname in os.listdir(CARDAMOM_DIR):
+    for fname in os.listdir(_cdir):
         m = pattern.match(fname)
         if m:
             prefix, gene = m.group(1), m.group(2)
@@ -1122,8 +1124,8 @@ def compute_ko_perturbation(gene: str, grn_model: str):
     from scipy.sparse import issparse as _issparse_p
 
     prefix = "" if grn_model == "full" else f"{grn_model}_"
-    wt_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
-    ko_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    wt_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
     if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
         return None
     try:
@@ -1160,8 +1162,8 @@ def compute_ko_pop_sim(gene: str, grn_model: str):
     from scipy.sparse import issparse as _issparse_s
 
     prefix = "" if grn_model == "full" else f"{grn_model}_"
-    wt_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
-    ko_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    wt_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
     if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
         return None
     reducer = get_umap_reducer()
