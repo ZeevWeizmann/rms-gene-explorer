@@ -2754,11 +2754,13 @@ def _render_msg_figures(msg, msg_id):
             elif _pert_data:
                 import copy as _copy
                 _bar_fig = _copy.deepcopy(_pert_data["bar_fig"])
-                # Query DGIdb for exactly the genes shown in the bar chart
+                # Reuse pre-fetched DGIdb result — no extra network call needed
                 try:
-                    _bar_genes = tuple(str(g) for g in _bar_fig.data[0].y if g)
-                    _bar_drugs_df = query_dgidb(_bar_genes)
-                    _bar_drug_set = set(_bar_drugs_df["Gene"].unique()) if not _bar_drugs_df.empty else set()
+                    _bar_genes_set = {str(g) for g in _bar_fig.data[0].y if g}
+                    _bar_drug_set = (
+                        set(_pre_drugs_df[_pre_drugs_df["Gene"].isin(_bar_genes_set)]["Gene"].unique())
+                        if not _pre_drugs_df.empty else set()
+                    )
                 except Exception:
                     _bar_drug_set = set()
                 if _bar_drug_set and _bar_fig.data:
