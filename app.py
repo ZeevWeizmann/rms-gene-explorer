@@ -2752,12 +2752,18 @@ def _render_msg_figures(msg, msg_id):
             elif "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
-                # Annotate bar-chart gene labels with 💊 where DGIdb has interactions
                 import copy as _copy
                 _bar_fig = _copy.deepcopy(_pert_data["bar_fig"])
-                if _pre_drug_gene_set and _bar_fig.data:
-                    _by = list(_bar_fig.data[0].y)   # gene names on y-axis
-                    _bx = list(_bar_fig.data[0].x)   # log2FC values
+                # Query DGIdb for exactly the genes shown in the bar chart
+                try:
+                    _bar_genes = tuple(str(g) for g in _bar_fig.data[0].y if g)
+                    _bar_drugs_df = query_dgidb(_bar_genes)
+                    _bar_drug_set = set(_bar_drugs_df["Gene"].unique()) if not _bar_drugs_df.empty else set()
+                except Exception:
+                    _bar_drug_set = set()
+                if _bar_drug_set and _bar_fig.data:
+                    _by = [str(g) for g in _bar_fig.data[0].y]
+                    _bx = list(_bar_fig.data[0].x)
                     _max_abs = 1
                     for _v in _bx:
                         try:
@@ -2768,7 +2774,7 @@ def _render_msg_figures(msg, msg_id):
                             pass
                     _pill_x, _pill_y = [], []
                     for g, v in zip(_by, _bx):
-                        if g in _pre_drug_gene_set:
+                        if g in _bar_drug_set:
                             try:
                                 _fv2 = float(v)
                                 _pill_x.append(_fv2 + (_max_abs * 0.07 if _fv2 >= 0 else -_max_abs * 0.07))
