@@ -2754,7 +2754,7 @@ def _render_msg_figures(msg, msg_id):
                 _live_grn_fig  = msg.get("grn_fig")
 
             if _live_adj is not None:
-                with st.expander("Network Program Weights", expanded=True):
+                with st.expander("Program Regulatory Interactions", expanded=True):
                     adj_df, genes_list = _live_adj
                     import numpy as _np2
                     adj_slp = adj_df.copy()
@@ -2767,7 +2767,7 @@ def _render_msg_figures(msg, msg_id):
                         color_continuous_scale="RdYlGn",
                         color_continuous_midpoint=0,
                         zmin=-vmax, zmax=vmax,
-                        title="Network Program Weights (signed log1p)",
+                        title="Program Regulatory Interactions (signed log1p)",
                         height=600,
                         aspect="auto"
                     )
