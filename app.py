@@ -2307,7 +2307,14 @@ def _render_msg_figures(msg, msg_id):
     _msg_grn_model = msg.get("grn_model")
     _has_grn = msg.get("grn_fig") is not None
     _has_adj = _has_grn and msg.get("grn_adj") is not None
-    _has_pert = _msg_grn_model in ("mki67", "tubb", "full")
+
+    # Гены с предвычисленными KO данными (full model)
+    _FULL_KO_GENES = {"HSPA1B", "AURKB", "FOXM1", "CDK1", "TOP2A"}
+    _q_gene = msg.get("query_gene", "")
+    _has_pert = (
+        _msg_grn_model in ("mki67", "tubb") or
+        (_msg_grn_model == "full" and _q_gene in _FULL_KO_GENES)
+    )
     _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
 
     # ── Build tab list — always 6 slots, grey (empty) if no data ─────────────
@@ -2334,12 +2341,14 @@ def _render_msg_figures(msg, msg_id):
             q_gene = msg.get("query_gene", "MKI67")
             if _msg_grn_model == "full":
                 # auto-select KO model from query gene
-                if q_gene == "AURKB":
-                    _effective_grn_model = "full_aurkb"
-                    _ko_gene_label = "AURKB"
-                else:
-                    _effective_grn_model = "full"
-                    _ko_gene_label = "HSPA1B"
+                _ko_map = {
+                    "HSPA1B": ("full",       "HSPA1B"),
+                    "AURKB":  ("full_aurkb", "AURKB"),
+                    "FOXM1":  ("full_foxm1", "FOXM1"),
+                    "CDK1":   ("full_cdk1",  "CDK1"),
+                    "TOP2A":  ("full_top2a", "TOP2A"),
+                }
+                _effective_grn_model, _ko_gene_label = _ko_map.get(q_gene, ("full", "HSPA1B"))
             else:
                 _effective_grn_model = _msg_grn_model
             pert_df = load_perturbation(_effective_grn_model)
