@@ -2017,14 +2017,48 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             arrowwidth=1.5, arrowcolor=color
         )
 
+    # Non-query nodes
+    _nq_idx = [i for i, n in enumerate(node_labels) if n != query_gene]
     fig.add_trace(go.Scatter(
-        x=node_x, y=node_y, mode="markers+text",
-        text=node_labels, textposition="top center",
-        marker=dict(size=node_sizes, color=node_colors,
-                    symbol=node_symbols,
-                    line=dict(width=1.5, color="white")),
-        hovertext=hover_texts, hoverinfo="text",
+        x=[node_x[i] for i in _nq_idx],
+        y=[node_y[i] for i in _nq_idx],
+        mode="markers+text",
+        text=[node_labels[i] for i in _nq_idx],
+        textposition="top center",
+        textfont=dict(size=9, color="#555"),
+        marker=dict(
+            size=[node_sizes[i] for i in _nq_idx],
+            color=[node_colors[i] for i in _nq_idx],
+            symbol=[node_symbols[i] for i in _nq_idx],
+            line=dict(width=1.5, color="white"),
+        ),
+        hovertext=[hover_texts[i] for i in _nq_idx],
+        hoverinfo="text", showlegend=False
+    ))
+
+    # Query gene — 3D bubble effect
+    _qi = node_labels.index(query_gene)
+    _qx, _qy = node_x[_qi], node_y[_qi]
+    fig.add_trace(go.Scatter(
+        x=[_qx], y=[_qy], mode="markers+text",
+        text=[query_gene], textposition="top center",
+        textfont=dict(size=12, color="#1a6faf", family="Arial Black"),
+        marker=dict(
+            size=36, color="#1a6faf", symbol="circle",
+            line=dict(width=3, color="#0d4a7a"),
+            gradient=dict(type="radial", color="rgba(130,190,255,0.9)"),
+        ),
+        hovertext=[hover_texts[_qi]], hoverinfo="text",
         showlegend=False
+    ))
+    # White highlight for 3D effect
+    _xs = max(node_x) - min(node_x) or 1
+    _ys = max(node_y) - min(node_y) or 1
+    fig.add_trace(go.Scatter(
+        x=[_qx - 0.015 * _xs], y=[_qy + 0.02 * _ys],
+        mode="markers",
+        marker=dict(size=9, color="rgba(255,255,255,0.75)", symbol="circle"),
+        hoverinfo="skip", showlegend=False
     ))
 
     for role, color in ROLE_COLOR.items():
