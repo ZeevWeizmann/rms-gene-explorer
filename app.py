@@ -2745,16 +2745,28 @@ def _render_msg_figures(msg, msg_id):
                             _bar_fig.add_annotation(
                                 xref="paper", x=1.01,
                                 yref="y",    y=g,
-                                text="⬤",
+                                text=" Rx ",
                                 showarrow=False,
-                                font=dict(size=13, color="#2563eb"),
+                                font=dict(size=10, color="white", family="Arial Black"),
+                                bgcolor="#2563eb",
+                                bordercolor="#1d4ed8",
+                                borderwidth=1,
+                                borderpad=3,
                                 xanchor="left",
                                 yanchor="middle",
+                                opacity=0.92,
                             )
-                    _bar_fig.update_layout(margin=dict(r=50))
+                    _bar_fig.update_layout(margin=dict(r=55))
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
                 if _bar_drug_set:
-                    st.caption("⬤ — known drug interactions in [DGIdb](https://dgidb.org)")
+                    st.markdown(
+                        '<span style="display:inline-block;background:#2563eb;color:white;'
+                        'border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;'
+                        'border:1px solid #1d4ed8"> Rx </span>'
+                        ' — known drug interactions in '
+                        '[DGIdb](https://dgidb.org)',
+                        unsafe_allow_html=True,
+                    )
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
