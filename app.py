@@ -2159,29 +2159,48 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20):
     if grn_mat is None or query_gene is None or query_gene not in grn_genes:
         return None
-    # Build the same direct-neighbour node set as build_grn_figure uses.
-    # gene_set (GNN program) and grn_genes (CardamomOT) rarely overlap, so we
-    # ignore gene_set here and use direct GRN neighbours of query_gene instead.
-    q_idx = grn_genes.index(query_gene)
-    direct = set()
-    for j, w in enumerate(grn_mat[q_idx]):
-        if abs(w) > 0 and grn_genes[j] != query_gene:
-            direct.add(grn_genes[j])
-    for i, w in enumerate(grn_mat[:, q_idx]):
-        if abs(w) > 0 and grn_genes[i] != query_gene:
-            direct.add(grn_genes[i])
-    # Limit to top_n by max(|outgoing|, |incoming|) weight
-    if len(direct) > top_n:
-        scored = []
-        for g in direct:
-            gi = grn_genes.index(g)
-            w_out = abs(float(grn_mat[q_idx, gi]))
-            w_in  = abs(float(grn_mat[gi, q_idx]))
-            scored.append((g, max(w_out, w_in)))
-        scored.sort(key=lambda x: x[1], reverse=True)
-        direct = {g for g, _ in scored[:top_n]}
-    all_nodes = [query_gene] + sorted(direct)
-    node_set  = set(all_nodes)
+    grn_set = set(grn_genes)
+    # Use program genes (gene_set) intersected with GRN genes as the node pool.
+    # Fall back to direct GRN neighbours if gene_set is empty or has no overlap.
+    if gene_set:
+        prog_in_grn = [g for g in gene_set if g in grn_set]
+    else:
+        prog_in_grn = []
+
+    if prog_in_grn:
+        # Always include query_gene; limit rest to top_n by strongest interaction
+        candidates = [g for g in prog_in_grn if g != query_gene]
+        if len(candidates) > top_n:
+            q_idx = grn_genes.index(query_gene)
+            scored = []
+            for g in candidates:
+                gi = grn_genes.index(g)
+                w = max(abs(float(grn_mat[q_idx, gi])), abs(float(grn_mat[gi, q_idx])))
+                scored.append((g, w))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            candidates = [g for g, _ in scored[:top_n]]
+        all_nodes = [query_gene] + sorted(candidates)
+    else:
+        # Fallback: direct GRN neighbours of query_gene
+        q_idx = grn_genes.index(query_gene)
+        direct = set()
+        for j, w in enumerate(grn_mat[q_idx]):
+            if abs(w) > 0 and grn_genes[j] != query_gene:
+                direct.add(grn_genes[j])
+        for i, w in enumerate(grn_mat[:, q_idx]):
+            if abs(w) > 0 and grn_genes[i] != query_gene:
+                direct.add(grn_genes[i])
+        if len(direct) > top_n:
+            q_idx = grn_genes.index(query_gene)
+            scored = []
+            for g in direct:
+                gi = grn_genes.index(g)
+                scored.append((g, max(abs(float(grn_mat[q_idx, gi])), abs(float(grn_mat[gi, q_idx])))))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            direct = {g for g, _ in scored[:top_n]}
+        all_nodes = [query_gene] + sorted(direct)
+
+    node_set = set(all_nodes)
     adj = pd.DataFrame(0.0, index=all_nodes, columns=all_nodes)
     for gene in all_nodes:
         gi = grn_genes.index(gene)
