@@ -2715,18 +2715,25 @@ def _render_msg_figures(msg, msg_id):
                                     _pert_file, _pop_file = _PRECOMP_KO[_ko_sel]
                                     _pert_df = pd.read_csv(_pert_file)
                                     _pop_df  = pd.read_csv(_pop_file)
-                                    # DE genes from log2FC at t=80
-                                    _t80 = _pert_df[_pert_df["time"] == 80].copy()
+                                    # DE genes: top 20 excl. KO gene, sorted by log2fc asc (same as Drug Targets)
+                                    _t80 = _pert_df[(_pert_df["time"] == 80) & (_pert_df["gene"] != _ko_sel)].copy()
                                     _t80["abs_lfc"] = _t80["log2fc"].abs()
-                                    _t80 = _t80.nlargest(15, "abs_lfc")
+                                    _top20 = _t80.nlargest(20, "abs_lfc").sort_values("log2fc")
+                                    # KO gene row (capped for readability, same as Drug Targets)
+                                    _ko_row = _pert_df[(_pert_df["time"] == 80) & (_pert_df["gene"] == _ko_sel)]
+                                    _ko_lfc = float(_ko_row["log2fc"].iloc[0]) if not _ko_row.empty else -6.0
+                                    _ko_lfc_disp = max(_ko_lfc, _top20["log2fc"].min() - 1.0)
+                                    _top20_ko = pd.concat([_top20[["gene","log2fc"]], pd.DataFrame([{
+                                        "gene": _ko_sel, "log2fc": _ko_lfc_disp
+                                    }])])
                                     _de_df_pre = pd.DataFrame({
-                                        "gene": _t80["gene"].values,
-                                        "delta_expr": _t80["log2fc"].values,
-                                        "delta_kon": _t80["log2fc"].values,
-                                        "direction": ["up" if v > 0 else "down" for v in _t80["log2fc"].values],
+                                        "gene": _top20_ko["gene"].values,
+                                        "delta_expr": _top20_ko["log2fc"].values,
+                                        "delta_kon": _top20_ko["log2fc"].values,
+                                        "direction": ["ko" if g == _ko_sel else ("up" if v > 0 else "down")
+                                                      for g, v in zip(_top20_ko["gene"].values, _top20_ko["log2fc"].values)],
                                     })
-                                    # Population fractions from pop CSV (t=80 = last rows)
-                                    _pop_n = len(_pop_df)
+                                    # Population fractions from pop CSV
                                     _pop_wt_r = pd.Series(_pop_df["pop_wt"]).value_counts(normalize=True).mul(100)
                                     _pop_ko_r = pd.Series(_pop_df["pop_ko"]).value_counts(normalize=True).mul(100)
                                     st.session_state[_ck] = {
@@ -2791,7 +2798,10 @@ def _render_msg_figures(msg, msg_id):
                         # ── Top differentially expressed genes chart ──
                         if "de_df" in _cr and _cr["de_df"] is not None and len(_cr["de_df"]) > 0:
                             _de = _cr["de_df"].copy()
-                            _de_clrs = ["#e05a5a" if d == "up" else "#4a7fc1" for d in _de["direction"]]
+                            _de_clrs = [
+                                "#F59E0B" if d == "ko" else ("#e05a5a" if d == "up" else "#4a7fc1")
+                                for d in _de["direction"]
+                            ]
                             _xaxis_title = _cr.get("xaxis_title", "Δ expression (KO − WT)")
                             _de_fig = go.Figure(go.Bar(
                                 x=_de["delta_expr"],
@@ -2801,13 +2811,14 @@ def _render_msg_figures(msg, msg_id):
                                 text=[f"{v:+.2f}" for v in _de["delta_expr"]],
                                 textposition="outside",
                             ))
+                            _n_genes = len(_de)
                             _de_fig.update_layout(
-                                height=420,
+                                height=max(380, _n_genes * 22 + 80),
                                 title=f"Top DE genes — {_cr['ko_gene']} KO vs WT",
                                 xaxis_title=_xaxis_title,
                                 yaxis=dict(autorange="reversed"),
                                 plot_bgcolor="white", paper_bgcolor="white",
-                                margin=dict(t=50, b=40, l=100),
+                                margin=dict(t=50, b=40, l=120),
                             )
                             st.plotly_chart(_de_fig, use_container_width=True, key=f"{msg_id}_custom_ko_de_fig")
 
