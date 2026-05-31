@@ -2694,10 +2694,8 @@ def _render_msg_figures(msg, msg_id):
           if not _tab_has.get("network"):
             st.empty()
           else:
-            with st.expander(T['network_graph'], expanded=True):
-                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
             if _has_adj:
-                with st.expander(T['adjacency_matrix'], expanded=False):
+                with st.expander("Network Program Weights", expanded=True):
                     adj_df, genes_list = msg["grn_adj"]
                     import numpy as _np2
                     adj_slp = adj_df.copy()
@@ -2710,7 +2708,7 @@ def _render_msg_figures(msg, msg_id):
                         color_continuous_scale="RdYlGn",
                         color_continuous_midpoint=0,
                         zmin=-vmax, zmax=vmax,
-                        title="Network weights (signed log1p)",
+                        title="Network Program Weights (signed log1p)",
                         height=600,
                         aspect="auto"
                     )
@@ -2720,6 +2718,8 @@ def _render_msg_figures(msg, msg_id):
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
+            with st.expander("Gene Regulatory Connections", expanded=False):
+                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
