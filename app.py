@@ -98,7 +98,7 @@ _TRANSLATIONS = {
         'ko_targets': 'Drug Targets',
         'drugs': 'Drugs',
         # Network tabs
-        'ko_perturbation': 'KO Simulation',
+        'ko_perturbation': 'Perturbation Simulation',
         'network_graph': 'Regulatory Network',
         'adjacency_matrix': 'Network Weights',
         'network_topology': '📊 Network topology analysis',
@@ -229,7 +229,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'ko_targets': 'Cibles thérapeutiques',
         'drugs': 'Médicaments',
         # Network tabs
-        'ko_perturbation': 'Simulation KO',
+        'ko_perturbation': 'Perturbation Simulation',
         'network_graph': 'Réseau de Régulation',
         'adjacency_matrix': "Poids du Réseau",
         'network_topology': '📊 Analyse topologique du réseau',
@@ -2558,7 +2558,8 @@ def _render_msg_figures(msg, msg_id):
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
 
-                # ── Interactive gene expression timecourse ─────────────────
+                # ── Gene expression dynamics ───────────────────────────────
+                st.markdown("#### Gene expression dynamics")
                 _tc_pert_df     = _pert_data["pert_df"]
                 _tc_all_genes   = sorted(_tc_pert_df["gene"].unique().tolist())
                 _tc_default     = _pert_data.get("query_gene", "")
@@ -2593,6 +2594,8 @@ def _render_msg_figures(msg, msg_id):
                 )
                 st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
 
+                # ── Cell population response ───────────────────────────────
+                st.markdown("#### Cell population response")
                 if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
                     try:
                         if _effective_grn_model == "tubb":
