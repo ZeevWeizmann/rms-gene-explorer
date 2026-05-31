@@ -2666,6 +2666,16 @@ def _render_msg_figures(msg, msg_id):
                         pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
                         _live_df,
                     ], ignore_index=True)
+                    # Query DGIdb for drug indicators (cached — no extra cost)
+                    _prog_genes_tuple = tuple(_df_show["Gene"].tolist())
+                    try:
+                        _prog_drugs_df = query_dgidb(_prog_genes_tuple)
+                        _drug_gene_set = set(_prog_drugs_df["Gene"].unique()) if not _prog_drugs_df.empty else set()
+                    except Exception:
+                        _drug_gene_set = set()
+                    _df_show["💊"] = _df_show["Gene"].apply(
+                        lambda g: "💊" if g in _drug_gene_set else ""
+                    )
                     _styled = _df_show.style.apply(
                         lambda row: [
                             "background-color:#dbeafe;color:#1d4ed8;font-weight:700"
@@ -2680,6 +2690,7 @@ def _render_msg_figures(msg, msg_id):
                         hide_index=True,
                         column_config={
                             "Similarity": st.column_config.NumberColumn("Similarity", format="%.2f"),
+                            "💊": st.column_config.TextColumn("💊", width="small"),
                         },
                     )
             else:
