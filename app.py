@@ -2769,9 +2769,12 @@ def _render_msg_figures(msg, msg_id):
                     _pill_x, _pill_y = [], []
                     for g, v in zip(_by, _bx):
                         if g in _pre_drug_gene_set:
-                            # place emoji just past the end of the bar
-                            _pill_x.append(v + (_max_abs * 0.07 if v >= 0 else -_max_abs * 0.07))
-                            _pill_y.append(g)
+                            try:
+                                _fv2 = float(v)
+                                _pill_x.append(_fv2 + (_max_abs * 0.07 if _fv2 >= 0 else -_max_abs * 0.07))
+                                _pill_y.append(g)
+                            except (TypeError, ValueError):
+                                pass
                     if _pill_y:
                         _bar_fig.add_trace(go.Scatter(
                             x=_pill_x, y=_pill_y,
