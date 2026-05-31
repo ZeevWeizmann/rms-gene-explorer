@@ -75,6 +75,7 @@ _TRANSLATIONS = {
         'program_size': 'Program size',
         'grn_hops': 'GRN hops',
         'grn_model': 'GRN model',
+        'grn_top_n': 'Network size',
         # Data upload
         'upload_note': 'Processed in memory only — not stored anywhere. Max ~50k cells.',
         'upload_label': 'Upload .h5ad file',
@@ -206,6 +207,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'program_size': 'Taille du programme',
         'grn_hops': 'Sauts GRN',
         'grn_model': 'Modèle GRN',
+        'grn_top_n': 'Taille du réseau',
         # Data upload
         'upload_note': 'Traité en mémoire uniquement — aucune donnée stockée. Max ~50k cellules.',
         'upload_label': 'Importer un fichier .h5ad',
@@ -2203,7 +2205,8 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
 _grn_state_key = f"grn_choice_{dataset_key}"
-grn_hops = st.session_state.get(f"grn_slider_{dataset_key}", 1)
+grn_hops  = st.session_state.get(f"grn_slider_{dataset_key}", 1)
+grn_top_n = st.session_state.get(f"grn_topn_{dataset_key}", 10)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
     grn_options = []
@@ -2941,8 +2944,8 @@ if query_gene:
             _grn_mat_q, _grn_genes_q = None, []
             _grn_model_q = None
 
-        grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops)
-        grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops)
+        grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops, top_n=grn_top_n)
+        grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops, top_n=grn_top_n)
 
         # Simulation time UMAP — all GRN models
         # Sim cells projected via UMAP transform (fit on real data, embedding
@@ -3084,7 +3087,7 @@ if query_gene:
 # ── Settings expander — after results ────────────────────────────
 with st.expander(T['settings'], expanded=False):
     if _gene_in_any_grn:
-        _c1, _c2, _c3 = st.columns([3, 2, 2])
+        _c1, _c2, _c3, _c4 = st.columns([3, 2, 2, 2])
     else:
         _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
@@ -3103,6 +3106,11 @@ with st.expander(T['settings'], expanded=False):
             T['grn_hops'],
             min_value=1, max_value=3, value=1, step=1,
             key=f"grn_slider_{dataset_key}"
+        )
+        _c4.slider(
+            T['grn_top_n'],
+            min_value=5, max_value=50, value=10, step=5,
+            key=f"grn_topn_{dataset_key}"
         )
     if _gene_in_any_grn:
         if len(grn_options) == 1:
