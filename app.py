@@ -2733,36 +2733,23 @@ def _render_msg_figures(msg, msg_id):
                 if _bar_drug_set and _bar_fig.data:
                     _by = [str(g) for g in _bar_fig.data[0].y]
                     _bx = list(_bar_fig.data[0].x)
-                    _max_abs = 1
-                    for _v in _bx:
-                        try:
-                            _fv = float(_v)
-                            if abs(_fv) > _max_abs:
-                                _max_abs = abs(_fv)
-                        except (TypeError, ValueError):
-                            pass
-                    _pill_x, _pill_y = [], []
+                    _max_abs = max((abs(float(v)) for v in _bx if v is not None), default=1)
                     for g, v in zip(_by, _bx):
                         if g in _bar_drug_set:
                             try:
-                                _fv2 = float(v)
-                                _pill_x.append(_fv2 + (_max_abs * 0.07 if _fv2 >= 0 else -_max_abs * 0.07))
-                                _pill_y.append(g)
+                                _fv = float(v)
+                                _xpos = _fv + (_max_abs * 0.08 if _fv >= 0 else -_max_abs * 0.08)
+                                _bar_fig.add_annotation(
+                                    x=_xpos, y=g,
+                                    text="◀ drug" if _fv < 0 else "drug ▶",
+                                    showarrow=False,
+                                    font=dict(size=11, color="#2563eb", family="Arial"),
+                                    xanchor="right" if _fv < 0 else "left",
+                                    yanchor="middle",
+                                )
                             except (TypeError, ValueError):
                                 pass
-                    if _pill_y:
-                        _bar_fig.add_trace(go.Scatter(
-                            x=_pill_x, y=_pill_y,
-                            mode="markers+text",
-                            marker=dict(symbol="arrow-right", size=10, color="#2563eb"),
-                            text=["drug"] * len(_pill_y),
-                            textposition="middle right",
-                            textfont=dict(size=12, color="#2563eb"),
-                            hoverinfo="skip",
-                            showlegend=False,
-                        ))
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
-                st.caption(f"DEBUG: pre_drugs rows={len(_pre_drugs_df)}, drug_set={_bar_drug_set}, d_all_genes_n={len(_pre_d_all_genes)}")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
