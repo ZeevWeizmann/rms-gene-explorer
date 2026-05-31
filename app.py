@@ -2674,9 +2674,6 @@ def _render_msg_figures(msg, msg_id):
                             _umap_row_cols[2].plotly_chart(_pop_umap_ko, use_container_width=True, key=f"{msg_id}_pop_umap_ko")
                     except Exception as _e:
                         st.info(f"{T['pop_unavail']}: {_e}")
-                _prog_map = {"tubb": "TUBB (201 genes)", "mki67": "MKI67 (201 genes)",
-                             "full": "Full (200 genes)", "full_aurkb": "Full (200 genes)"}
-                st.caption(f"{T['sim_caption']} · {_prog_map.get(_effective_grn_model, '')} · {_ko_gene_label} {T['knocked_out']}")
 
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
