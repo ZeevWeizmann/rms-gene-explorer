@@ -2695,9 +2695,33 @@ def _render_msg_figures(msg, msg_id):
           if not _tab_has.get("network"):
             st.empty()
           else:
-            if _has_adj:
+            # Rebuild GRN figures using live slider values so they update
+            # immediately when Network hops / Network size sliders change,
+            # without requiring the user to re-query the gene.
+            _msg_dk       = msg.get("dataset_key", "v1")
+            _live_hops    = st.session_state.get(f"grn_slider_{_msg_dk}", 1)
+            _live_top_n   = st.session_state.get(f"grn_topn_{_msg_dk}", 10)
+            _msg_grn_key  = msg.get("grn_model")
+            _msg_q_gene   = msg.get("query_gene", "")
+            _msg_prog_genes = msg.get("grn_program_genes") or [_msg_q_gene]
+            if _msg_grn_key:
+                _live_grn_mat, _live_grn_genes = load_grn(_msg_grn_key)
+                _live_adj = build_grn_adjacency(
+                    _live_grn_mat, _live_grn_genes,
+                    gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
+                    hops=_live_hops, top_n=_live_top_n,
+                )
+                _live_grn_fig, _ = build_grn_figure(
+                    _live_grn_mat, _live_grn_genes, _msg_q_gene,
+                    gene_set=_msg_prog_genes, hops=_live_hops, top_n=_live_top_n,
+                )
+            else:
+                _live_adj      = msg.get("grn_adj")
+                _live_grn_fig  = msg.get("grn_fig")
+
+            if _live_adj is not None:
                 with st.expander("Network Program Weights", expanded=True):
-                    adj_df, genes_list = msg["grn_adj"]
+                    adj_df, genes_list = _live_adj
                     import numpy as _np2
                     adj_slp = adj_df.copy()
                     adj_slp[:] = _np2.sign(adj_df.values) * _np2.log1p(_np2.abs(adj_df.values))
@@ -2718,9 +2742,10 @@ def _render_msg_figures(msg, msg_id):
                         yaxis=dict(tickfont=dict(size=9)),
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
-                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj")
-            with st.expander("Gene Regulatory Connections", expanded=False):
-                st.plotly_chart(msg["grn_fig"], use_container_width=True, key=f"{msg_id}_grn")
+                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{_live_top_n}_{_live_hops}")
+            if _live_grn_fig is not None:
+                with st.expander("Gene Regulatory Connections", expanded=False):
+                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{_live_top_n}_{_live_hops}")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
@@ -3080,6 +3105,8 @@ if query_gene:
             "grn_topo": grn_topo,
             "grn_adj": grn_adj,
             "grn_model": _grn_model_q,
+            "grn_program_genes": program_genes,
+            "dataset_key": dataset_key,
             "fig_gene_map": fig_gene_map,
         })
         # Reset selectbox to placeholder (allows re-selecting the same gene next time)
