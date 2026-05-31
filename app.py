@@ -2778,7 +2778,7 @@ def _render_msg_figures(msg, msg_id):
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{_live_top_n}_{_live_hops}")
             if _live_grn_fig is not None:
-                with st.expander("Gene Regulatory Connections", expanded=False):
+                with st.expander("Gene Regulatory Interactions", expanded=False):
                     st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{_live_top_n}_{_live_hops}")
 
 # ── Message rendering loop ───────────────────────────────────────
