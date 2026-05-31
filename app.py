@@ -2484,19 +2484,44 @@ def _render_msg_figures(msg, msg_id):
         with _tab_map["gene_prog"]:
             _annot_label = msg.get("query_annotation", "")
             _cluster_summary = summaries.get(msg.get("cluster_id", ""), "") if "cluster_id" in msg else ""
-            if msg.get("fig_gene_map") is not None:
+            _q = msg.get("query_gene", "")
+
+            # Rebuild program list live using current program_size
+            _all_sim = msg.get("all_similar")
+            if _all_sim:
+                _live_pairs  = _all_sim[:program_size]
+                _live_df     = pd.DataFrame(_live_pairs, columns=["Gene", "Similarity"])
+                _live_df["Similarity"] = _live_df["Similarity"].round(2)
+                _live_df.index = range(1, len(_live_df) + 1)
+                _live_prog_genes = [_q] + [g for g, _ in _live_pairs]
+                _live_sim_scores = {g: s for g, s in _live_pairs}
+                # Rebuild gene map with current program_size
+                _live_gene_map = None
+                try:
+                    _gumap = load_gene_umap2d(dataset_key)
+                    _live_gene_map = build_gene_embedding_map(
+                        _gumap, _q, _live_prog_genes, annotations,
+                        embeddings_arr=embeddings, genes_list=genes,
+                        sim_scores=_live_sim_scores,
+                    )
+                except Exception:
+                    _live_gene_map = msg.get("fig_gene_map")
+            else:
+                _live_df        = msg.get("df", pd.DataFrame())
+                _live_gene_map  = msg.get("fig_gene_map")
+
+            if _live_gene_map is not None:
                 _mc, _tc = st.columns([5, 2])
                 with _mc:
-                    st.plotly_chart(msg["fig_gene_map"], use_container_width=True,
-                                    key=f"{msg_id}_gene_map")
+                    st.plotly_chart(_live_gene_map, use_container_width=True,
+                                    key=f"{msg_id}_gene_map_{program_size}")
                     if _cluster_summary:
                         with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
                             st.markdown(_cluster_summary)
                 with _tc:
-                    _q = msg.get("query_gene", "")
                     _df_show = pd.concat([
                         pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
-                        msg["df"],
+                        _live_df,
                     ], ignore_index=True)
                     _styled = _df_show.style.apply(
                         lambda row: [
@@ -2515,7 +2540,7 @@ def _render_msg_figures(msg, msg_id):
                         },
                     )
             else:
-                st.dataframe(msg["df"], use_container_width=True)
+                st.dataframe(_live_df, use_container_width=True)
                 if _annot_label:
                     with st.popover(f"ℹ️ {_annot_label}"):
                         if _cluster_summary:
@@ -2869,8 +2894,10 @@ if query_gene:
         target_emb = embeddings[idx].reshape(1, -1)
 
         sims = cosine_similarity(target_emb, embeddings)[0]
-        sorted_idx = np.argsort(sims)[::-1]
-        sorted_idx = [i for i in sorted_idx if genes[i] != query_gene][:program_size]
+        sorted_idx_all = np.argsort(sims)[::-1]
+        sorted_idx_all = [i for i in sorted_idx_all if genes[i] != query_gene][:200]
+        # Slice to current program_size for initial display
+        sorted_idx = sorted_idx_all[:program_size]
 
         top_genes = [
             (genes[i], round(sims[i], 4), annotations.get(int(clusters[i]), ""))
@@ -2880,6 +2907,8 @@ if query_gene:
         df = df[["Gene", "Similarity"]].copy()
         df["Similarity"] = df["Similarity"].round(2)
         df.index = range(1, len(df) + 1)
+        # Store full sorted list for live program_size resizing
+        all_similar = [(genes[i], round(float(sims[i]), 4)) for i in sorted_idx_all]
 
         query_cluster = int(clusters[idx])
         query_annotation = annotations.get(query_cluster, "")
@@ -3129,6 +3158,7 @@ if query_gene:
             "role": "assistant",
             "content": _content,
             "df": df,
+            "all_similar": all_similar,
             "cluster_id": query_cluster,
             "query_annotation": query_annotation,
             "query_gene": query_gene,
