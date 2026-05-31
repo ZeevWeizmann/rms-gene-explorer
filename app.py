@@ -629,10 +629,7 @@ LOGO_W        = 55  if is_mobile else 90
 
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
-try:
-    CARDAMOM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "cardamomOT")
-except NameError:
-    CARDAMOM_DIR = os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
+CARDAMOM_DIR = os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
 
 @st.cache_resource
 def load_data(dataset="v1"):
