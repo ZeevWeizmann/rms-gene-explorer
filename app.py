@@ -629,6 +629,7 @@ LOGO_W        = 55  if is_mobile else 90
 
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
+CARDAMOM_DIR = os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
 
 @st.cache_resource
 def load_data(dataset="v1"):
@@ -1063,6 +1064,162 @@ def load_foxm1_real_timecourse():
     token = st.secrets.get("HF_TOKEN", None)
     path = hf_hub_download(repo_id=REPO_ID, filename=f, repo_type="dataset", token=token)
     return pd.read_csv(path)
+
+
+# ── Dynamic KO perturbation system ───────────────────────────────────────────
+
+@st.cache_resource
+def build_ko_registry():
+    """Scan CARDAMOM_DIR for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
+    import re
+    registry = {}
+    if not os.path.isdir(CARDAMOM_DIR):
+        return registry
+    pattern = re.compile(
+        r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
+    )
+    prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
+    for fname in os.listdir(CARDAMOM_DIR):
+        m = pattern.match(fname)
+        if m:
+            prefix, gene = m.group(1), m.group(2)
+            grn_model = prefix_to_model[prefix]
+            registry.setdefault(gene, []).append(grn_model)
+    return registry
+
+
+@st.cache_resource
+def get_umap_reducer():
+    """Fit UMAP on real data and replace embedding with umap_coords.csv coords.
+    Returns the fitted reducer, or None if local files are unavailable."""
+    import os
+    data_path  = os.path.join(LOCAL_DIR, "data_full.h5ad")
+    coords_path = os.path.join(LOCAL_DIR, "umap_coords.csv")
+    if not (os.path.exists(data_path) and os.path.exists(coords_path)):
+        return None
+    try:
+        import anndata
+        import umap as umap_lib
+        import numpy as _np_u
+        adata = anndata.read_h5ad(data_path)
+        from scipy.sparse import issparse as _issparse
+        X = adata.X.toarray() if _issparse(adata.X) else _np_u.array(adata.X)
+        reducer = umap_lib.UMAP(n_neighbors=15, min_dist=0.3, random_state=42, verbose=False)
+        reducer.fit(X)
+        coords_df = pd.read_csv(coords_path)
+        reducer.embedding_ = coords_df[["x", "y"]].values
+        return reducer
+    except Exception:
+        return None
+
+
+@st.cache_data
+def compute_ko_perturbation(gene: str, grn_model: str):
+    """Compute per-gene per-timepoint WT vs KO means from h5ad files.
+    Returns DataFrame with columns: gene, time, mean_wt, mean_ko, log2fc, or None."""
+    import os
+    import numpy as _np_p
+    from scipy.sparse import issparse as _issparse_p
+
+    prefix = "" if grn_model == "full" else f"{grn_model}_"
+    wt_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
+        return None
+    try:
+        import anndata
+        adata_wt = anndata.read_h5ad(wt_path)
+        adata_ko = anndata.read_h5ad(ko_path)
+        genes_list = list(adata_wt.var_names)
+        wt_times = adata_wt.obs["time"].values if "time" in adata_wt.obs.columns else _np_p.zeros(adata_wt.n_obs)
+        ko_times = adata_ko.obs["time"].values if "time" in adata_ko.obs.columns else _np_p.zeros(adata_ko.n_obs)
+        X_wt = adata_wt.X.toarray() if _issparse_p(adata_wt.X) else _np_p.array(adata_wt.X)
+        X_ko = adata_ko.X.toarray() if _issparse_p(adata_ko.X) else _np_p.array(adata_ko.X)
+        rows = []
+        for t in sorted(set(wt_times)):
+            wt_mask = wt_times == t
+            ko_mask = ko_times == t
+            wt_means = X_wt[wt_mask].mean(axis=0) if wt_mask.any() else _np_p.zeros(len(genes_list))
+            ko_means = X_ko[ko_mask].mean(axis=0) if ko_mask.any() else _np_p.zeros(len(genes_list))
+            for i, g in enumerate(genes_list):
+                mwt = float(wt_means[i])
+                mko = float(ko_means[i])
+                lfc = float(_np_p.log2((mko + 1e-9) / (mwt + 1e-9)))
+                rows.append({"gene": g, "time": t, "mean_wt": mwt, "mean_ko": mko, "log2fc": lfc})
+        return pd.DataFrame(rows)
+    except Exception:
+        return None
+
+
+@st.cache_data
+def compute_ko_pop_sim(gene: str, grn_model: str):
+    """Project WT and KO simulations through UMAP and score populations.
+    Returns DataFrame with columns: x_wt, y_wt, time, x_ko, y_ko, pop_wt, pop_ko, or None."""
+    import os
+    import numpy as _np_s
+    from scipy.sparse import issparse as _issparse_s
+
+    prefix = "" if grn_model == "full" else f"{grn_model}_"
+    wt_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = os.path.join(CARDAMOM_DIR, f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
+        return None
+    reducer = get_umap_reducer()
+    if reducer is None:
+        return None
+    try:
+        import anndata
+        adata_wt = anndata.read_h5ad(wt_path)
+        adata_ko = anndata.read_h5ad(ko_path)
+        X_wt = adata_wt.X.toarray() if _issparse_s(adata_wt.X) else _np_s.array(adata_wt.X)
+        X_ko = adata_ko.X.toarray() if _issparse_s(adata_ko.X) else _np_s.array(adata_ko.X)
+        wt_times = adata_wt.obs["time"].values if "time" in adata_wt.obs.columns else _np_s.zeros(adata_wt.n_obs)
+        ko_times = adata_ko.obs["time"].values if "time" in adata_ko.obs.columns else _np_s.zeros(adata_ko.n_obs)
+
+        # UMAP projection
+        emb_wt = reducer.transform(X_wt)
+        emb_ko = reducer.transform(X_ko)
+
+        # Population scoring: use WT to compute thresholds
+        genes_list = list(adata_wt.var_names)
+        def _score_pop(X_mat, cenpf_thr, dnajb1_thr, wt_cenpf_mean, wt_cenpf_std, wt_dnajb1_mean, wt_dnajb1_std):
+            pops = []
+            for i in range(X_mat.shape[0]):
+                cenpf_z  = (X_mat[i, genes_list.index("CENPF")]  - wt_cenpf_mean)  / (wt_cenpf_std  + 1e-9)  if "CENPF"  in genes_list else 0.0
+                dnajb1_z = (X_mat[i, genes_list.index("DNAJB1")] - wt_dnajb1_mean) / (wt_dnajb1_std + 1e-9)  if "DNAJB1" in genes_list else 0.0
+                if dnajb1_z >= dnajb1_thr:
+                    pops.append("quiescent")
+                elif cenpf_z >= cenpf_thr:
+                    pops.append("proliferative")
+                else:
+                    pops.append("intermediate")
+            return pops
+
+        if "CENPF" in genes_list and "DNAJB1" in genes_list:
+            ci = genes_list.index("CENPF");  di = genes_list.index("DNAJB1")
+            wt_cenpf_vals  = X_wt[:, ci]; wt_dnajb1_vals = X_wt[:, di]
+            wt_cm = float(wt_cenpf_vals.mean());  wt_cs = float(wt_cenpf_vals.std())
+            wt_dm = float(wt_dnajb1_vals.mean()); wt_ds = float(wt_dnajb1_vals.std())
+            cenpf_z_wt  = (wt_cenpf_vals  - wt_cm)  / (wt_cs  + 1e-9)
+            dnajb1_z_wt = (wt_dnajb1_vals - wt_dm)  / (wt_ds  + 1e-9)
+            cenpf_thr70  = float(_np_s.percentile(cenpf_z_wt,  70))
+            dnajb1_thr70 = float(_np_s.percentile(dnajb1_z_wt, 70))
+            pop_wt = _score_pop(X_wt, cenpf_thr70, dnajb1_thr70, wt_cm, wt_cs, wt_dm, wt_ds)
+            pop_ko = _score_pop(X_ko, cenpf_thr70, dnajb1_thr70, wt_cm, wt_cs, wt_dm, wt_ds)
+        else:
+            pop_wt = ["intermediate"] * X_wt.shape[0]
+            pop_ko = ["intermediate"] * X_ko.shape[0]
+
+        # Align rows: pair WT and KO cells by position (same number of cells assumed)
+        n = min(X_wt.shape[0], X_ko.shape[0])
+        return pd.DataFrame({
+            "x_wt":  emb_wt[:n, 0], "y_wt": emb_wt[:n, 1],
+            "time":  wt_times[:n],
+            "x_ko":  emb_ko[:n, 0], "y_ko": emb_ko[:n, 1],
+            "pop_wt": pop_wt[:n],   "pop_ko": pop_ko[:n],
+        })
+    except Exception:
+        return None
 
 
 # ── Online KO Simulation ──────────────────────────────────────────────────────
@@ -2263,15 +2420,21 @@ def _render_msg_figures(msg, msg_id):
     _has_grn = msg.get("grn_fig") is not None
     _has_adj = _has_grn and msg.get("grn_adj") is not None
 
-    # Гены с предвычисленными KO данными (full model)
-    _FULL_KO_GENES = {"HSPA1B", "AURKB", "FOXM1", "CDK1", "TOP2A"}
     _q_gene = msg.get("query_gene", "")
-    _has_pert = (
-        (_msg_grn_model == "mki67" and _q_gene == "BIRC5") or
-        (_msg_grn_model == "tubb" and _q_gene == "TUBB") or
-        (_msg_grn_model == "full" and _q_gene in _FULL_KO_GENES)
-    )
-    _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
+    _ko_registry = build_ko_registry()
+    _available_ko_models = _ko_registry.get(_q_gene, [])
+    # Fallback: legacy hardcoded pairs still count as available when registry is empty
+    if not _available_ko_models:
+        _FULL_KO_GENES = {"HSPA1B", "AURKB", "FOXM1", "CDK1", "TOP2A"}
+        _legacy_pert = (
+            (_msg_grn_model == "mki67" and _q_gene == "BIRC5") or
+            (_msg_grn_model == "tubb" and _q_gene == "TUBB") or
+            (_msg_grn_model == "full" and _q_gene in _FULL_KO_GENES)
+        )
+    else:
+        _legacy_pert = False
+    _has_pert = bool(_available_ko_models) or _legacy_pert
+    _ko_gene_label = _q_gene  # now dynamic
 
     # ── Build tab list — always 6 slots, grey (empty) if no data ─────────────
     # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets · Drugs
@@ -2295,19 +2458,33 @@ def _render_msg_figures(msg, msg_id):
     if _has_pert:
         try:
             q_gene = msg.get("query_gene", "MKI67")
-            if _msg_grn_model == "full":
-                # auto-select KO model from query gene
-                _ko_map = {
-                    "HSPA1B": ("full",       "HSPA1B"),
-                    "AURKB":  ("full_aurkb", "AURKB"),
-                    "FOXM1":  ("full_foxm1", "FOXM1"),
-                    "CDK1":   ("full_cdk1",  "CDK1"),
-                    "TOP2A":  ("full_top2a", "TOP2A"),
-                }
-                _effective_grn_model, _ko_gene_label = _ko_map.get(q_gene, ("full", "HSPA1B"))
-            else:
-                _effective_grn_model = _msg_grn_model
-            pert_df = load_perturbation(_effective_grn_model)
+            _effective_grn_model = None
+            pert_df = None
+
+            if _available_ko_models:
+                # Dynamic path: pick model from registry
+                if len(_available_ko_models) == 1:
+                    _effective_grn_model = _available_ko_models[0]
+                else:
+                    # Multiple models available — user will select in the tab; default to first
+                    _effective_grn_model = _available_ko_models[0]
+                pert_df = compute_ko_perturbation(q_gene, _effective_grn_model)
+
+            if pert_df is None:
+                # Fallback to legacy pre-computed CSVs
+                if _msg_grn_model == "full":
+                    _ko_map = {
+                        "HSPA1B": ("full",       "HSPA1B"),
+                        "AURKB":  ("full_aurkb", "AURKB"),
+                        "FOXM1":  ("full_foxm1", "FOXM1"),
+                        "CDK1":   ("full_cdk1",  "CDK1"),
+                        "TOP2A":  ("full_top2a", "TOP2A"),
+                    }
+                    _effective_grn_model, _ko_gene_label = _ko_map.get(q_gene, ("full", "HSPA1B"))
+                else:
+                    _effective_grn_model = _msg_grn_model
+                pert_df = load_perturbation(_effective_grn_model)
+
             bar_fig, _ = build_perturbation_figures(
                 pert_df, q_gene, ko_gene=_ko_gene_label,
                 real_expr_means=load_real_expr_means())
@@ -2317,6 +2494,7 @@ def _render_msg_figures(msg, msg_id):
                 "query_gene": q_gene,
                 "effective_model": _effective_grn_model,
                 "ko_label": _ko_gene_label,
+                "available_models": _available_ko_models,
             }
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
@@ -2557,6 +2735,29 @@ def _render_msg_figures(msg, msg_id):
             elif _pert_data:
                 _effective_grn_model = _pert_data["effective_model"]
                 _ko_gene_label       = _pert_data["ko_label"]
+                _avail_models_tab    = _pert_data.get("available_models", [])
+
+                # ── GRN model selector (only when multiple models available) ──
+                if len(_avail_models_tab) > 1:
+                    _sel_model = st.radio(
+                        "GRN model",
+                        options=_avail_models_tab,
+                        index=_avail_models_tab.index(_effective_grn_model) if _effective_grn_model in _avail_models_tab else 0,
+                        key=f"{msg_id}_pert_model_sel",
+                        horizontal=True,
+                    )
+                    if _sel_model != _effective_grn_model:
+                        _effective_grn_model = _sel_model
+                        _reloaded = compute_ko_perturbation(_ko_gene_label, _effective_grn_model)
+                        if _reloaded is not None:
+                            _pert_data = dict(_pert_data)
+                            _pert_data["pert_df"] = _reloaded
+                            _pert_data["effective_model"] = _effective_grn_model
+                            _bar_fig2, _ = build_perturbation_figures(
+                                _reloaded, _pert_data.get("query_gene", ""),
+                                ko_gene=_ko_gene_label,
+                                real_expr_means=load_real_expr_means())
+                            _pert_data["bar_fig"] = _bar_fig2
 
                 # ── Gene expression dynamics ───────────────────────────────
                 with st.expander(f"Gene expression after {_ko_gene_label} KO", expanded=True):
@@ -2595,28 +2796,38 @@ def _render_msg_figures(msg, msg_id):
                     st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
 
                 # ── Cell population response ───────────────────────────────
-                if _effective_grn_model in ("tubb", "mki67", "full", "full_aurkb"):
+                # Try dynamic UMAP projection first; fall back to legacy pre-computed CSVs
+                _sim_scored = None
+                _ko_label   = f"{_ko_gene_label} KO"
+                _avail_models = _pert_data.get("available_models", [])
+                if _avail_models:
+                    _sim_scored = compute_ko_pop_sim(_ko_gene_label, _effective_grn_model)
+                if _sim_scored is None:
+                    # Legacy fallback
+                    if _effective_grn_model == "tubb":
+                        try: _sim_scored = load_tubb_pop_sim();    _ko_label = "TUBB KO"
+                        except Exception: pass
+                    elif _effective_grn_model == "mki67":
+                        try: _sim_scored = load_mki67_pop_sim();   _ko_label = "BIRC5 KO"
+                        except Exception: pass
+                    elif _effective_grn_model == "full_aurkb":
+                        try: _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
+                        except Exception: pass
+                    elif _effective_grn_model in ("full", "full_foxm1", "full_cdk1", "full_top2a"):
+                        _lfc_map = {
+                            "full_foxm1": (load_full_foxm1_pop_sim, "FOXM1 KO"),
+                            "full_aurkb": (load_full_aurkb_pop_sim, "AURKB KO"),
+                        }
+                        _lfc_loader, _lfc_label = _lfc_map.get(_effective_grn_model, (load_full_pop_sim, "HSPA1B KO"))
+                        try: _sim_scored = _lfc_loader(); _ko_label = _lfc_label
+                        except Exception: pass
+
+                if _sim_scored is not None:
                   with st.expander("Cell population response", expanded=True):
                     try:
-                        if _effective_grn_model == "tubb":
-                            _sim_scored = load_tubb_pop_sim();    _ko_label = "TUBB KO"
-                        elif _effective_grn_model == "mki67":
-                            _sim_scored = load_mki67_pop_sim();   _ko_label = "BIRC5 KO"
-                        elif _effective_grn_model == "full_aurkb":
-                            _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
-                        else:
-                            _sim_scored = load_full_pop_sim();    _ko_label = "HSPA1B KO"
                         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
                         _pt_pop_order = ["quiescent", "proliferative", "intermediate"]
                         _pt_pop_sizes = {"intermediate": 2, "proliferative": 3, "quiescent": 4}
-                        _needs_flip = _effective_grn_model == "full_aurkb"
-                        if _needs_flip:
-                            _sim_scored = _sim_scored.copy()
-                            _xm = _sim_scored["x_wt"].max(); _ym = _sim_scored["y_wt"].max()
-                            _sim_scored["x_wt"] = _xm - _sim_scored["x_wt"]
-                            _sim_scored["y_wt"] = _ym - _sim_scored["y_wt"]
-                            _sim_scored["x_ko"] = _xm - _sim_scored["x_ko"]
-                            _sim_scored["y_ko"] = _ym - _sim_scored["y_ko"]
 
                         # Build Sim WT population UMAP
                         _pop_umap_wt = px.scatter(
