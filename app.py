@@ -2486,29 +2486,39 @@ def _render_msg_figures(msg, msg_id):
             _cluster_summary = summaries.get(msg.get("cluster_id", ""), "") if "cluster_id" in msg else ""
             _q = msg.get("query_gene", "")
 
-            # Rebuild program list live using current program_size
+            # Rebuild program list live using current program_size.
+            # Gene map is cached in session_state by (msg_id, program_size) so
+            # that changing Network size does NOT trigger a map rebuild.
             _all_sim = msg.get("all_similar")
+            _map_ss_key = f"_gmap_{msg_id}_{program_size}"
+
             if _all_sim:
                 _live_pairs  = _all_sim[:program_size]
                 _live_df     = pd.DataFrame(_live_pairs, columns=["Gene", "Similarity"])
                 _live_df["Similarity"] = _live_df["Similarity"].round(2)
                 _live_df.index = range(1, len(_live_df) + 1)
-                _live_prog_genes = [_q] + [g for g, _ in _live_pairs]
-                _live_sim_scores = {g: s for g, s in _live_pairs}
-                # Rebuild gene map with current program_size
-                _live_gene_map = None
-                try:
-                    _gumap = load_gene_umap2d(dataset_key)
-                    _live_gene_map = build_gene_embedding_map(
-                        _gumap, _q, _live_prog_genes, annotations,
-                        embeddings_arr=embeddings, genes_list=genes,
-                        sim_scores=_live_sim_scores,
-                    )
-                except Exception:
-                    _live_gene_map = msg.get("fig_gene_map")
+                # Use cached map if program_size unchanged, otherwise rebuild
+                if _map_ss_key in st.session_state:
+                    _live_gene_map = st.session_state[_map_ss_key]
+                else:
+                    _live_prog_genes = [_q] + [g for g, _ in _live_pairs]
+                    _live_sim_scores = {g: s for g, s in _live_pairs}
+                    try:
+                        _gumap = load_gene_umap2d(dataset_key)
+                        _live_gene_map = build_gene_embedding_map(
+                            _gumap, _q, _live_prog_genes, annotations,
+                            embeddings_arr=embeddings, genes_list=genes,
+                            sim_scores=_live_sim_scores,
+                        )
+                    except Exception:
+                        _live_gene_map = msg.get("fig_gene_map")
+                    st.session_state[_map_ss_key] = _live_gene_map
             else:
-                _live_df        = msg.get("df", pd.DataFrame())
-                _live_gene_map  = msg.get("fig_gene_map")
+                # Old message without all_similar: at least slice df to program_size
+                _stored_df = msg.get("df", pd.DataFrame())
+                _live_df   = _stored_df.iloc[:program_size].copy() if len(_stored_df) >= program_size else _stored_df
+                # Gene map can't be rebuilt — use cache or stored
+                _live_gene_map = st.session_state.get(_map_ss_key, msg.get("fig_gene_map"))
 
             if _live_gene_map is not None:
                 _mc, _tc = st.columns([5, 2])
