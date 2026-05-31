@@ -2692,17 +2692,14 @@ def _render_msg_figures(msg, msg_id):
                     _run_btn = st.button("▶ Run KO simulation", key=f"{msg_id}_run_ko_btn")
                     _ck = f"{msg_id}_custom_ko_result"
                     if _run_btn:
-                        with st.spinner(f"Simulating {_ko_sel} KO (~20 sec)…"):
+                        with st.spinner(f"Simulating {_ko_sel} KO (~2 min, stochastic PDMP)…"):
                             try:
                                 _grn_p = _grn_p_pre  # already loaded above
                                 _gene_names_list = _grn_p.get("gene_names", list(genes))
                                 _kon_wt, _kon_ko = run_online_ko(_ko_sel, _gene_names_list, _grn_p)
-                                _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p)
                                 _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p, top_n=15)
                                 st.session_state[_ck] = {
                                     "ko_gene": _ko_sel,
-                                    "pop_wt": _pop_wt_r,
-                                    "pop_ko": _pop_ko_r,
                                     "de_df": _de_df,
                                 }
                             except Exception as _e:
@@ -2710,32 +2707,6 @@ def _render_msg_figures(msg, msg_id):
                                 st.error(f"Simulation error: {_e}\n{traceback.format_exc()}")
                     if _ck in st.session_state:
                         _cr = st.session_state[_ck]
-                        _pops = ["proliferative", "quiescent", "intermediate"]
-                        _clrs = {"proliferative": "#e05a5a", "quiescent": "#4a7fc1", "intermediate": "#aaaaaa"}
-                        _wt_v = [_cr["pop_wt"].get(p, 0) for p in _pops]
-                        _ko_v = [_cr["pop_ko"].get(p, 0) for p in _pops]
-                        _delta = [_ko_v[i] - _wt_v[i] for i in range(3)]
-
-                        # ── Population fractions chart ──
-                        _cfig = go.Figure()
-                        for pi, pop in enumerate(_pops):
-                            _cfig.add_bar(
-                                name=pop,
-                                x=["WT sim", f"{_cr['ko_gene']} KO"],
-                                y=[_wt_v[pi], _ko_v[pi]],
-                                marker_color=_clrs[pop],
-                                text=[f"{_wt_v[pi]:.1f}%",
-                                      f"{_ko_v[pi]:.1f}% ({_delta[pi]:+.1f}%)" if abs(_delta[pi]) > 0.1 else f"{_ko_v[pi]:.1f}%"],
-                                textposition="outside",
-                            )
-                        _cfig.update_layout(
-                            barmode="group", height=350,
-                            title=f"Cell populations: WT vs {_cr['ko_gene']} KO",
-                            yaxis_title="% of cells", plot_bgcolor="white", paper_bgcolor="white",
-                            legend=dict(orientation="h", y=-0.15),
-                            margin=dict(t=50, b=60),
-                        )
-                        st.plotly_chart(_cfig, use_container_width=True, key=f"{msg_id}_custom_ko_fig")
 
                         # ── Top differentially expressed genes chart ──
                         if "de_df" in _cr and _cr["de_df"] is not None and len(_cr["de_df"]) > 0:
@@ -2759,7 +2730,7 @@ def _render_msg_figures(msg, msg_id):
                             )
                             st.plotly_chart(_de_fig, use_container_width=True, key=f"{msg_id}_custom_ko_de_fig")
 
-                        st.caption("Population scoring: CENPF kon ↑ → proliferative, DNAJB1 kon ↑ → quiescent · Expression = E[RNA] = max_kz × kon / c")
+                        st.caption("Expression = E[RNA] = max_kz × kon / c · Red = upregulated, Blue = downregulated in KO vs WT")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:

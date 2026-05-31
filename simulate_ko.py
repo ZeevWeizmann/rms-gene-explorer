@@ -311,19 +311,21 @@ def _simulate_trajectories_unitary(
 # High-level simulate_network wrapper
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_simulation(p, times, ko_idx=None):
+def _run_simulation(p, times, ko_idx=None, stochastic=True):
     """
     Simulate the GRN network for WT (ko_idx=None) or KO (ko_idx=int).
 
     Parameters
     ----------
-    p        : dict from load_grn_params()
-    times    : sorted 1-D array, e.g. [0,16,32,48,64,80]
-    ko_idx   : gene column index (0=stimulus, 1..200=genes) to knock out
+    p          : dict from load_grn_params()
+    times      : sorted 1-D array, e.g. [0,16,32,48,64,80]
+    ko_idx     : gene column index (0=stimulus, 1..200=genes) to knock out
+    stochastic : True = PDMP (matches pre-computed results), False = ODE (faster)
 
     Returns
     -------
     kon_theta : np.ndarray, shape (N*len(times), 201)
+    N         : int, number of cells at t=0
     """
     inter_t   = p["inter_t_simul"].copy()       # (5, 201, 201, 1)
     basal     = p["basal_simul"].copy()          # (201, 1)
@@ -366,10 +368,10 @@ def _run_simulation(p, times, ko_idx=None):
         np.sort(times),
         times_train,
         scale=1.0,
-        stochastic=False,   # ODE is deterministic and ~4× faster
+        stochastic=stochastic,
         finish_by_det=True,
     )
-    return kon_theta
+    return kon_theta, N
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -393,9 +395,9 @@ def simulate_ko(gene_name: str, gene_names: list, grn_params: dict):
     """
     times = np.array([0., 16., 32., 48., 64., 80.])
 
-    kon_wt = _run_simulation(grn_params, times, ko_idx=None)
+    kon_wt, _ = _run_simulation(grn_params, times, ko_idx=None, stochastic=True)
     ko_idx = gene_names.index(gene_name) + 1   # +1 because col 0 = stimulus
-    kon_ko = _run_simulation(grn_params, times, ko_idx=ko_idx)
+    kon_ko, _ = _run_simulation(grn_params, times, ko_idx=ko_idx, stochastic=True)
 
     p  = grn_params
     mp = p["mixture_parameters"]     # (3, 201)
@@ -427,10 +429,13 @@ def simulate_ko(gene_name: str, gene_names: list, grn_params: dict):
 
 def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict):
     """
-    Run a CardamomOT KO simulation and return raw kon_theta values.
+    Run a CardamomOT KO simulation (PDMP, matching pre-computed results) and
+    return kon_theta values at the final timepoint (t=80).
 
-    Returns (kon_wt, kon_ko) — shape (n_cells, 201) including stimulus col 0.
-    Use this when you want gene-level fold-change without stochastic RNA sampling.
+    Returns
+    -------
+    kon_wt, kon_ko : np.ndarray, shape (N_cells_t0, 201) — last timepoint only.
+                     Col 0 = stimulus, cols 1..200 = genes.
 
     gene_names is ignored if grn_params contains "gene_names" (preferred).
     """
@@ -443,7 +448,8 @@ def simulate_ko_kon(gene_name: str, gene_names: list, grn_params: dict):
             f"Available genes include: {sim_gene_names[:10]}..."
         )
     times = np.array([0., 16., 32., 48., 64., 80.])
-    kon_wt = _run_simulation(grn_params, times, ko_idx=None)
+    kon_wt_all, N = _run_simulation(grn_params, times, ko_idx=None, stochastic=True)
     ko_idx = sim_gene_names.index(gene_name) + 1   # +1 to skip stimulus col 0
-    kon_ko = _run_simulation(grn_params, times, ko_idx=ko_idx)
-    return kon_wt, kon_ko
+    kon_ko_all, _ = _run_simulation(grn_params, times, ko_idx=ko_idx, stochastic=True)
+    # Return only the final timepoint (t=80)
+    return kon_wt_all[-N:, :], kon_ko_all[-N:, :]
