@@ -2703,10 +2703,6 @@ def _render_msg_figures(msg, msg_id):
                         pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
                         _live_df,
                     ], ignore_index=True)
-                    # Use pre-fetched DGIdb result (computed once before tabs)
-                    _df_show["💊"] = _df_show["Gene"].apply(
-                        lambda g: "💊" if g in _pre_drug_gene_set else ""
-                    )
                     _styled = _df_show.style.apply(
                         lambda row: [
                             "background-color:#dbeafe;color:#1d4ed8;font-weight:700"
@@ -2721,7 +2717,6 @@ def _render_msg_figures(msg, msg_id):
                         hide_index=True,
                         column_config={
                             "Similarity": st.column_config.NumberColumn("Similarity", format="%.2f"),
-                            "💊": st.column_config.TextColumn("💊", width="small"),
                         },
                     )
             else:
@@ -2757,7 +2752,16 @@ def _render_msg_figures(msg, msg_id):
             elif "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
-                st.plotly_chart(_pert_data["bar_fig"], use_container_width=True, key=f"{msg_id}_pert_bar")
+                # Annotate bar-chart gene labels with 💊 where DGIdb has interactions
+                import copy as _copy
+                _bar_fig = _copy.deepcopy(_pert_data["bar_fig"])
+                if _pre_drug_gene_set and _bar_fig.data:
+                    _new_y = tuple(
+                        f"{g} 💊" if g in _pre_drug_gene_set else g
+                        for g in _bar_fig.data[0].y
+                    )
+                    _bar_fig.update_traces(y=_new_y, selector=dict(type="bar"))
+                st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
