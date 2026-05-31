@@ -1318,42 +1318,43 @@ def query_dgidb(genes: tuple) -> pd.DataFrame:
             }}
         }}
     }}"""
-    try:
-        r = requests.post("https://dgidb.org/api/graphql",
-                          json={"query": gql}, timeout=30)
-        nodes = r.json().get("data", {}).get("genes", {}).get("nodes", [])
-        rows = []
-        for node in nodes:
-            # map alias back to the canonical gene name that was queried
-            canonical = next(
-                (g for g, aliases in _ALIASES.items() if node["name"] in aliases),
-                node["name"]
-            )
-            for ia in node.get("interactions", []):
-                drug  = ia.get("drug", {}) or {}
-                types = [t["type"] for t in (ia.get("interactionTypes") or []) if t.get("type")]
-                score = ia.get("interactionScore") or 0
-                drug_name = (drug.get("name") or "").title()
-                if not drug_name:
-                    continue
-                rows.append({
-                    "Gene":     canonical,
-                    "Drug":     drug_name,
-                    "Approved": "✅" if drug.get("approved") else "",
-                    "Type":     ", ".join(types),
-                    "Score":    round(float(score), 2),
-                })
-        df = pd.DataFrame(rows) if rows else pd.DataFrame(
-            columns=["Gene", "Drug", "Approved", "Type", "Score"])
-        if not df.empty:
-            # deduplicate same drug–gene pair (keep highest score)
-            df = (df.sort_values("Score", ascending=False)
-                    .drop_duplicates(subset=["Gene", "Drug"])
-                    .sort_values(["Approved", "Score"], ascending=[False, False])
-                    .reset_index(drop=True))
-        return df
-    except Exception:
-        return pd.DataFrame(columns=["Gene", "Drug", "Approved", "Type", "Score"])
+    # NOTE: network errors raise an exception so st.cache_data does NOT cache
+    # the failed result — only successful (even empty) API responses are cached.
+    r = requests.post("https://dgidb.org/api/graphql",
+                      json={"query": gql}, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    if "errors" in data and not data.get("data"):
+        raise RuntimeError(f"DGIdb API error: {data['errors']}")
+    nodes = data.get("data", {}).get("genes", {}).get("nodes", [])
+    rows = []
+    for node in nodes:
+        canonical = next(
+            (g for g, aliases in _ALIASES.items() if node["name"] in aliases),
+            node["name"]
+        )
+        for ia in node.get("interactions", []):
+            drug  = ia.get("drug", {}) or {}
+            types = [t["type"] for t in (ia.get("interactionTypes") or []) if t.get("type")]
+            score = ia.get("interactionScore") or 0
+            drug_name = (drug.get("name") or "").title()
+            if not drug_name:
+                continue
+            rows.append({
+                "Gene":     canonical,
+                "Drug":     drug_name,
+                "Approved": "✅" if drug.get("approved") else "",
+                "Type":     ", ".join(types),
+                "Score":    round(float(score), 2),
+            })
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(
+        columns=["Gene", "Drug", "Approved", "Type", "Score"])
+    if not df.empty:
+        df = (df.sort_values("Score", ascending=False)
+                .drop_duplicates(subset=["Gene", "Drug"])
+                .sort_values(["Approved", "Score"], ascending=[False, False])
+                .reset_index(drop=True))
+    return df
 
 
 @st.cache_resource
