@@ -2738,12 +2738,16 @@ def _render_msg_figures(msg, msg_id):
                 else:
                     _d_highlight = {_d_ko_label, _d_query_gene}
                     st.caption("Drug–gene interactions from **DGIdb**")
+                    def _style_drug_rows(row):
+                        if row["Gene"] in _d_highlight:
+                            return ["background-color: #dbeeff; color: #1a4a7a; font-weight: 600"] * len(row)
+                        return [""] * len(row)
+                    _drugs_styled = _drugs_df.style.apply(_style_drug_rows, axis=1).format({"Score": "{:.2f}"})
                     st.dataframe(
-                        _drugs_df,
+                        _drugs_styled,
                         use_container_width=True,
                         hide_index=True,
                         column_config={
-                            "Score": st.column_config.NumberColumn("Score", format="%.2f"),
                             "Approved": st.column_config.TextColumn("FDA"),
                         },
                     )
