@@ -2315,7 +2315,8 @@ def _render_msg_figures(msg, msg_id):
     _FULL_KO_GENES = {"HSPA1B", "AURKB", "FOXM1", "CDK1", "TOP2A"}
     _q_gene = msg.get("query_gene", "")
     _has_pert = (
-        _msg_grn_model in ("mki67", "tubb") or
+        (_msg_grn_model == "mki67" and _q_gene == "BIRC5") or
+        (_msg_grn_model == "tubb" and _q_gene == "TUBB") or
         (_msg_grn_model == "full" and _q_gene in _FULL_KO_GENES)
     )
     _ko_gene_label = {"mki67": "BIRC5", "tubb": "TUBB", "full": "HSPA1B"}.get(_msg_grn_model, "")
@@ -3087,10 +3088,7 @@ if query_gene:
 
 # ── Settings expander — after results ────────────────────────────
 with st.expander(T['settings'], expanded=False):
-    if _gene_in_any_grn:
-        _c1, _c2, _c3, _c4 = st.columns([3, 2, 2, 2])
-    else:
-        _c1, _c2 = st.columns([3, 3])
+    _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
         T['vector_db'],
         options=_ds_options,
@@ -3103,12 +3101,13 @@ with st.expander(T['settings'], expanded=False):
         key=f"slider_{dataset_key}"
     )
     if _gene_in_any_grn:
-        _c3.slider(
+        _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
+        _cg1.slider(
             T['grn_hops'],
             min_value=1, max_value=3, value=1, step=1,
             key=f"grn_slider_{dataset_key}"
         )
-        _c4.slider(
+        _cg2.slider(
             T['grn_top_n'],
             min_value=5, max_value=50, value=10, step=5,
             key=f"grn_topn_{dataset_key}"
