@@ -2729,29 +2729,32 @@ def _render_msg_figures(msg, msg_id):
           if not _tab_has.get("network"):
             st.empty()
           else:
-            # Rebuild GRN figures using live slider values so they update
-            # immediately when Network hops / Network size sliders change,
-            # without requiring the user to re-query the gene.
-            _msg_dk       = msg.get("dataset_key", "v1")
-            _live_hops    = st.session_state.get(f"grn_slider_{_msg_dk}", 1)
-            _live_top_n   = st.session_state.get(f"grn_topn_{_msg_dk}", 10)
-            _msg_grn_key  = msg.get("grn_model")
-            _msg_q_gene   = msg.get("query_gene", "")
+            # Rebuild GRN figures using live slider values (module-level
+            # grn_top_n / grn_hops are already computed from session_state
+            # at the top of the script — use them directly to avoid key mismatch).
+            _msg_grn_key    = msg.get("grn_model")
+            _msg_q_gene     = msg.get("query_gene", "")
             _msg_prog_genes = msg.get("grn_program_genes") or [_msg_q_gene]
+            _live_adj      = None
+            _live_grn_fig  = None
             if _msg_grn_key:
-                _live_grn_mat, _live_grn_genes = load_grn(_msg_grn_key)
-                _live_adj = build_grn_adjacency(
-                    _live_grn_mat, _live_grn_genes,
-                    gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
-                    hops=_live_hops, top_n=_live_top_n,
-                )
-                _live_grn_fig, _ = build_grn_figure(
-                    _live_grn_mat, _live_grn_genes, _msg_q_gene,
-                    gene_set=_msg_prog_genes, hops=_live_hops, top_n=_live_top_n,
-                )
-            else:
-                _live_adj      = msg.get("grn_adj")
-                _live_grn_fig  = msg.get("grn_fig")
+                try:
+                    _live_grn_mat, _live_grn_genes = load_grn(_msg_grn_key)
+                    _live_adj = build_grn_adjacency(
+                        _live_grn_mat, _live_grn_genes,
+                        gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
+                        hops=grn_hops, top_n=grn_top_n,
+                    )
+                    _live_grn_fig, _ = build_grn_figure(
+                        _live_grn_mat, _live_grn_genes, _msg_q_gene,
+                        gene_set=_msg_prog_genes, hops=grn_hops, top_n=grn_top_n,
+                    )
+                except Exception:
+                    pass
+            if _live_adj is None:
+                _live_adj = msg.get("grn_adj")
+            if _live_grn_fig is None:
+                _live_grn_fig = msg.get("grn_fig")
 
             if _live_adj is not None:
                 with st.expander("Program Regulatory Interactions", expanded=True):
@@ -2776,10 +2779,10 @@ def _render_msg_figures(msg, msg_id):
                         yaxis=dict(tickfont=dict(size=9)),
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
-                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{_live_top_n}_{_live_hops}")
+                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}")
             if _live_grn_fig is not None:
                 with st.expander("Gene Regulatory Interactions", expanded=True):
-                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{_live_top_n}_{_live_hops}")
+                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
