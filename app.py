@@ -2740,18 +2740,21 @@ def _render_msg_figures(msg, msg_id):
                         except (TypeError, ValueError):
                             _x_floats.append(0.0)
                     _max_abs = max((abs(x) for x in _x_floats), default=1)
-                    for g, _fv in zip(_by, _x_floats):
+                    for g in _by:
                         if g in _bar_drug_set:
                             _bar_fig.add_annotation(
-                                x=_fv, y=g,
-                                text="●",
+                                xref="paper", x=1.01,
+                                yref="y",    y=g,
+                                text="⬤",
                                 showarrow=False,
-                                font=dict(size=14, color="#2563eb"),
-                                xanchor="left" if _fv >= 0 else "right",
+                                font=dict(size=13, color="#2563eb"),
+                                xanchor="left",
                                 yanchor="middle",
-                                xshift=6 if _fv >= 0 else -6,
                             )
+                    _bar_fig.update_layout(margin=dict(r=50))
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                if _bar_drug_set:
+                    st.caption("⬤ — known drug interactions in [DGIdb](https://dgidb.org)")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
