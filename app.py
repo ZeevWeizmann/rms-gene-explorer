@@ -2762,6 +2762,7 @@ def _render_msg_figures(msg, msg_id):
                             showlegend=False,
                         ))
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                st.caption(f"DEBUG: pre_drugs rows={len(_pre_drugs_df)}, drug_set={_bar_drug_set}, d_all_genes_n={len(_pre_d_all_genes)}")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
