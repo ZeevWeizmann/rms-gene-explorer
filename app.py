@@ -3374,6 +3374,7 @@ if query_gene:
             "TUBB":   "💊 **Vincristine** (FDA-approved, RMS standard of care)",
             "BIRC5":  "💊 **YM155** / Sepantronium (clinical trials)",
             "HSPA1B": "🎯 **Novel target** — HSP70 inhibitor class, no approved RMS drug",
+            "AURKB":  "💊 **AZD1152** (barasertib) — selective Aurora B inhibitor, preclinical activity in RMS",
         }
         _drug_line = _DRUG_MAP.get(query_gene.upper(), "")
         _content = f"**{T['gene_program_for']} {query_gene}** — {T['cluster']} {query_cluster}: *{query_annotation}*"
@@ -3533,6 +3534,7 @@ _FEATURED = [
     ("TUBB",   "tubb",  "💊 Vincristine · FDA-approved"),
     ("BIRC5",  "mki67", "💊 YM155 · clinical trials"),
     ("HSPA1B", "full",  "🎯 Novel target · HSP70 class"),
+    ("AURKB",  "full",  "💊 AZD1152 · Aurora kinase B"),
 ]
 with st.expander(T['featured_targets'], expanded=False):
     _fcols = st.columns(len(_FEATURED))
