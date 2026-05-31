@@ -2695,23 +2695,66 @@ def _render_msg_figures(msg, msg_id):
                     _wt_cache_key = f"{msg_id}_wt_kon_cache"
                     if _wt_cache_key not in st.session_state:
                         st.session_state[_wt_cache_key] = {}
+
+                    # Pre-computed CSVs for 5 genes — instant and exact
+                    _PRECOMP_KO = {
+                        "HSPA1B": ("full_ko_perturbation.csv",    "full_pop_sim_scored.csv"),
+                        "AURKB":  ("full_aurkb_ko_perturbation.csv", "full_aurkb_pop_sim_scored.csv"),
+                        "FOXM1":  ("full_foxm1_ko_perturbation.csv", "full_foxm1_pop_sim_scored.csv"),
+                        "CDK1":   ("full_cdk1_ko_perturbation.csv",  "full_cdk1_pop_sim_scored.csv"),
+                        "TOP2A":  ("full_top2a_ko_perturbation.csv", "full_top2a_pop_sim_scored.csv"),
+                    }
+
                     if _run_btn:
-                        with st.spinner(f"Simulating {_ko_sel} KO (~30 sec)…"):
+                        _is_precomp = _ko_sel in _PRECOMP_KO
+                        _spinner_msg = f"Loading pre-computed {_ko_sel} KO…" if _is_precomp else f"Simulating {_ko_sel} KO (~30 sec)…"
+                        with st.spinner(_spinner_msg):
                             try:
-                                _grn_p = _grn_p_pre
-                                _gene_names_list = _grn_p.get("gene_names", list(genes))
-                                _kon_wt, _kon_ko = run_online_ko(
-                                    _ko_sel, _gene_names_list, _grn_p,
-                                    wt_cache=st.session_state[_wt_cache_key],
-                                )
-                                _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p)
-                                _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p, top_n=15)
-                                st.session_state[_ck] = {
-                                    "ko_gene": _ko_sel,
-                                    "pop_wt": _pop_wt_r,
-                                    "pop_ko": _pop_ko_r,
-                                    "de_df": _de_df,
-                                }
+                                if _is_precomp:
+                                    # ── Use pre-computed adata_sim data (exact match with Drug Targets) ──
+                                    _pert_file, _pop_file = _PRECOMP_KO[_ko_sel]
+                                    _pert_df = pd.read_csv(_pert_file)
+                                    _pop_df  = pd.read_csv(_pop_file)
+                                    # DE genes from log2FC at t=80
+                                    _t80 = _pert_df[_pert_df["time"] == 80].copy()
+                                    _t80["abs_lfc"] = _t80["log2fc"].abs()
+                                    _t80 = _t80.nlargest(15, "abs_lfc")
+                                    _de_df_pre = pd.DataFrame({
+                                        "gene": _t80["gene"].values,
+                                        "delta_expr": _t80["log2fc"].values,
+                                        "delta_kon": _t80["log2fc"].values,
+                                        "direction": ["up" if v > 0 else "down" for v in _t80["log2fc"].values],
+                                    })
+                                    # Population fractions from pop CSV (t=80 = last rows)
+                                    _pop_n = len(_pop_df)
+                                    _pop_wt_r = pd.Series(_pop_df["pop_wt"]).value_counts(normalize=True).mul(100)
+                                    _pop_ko_r = pd.Series(_pop_df["pop_ko"]).value_counts(normalize=True).mul(100)
+                                    st.session_state[_ck] = {
+                                        "ko_gene": _ko_sel,
+                                        "pop_wt": _pop_wt_r,
+                                        "pop_ko": _pop_ko_r,
+                                        "de_df": _de_df_pre,
+                                        "precomputed": True,
+                                        "xaxis_title": "log₂FC (KO / WT)",
+                                    }
+                                else:
+                                    # ── Online PDMP simulation for any other gene ──
+                                    _grn_p = _grn_p_pre
+                                    _gene_names_list = _grn_p.get("gene_names", list(genes))
+                                    _kon_wt, _kon_ko = run_online_ko(
+                                        _ko_sel, _gene_names_list, _grn_p,
+                                        wt_cache=st.session_state[_wt_cache_key],
+                                    )
+                                    _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p)
+                                    _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p, top_n=15)
+                                    st.session_state[_ck] = {
+                                        "ko_gene": _ko_sel,
+                                        "pop_wt": _pop_wt_r,
+                                        "pop_ko": _pop_ko_r,
+                                        "de_df": _de_df,
+                                        "precomputed": False,
+                                        "xaxis_title": "Δ expected expression (KO − WT, UMI)",
+                                    }
                             except Exception as _e:
                                 import traceback
                                 st.error(f"Simulation error: {_e}\n{traceback.format_exc()}")
@@ -2749,6 +2792,7 @@ def _render_msg_figures(msg, msg_id):
                         if "de_df" in _cr and _cr["de_df"] is not None and len(_cr["de_df"]) > 0:
                             _de = _cr["de_df"].copy()
                             _de_clrs = ["#e05a5a" if d == "up" else "#4a7fc1" for d in _de["direction"]]
+                            _xaxis_title = _cr.get("xaxis_title", "Δ expression (KO − WT)")
                             _de_fig = go.Figure(go.Bar(
                                 x=_de["delta_expr"],
                                 y=_de["gene"],
@@ -2759,16 +2803,16 @@ def _render_msg_figures(msg, msg_id):
                             ))
                             _de_fig.update_layout(
                                 height=420,
-                                title=f"Top DE genes in GRN — {_cr['ko_gene']} KO vs WT",
-                                xaxis_title="Δ expected expression (KO − WT, UMI)",
+                                title=f"Top DE genes — {_cr['ko_gene']} KO vs WT",
+                                xaxis_title=_xaxis_title,
                                 yaxis=dict(autorange="reversed"),
                                 plot_bgcolor="white", paper_bgcolor="white",
                                 margin=dict(t=50, b=40, l=100),
                             )
                             st.plotly_chart(_de_fig, use_container_width=True, key=f"{msg_id}_custom_ko_de_fig")
 
-                        st.caption("Populations & DE genes based on 200-gene GRN network (PDMP simulation) · "
-                                   "Red = up, Blue = down in KO vs WT")
+                        _src = "pre-computed simulation (13,968 cells)" if _cr.get("precomputed") else "online PDMP simulation (~100 cells)"
+                        st.caption(f"Source: {_src} · 200-gene GRN network · Red = up, Blue = down in KO vs WT")
 
     # ── Tab: Gene Network (graph + adjacency matrix) ─────────────────────────
     if "network" in _tab_map:
