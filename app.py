@@ -2745,7 +2745,7 @@ def _render_msg_figures(msg, msg_id):
                             _bar_fig.add_annotation(
                                 xref="paper", x=1.01,
                                 yref="y",    y=g,
-                                text=" Rx ",
+                                text=" drug ",
                                 showarrow=False,
                                 font=dict(size=10, color="white", family="Arial Black"),
                                 bgcolor="#2563eb",
@@ -2762,7 +2762,7 @@ def _render_msg_figures(msg, msg_id):
                     st.markdown(
                         '<span style="display:inline-block;background:#2563eb;color:white;'
                         'border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;'
-                        'border:1px solid #1d4ed8"> Rx </span>'
+                        'border:1px solid #1d4ed8"> drug </span>'
                         ' — known drug interactions in '
                         '[DGIdb](https://dgidb.org)',
                         unsafe_allow_html=True,
