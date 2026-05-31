@@ -2291,7 +2291,6 @@ n_clusters = len(set(clusters))
 n_cells = umap_df.shape[0]
 
 # ── GRN selector — hide only if gene is in NO model at all ──────
-_orig_gene_set   = load_grn_gene_list("original")
 _mki67_gene_set  = load_grn_gene_list("mki67")
 _tubb_gene_set   = load_grn_gene_list("tubb")
 _full_gene_set   = load_grn_gene_list("full")
@@ -2301,7 +2300,6 @@ _ALL_MODELS = {
     "Full program (200 genes)":               ("full",     _full_gene_set),
     "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
     "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
-    "Original (159 genes)":                    ("original", _orig_gene_set),
 }
 
 # use last queried gene (or most recent search) to decide visibility
@@ -2333,7 +2331,7 @@ else:
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _orig_gene_set | _tubb_gene_set | _full_gene_set
+grn_gene_set = _mki67_gene_set | _tubb_gene_set | _full_gene_set
 
 def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
@@ -2898,7 +2896,13 @@ def _render_msg_figures(msg, msg_id):
             # at the top of the script — use them directly to avoid key mismatch).
             _msg_grn_key    = msg.get("grn_model")
             _msg_q_gene     = msg.get("query_gene", "")
-            _msg_prog_genes = msg.get("grn_program_genes") or [_msg_q_gene]
+            # Rebuild program gene list live from all_similar sliced to program_size
+            _all_sim_net    = msg.get("all_similar")
+            if _all_sim_net:
+                _live_prog_pairs = _all_sim_net[:program_size]
+                _msg_prog_genes  = [_msg_q_gene] + [g for g, _ in _live_prog_pairs]
+            else:
+                _msg_prog_genes  = msg.get("grn_program_genes") or [_msg_q_gene]
             _live_adj      = None
             _live_grn_fig  = None
             if _msg_grn_key:
