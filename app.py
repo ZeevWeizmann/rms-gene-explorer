@@ -2756,11 +2756,24 @@ def _render_msg_figures(msg, msg_id):
                 import copy as _copy
                 _bar_fig = _copy.deepcopy(_pert_data["bar_fig"])
                 if _pre_drug_gene_set and _bar_fig.data:
-                    _new_y = tuple(
-                        f"{g} 💊" if g in _pre_drug_gene_set else g
-                        for g in _bar_fig.data[0].y
-                    )
-                    _bar_fig.update_traces(y=_new_y, selector=dict(type="bar"))
+                    _by = list(_bar_fig.data[0].y)   # gene names on y-axis
+                    _bx = list(_bar_fig.data[0].x)   # log2FC values
+                    _max_abs = max((abs(v) for v in _bx), default=1)
+                    _pill_x, _pill_y = [], []
+                    for g, v in zip(_by, _bx):
+                        if g in _pre_drug_gene_set:
+                            # place emoji just past the end of the bar
+                            _pill_x.append(v + (_max_abs * 0.07 if v >= 0 else -_max_abs * 0.07))
+                            _pill_y.append(g)
+                    if _pill_y:
+                        _bar_fig.add_trace(go.Scatter(
+                            x=_pill_x, y=_pill_y,
+                            mode="text",
+                            text=["💊"] * len(_pill_y),
+                            textfont=dict(size=15),
+                            hoverinfo="skip",
+                            showlegend=False,
+                        ))
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
