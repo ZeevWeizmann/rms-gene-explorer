@@ -630,7 +630,8 @@ LOGO_W        = 55  if is_mobile else 90
 REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
 def _get_cardamom_dir():
-    return os.path.join(os.path.dirname(LOCAL_DIR), "cardamomOT")
+    import os as _os
+    return _os.path.join("/Users/zeev/CardamomOT/my_project", "cardamomOT")
 
 @st.cache_resource
 def load_data(dataset="v1"):
@@ -1072,22 +1073,25 @@ def load_foxm1_real_timecourse():
 @st.cache_resource
 def build_ko_registry():
     """Scan cardamomOT dir for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
-    import re
-    registry = {}
-    _cdir = _get_cardamom_dir()
-    if not os.path.isdir(_cdir):
+    try:
+        import re, os as _os
+        registry = {}
+        _cdir = _get_cardamom_dir()
+        if not _cdir or not _os.path.isdir(_cdir):
+            return registry
+        pattern = re.compile(
+            r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
+        )
+        prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
+        for fname in _os.listdir(_cdir):
+            m = pattern.match(fname)
+            if m:
+                prefix, gene = m.group(1), m.group(2)
+                grn_model = prefix_to_model[prefix]
+                registry.setdefault(gene, []).append(grn_model)
         return registry
-    pattern = re.compile(
-        r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
-    )
-    prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
-    for fname in os.listdir(_cdir):
-        m = pattern.match(fname)
-        if m:
-            prefix, gene = m.group(1), m.group(2)
-            grn_model = prefix_to_model[prefix]
-            registry.setdefault(gene, []).append(grn_model)
-    return registry
+    except Exception:
+        return {}
 
 
 @st.cache_resource
