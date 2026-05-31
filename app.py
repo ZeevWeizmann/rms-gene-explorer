@@ -2733,7 +2733,12 @@ def _render_msg_figures(msg, msg_id):
                 if _bar_drug_set and _bar_fig.data:
                     _by = [str(g) for g in _bar_fig.data[0].y]
                     _bx = list(_bar_fig.data[0].x)
-                    _max_abs = max((abs(float(v)) for v in _bx if v is not None), default=1)
+                    _max_abs = 1
+                    for _v in _bx:
+                        try:
+                            _max_abs = max(_max_abs, abs(float(_v)))
+                        except (TypeError, ValueError):
+                            pass
                     for g, v in zip(_by, _bx):
                         if g in _bar_drug_set:
                             try:
