@@ -1112,30 +1112,45 @@ def run_online_ko(gene_name: str, gene_names: list, grn_params: dict):
     return _sim_kon(gene_name, gene_names, grn_params)
 
 
-def score_populations_online(kon_wt, kon_ko, gene_names):
+def score_populations_online(kon_wt, kon_ko, gene_names, grn_params):
     """
-    Score cell populations from kon_theta directly (no RNA sampling).
-    CENPF  kon high → proliferative; DNAJB1 kon high → quiescent.
-    Thresholds = 70th percentile of WT kon values.
-    kon_wt, kon_ko : shape (n_cells, 201) — col 0 = stimulus, cols 1-200 = genes.
+    Score cell populations using expected RNA z-scores — matches the pre-computed method:
+      Proliferative: CENPF  z-score >= 70th percentile of WT
+      Quiescent:     DNAJB1 z-score >= 70th percentile of WT
+      Intermediate:  all remaining
+
+    Expected RNA = max_kz * kon / c  (NB mean, per gene).
+    z-score relative to WT distribution; threshold = 70th pct of WT z-scores.
+    Since z-score is a linear transform, this is equivalent to:
+      RNA >= 70th percentile of WT RNA.
     """
     cenpf_col  = gene_names.index("CENPF")  + 1   # +1 for stimulus col
     dnajb1_col = gene_names.index("DNAJB1") + 1
 
-    c_wt = kon_wt[:, cenpf_col]
-    d_wt = kon_wt[:, dnajb1_col]
-    p70p = np.percentile(c_wt, 70)
-    p70q = np.percentile(d_wt, 70)
+    # Compute expected RNA from kon
+    mixture = grn_params["mixture_parameters"]      # (n_rows, 201)
+    kz_raw  = mixture[:-1, :]                       # (n_networks+1, 201)
+    max_kz  = np.maximum(np.max(kz_raw, axis=0), 1e-6)  # (201,)
+    c_disp  = np.maximum(mixture[-1, :], 1e-6)     # (201,)
 
-    def _assign(kon):
-        c = kon[:, cenpf_col]
-        d = kon[:, dnajb1_col]
-        lbl = np.full(len(c), "intermediate", dtype=object)
-        lbl[c >= p70p] = "proliferative"
-        lbl[d >= p70q] = "quiescent"
+    def _to_expr(kon):
+        # Expected RNA: shape (n_cells, 201)
+        return (kon * max_kz) / c_disp
+
+    expr_wt = _to_expr(kon_wt)
+    expr_ko = _to_expr(kon_ko)
+
+    # 70th percentile of WT expected RNA as threshold (= z-score threshold)
+    p70_c = np.percentile(expr_wt[:, cenpf_col],  70)
+    p70_d = np.percentile(expr_wt[:, dnajb1_col], 70)
+
+    def _assign(expr):
+        lbl = np.full(len(expr), "intermediate", dtype=object)
+        lbl[expr[:, cenpf_col]  >= p70_c] = "proliferative"
+        lbl[expr[:, dnajb1_col] >= p70_d] = "quiescent"
         return pd.Series(lbl).value_counts(normalize=True).mul(100)
 
-    return _assign(kon_wt), _assign(kon_ko)
+    return _assign(expr_wt), _assign(expr_ko)
 
 
 def top_de_genes_online(kon_wt, kon_ko, gene_names, grn_params, top_n=15):
@@ -2682,7 +2697,7 @@ def _render_msg_figures(msg, msg_id):
                                 _grn_p = _grn_p_pre  # already loaded above
                                 _gene_names_list = _grn_p.get("gene_names", list(genes))
                                 _kon_wt, _kon_ko = run_online_ko(_ko_sel, _gene_names_list, _grn_p)
-                                _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list)
+                                _pop_wt_r, _pop_ko_r = score_populations_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p)
                                 _de_df = top_de_genes_online(_kon_wt, _kon_ko, _gene_names_list, _grn_p, top_n=15)
                                 st.session_state[_ck] = {
                                     "ko_gene": _ko_sel,
