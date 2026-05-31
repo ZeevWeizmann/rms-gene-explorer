@@ -2785,9 +2785,8 @@ def _render_msg_figures(msg, msg_id):
                         _bar_fig.add_trace(go.Scatter(
                             x=_pill_x, y=_pill_y,
                             mode="markers+text",
-                            marker=dict(symbol="arrow-right", size=10, color="#2563eb",
-                                        angleref="previous"),
-                            text=["💊 drug"] * len(_pill_y),
+                            marker=dict(symbol="arrow-right", size=10, color="#2563eb"),
+                            text=["drug"] * len(_pill_y),
                             textposition="middle right",
                             textfont=dict(size=12, color="#2563eb"),
                             hoverinfo="skip",
