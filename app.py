@@ -2199,8 +2199,11 @@ def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, t
                 scored.append((g, w))
             scored.sort(key=lambda x: x[1], reverse=True)
             candidates = [g for g, _ in scored[:top_n]]
-        all_nodes = [query_gene] + sorted(candidates)
-    else:
+        if candidates:
+            all_nodes = [query_gene] + sorted(candidates)
+        else:
+            prog_in_grn = []  # no overlap besides query gene → use GRN neighbours fallback
+    if not prog_in_grn:
         # Fallback: direct GRN neighbours of query_gene
         q_idx = grn_genes.index(query_gene)
         direct = set()
@@ -3022,7 +3025,7 @@ def _render_msg_figures(msg, msg_id):
                     _live_adj = build_grn_adjacency(
                         _live_grn_mat, _live_grn_genes,
                         gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
-                        hops=grn_hops, top_n=grn_top_n,
+                        hops=grn_hops, top_n=program_size,
                     )
                     _live_grn_fig, _ = build_grn_figure(
                         _live_grn_mat, _live_grn_genes, _msg_q_gene,
