@@ -2758,7 +2758,7 @@ def _render_msg_figures(msg, msg_id):
                 if _pre_drug_gene_set and _bar_fig.data:
                     _by = list(_bar_fig.data[0].y)   # gene names on y-axis
                     _bx = list(_bar_fig.data[0].x)   # log2FC values
-                    _max_abs = max((abs(v) for v in _bx), default=1)
+                    _max_abs = max((abs(v) for v in _bx if v is not None and v == v), default=1)
                     _pill_x, _pill_y = [], []
                     for g, v in zip(_by, _bx):
                         if g in _pre_drug_gene_set:
