@@ -2733,27 +2733,31 @@ def _render_msg_figures(msg, msg_id):
                 if _bar_drug_set and _bar_fig.data:
                     _by = [str(g) for g in _bar_fig.data[0].y]
                     _bx = list(_bar_fig.data[0].x)
-                    _max_abs = 1
+                    _x_floats = []
                     for _v in _bx:
                         try:
-                            _max_abs = max(_max_abs, abs(float(_v)))
+                            _x_floats.append(float(_v))
                         except (TypeError, ValueError):
-                            pass
-                    for g, v in zip(_by, _bx):
+                            _x_floats.append(0.0)
+                    _max_abs = max((abs(x) for x in _x_floats), default=1)
+                    # Fixed annotation x: always at +max_abs*1.15 (right side)
+                    # so labels don't overlap bars and are clearly visible
+                    _ann_x = _max_abs * 1.15
+                    for g, _fv in zip(_by, _x_floats):
                         if g in _bar_drug_set:
-                            try:
-                                _fv = float(v)
-                                _xpos = _fv + (_max_abs * 0.08 if _fv >= 0 else -_max_abs * 0.08)
-                                _bar_fig.add_annotation(
-                                    x=_xpos, y=g,
-                                    text="◀ drug" if _fv < 0 else "drug ▶",
-                                    showarrow=False,
-                                    font=dict(size=11, color="#2563eb", family="Arial"),
-                                    xanchor="right" if _fv < 0 else "left",
-                                    yanchor="middle",
-                                )
-                            except (TypeError, ValueError):
-                                pass
+                            _bar_fig.add_annotation(
+                                x=_ann_x, y=g,
+                                text="◀ drug",
+                                showarrow=False,
+                                font=dict(size=11, color="#2563eb", family="Arial"),
+                                xanchor="left",
+                                yanchor="middle",
+                            )
+                    # Widen x-axis to fit annotations
+                    _bar_fig.update_xaxes(range=[
+                        -_max_abs * 1.15,
+                        _max_abs * 1.45,
+                    ])
                 st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
