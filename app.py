@@ -2536,6 +2536,43 @@ def _render_msg_figures(msg, msg_id):
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
 
+    # ── Pre-fetch DGIdb once for program genes + KO-affected genes ────────────
+    # Builds a combined gene list so both the Gene Program indicator column and
+    # the Drugs tab table share a single (cached) DGIdb call.
+    _pre_drugs_df      = pd.DataFrame()
+    _pre_drug_gene_set = set()
+    _pre_d_all_genes   = ()   # KO-affected genes tuple for the Drugs tab
+    try:
+        # Program genes (up to program_size, from message cache)
+        _pre_all_sim   = msg.get("all_similar", [])
+        _pre_prog_list = [_q_gene] + [g for g, _ in _pre_all_sim[:program_size]]
+        # KO-affected genes (top-20 by |log2FC| at last timepoint)
+        if _pert_data and "error" not in _pert_data:
+            _pre_pdf    = _pert_data["pert_df"]
+            _pre_ko_lbl = _pert_data["ko_label"]
+            _pre_qg     = _pert_data.get("query_gene", "")
+            _pre_times  = sorted(_pre_pdf["time"].unique())
+            _pre_summ2  = _pre_pdf[
+                (_pre_pdf["time"] == _pre_times[-1]) &
+                (_pre_pdf["gene"] != _pre_ko_lbl)
+            ].copy()
+            if "log2fc" not in _pre_summ2.columns:
+                _pre_summ2["log2fc"] = np.log2(
+                    (_pre_summ2["mean_ko"] + 1e-9) / (_pre_summ2["mean_wt"] + 1e-9))
+            _pre_summ2["abs_lfc"] = _pre_summ2["log2fc"].abs()
+            _pre_top20 = _pre_summ2.nlargest(20, "abs_lfc")["gene"].tolist()
+            _pre_d_all_genes = tuple(dict.fromkeys(
+                [_pre_ko_lbl, _pre_qg] + _pre_top20
+            ))
+        # Union of both sets, deduplicated
+        _pre_combined = tuple(dict.fromkeys(_pre_prog_list + list(_pre_d_all_genes)))
+        if _pre_combined:
+            _pre_drugs_df = query_dgidb(_pre_combined)
+            if not _pre_drugs_df.empty:
+                _pre_drug_gene_set = set(_pre_drugs_df["Gene"].unique())
+    except Exception:
+        pass
+
     _tab_keys   = [d[0] for d in _tab_defs]
     _tab_titles = [d[1] for d in _tab_defs]
     _tabs = st.tabs(_tab_titles)
@@ -2666,15 +2703,9 @@ def _render_msg_figures(msg, msg_id):
                         pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
                         _live_df,
                     ], ignore_index=True)
-                    # Query DGIdb for drug indicators (cached — no extra cost)
-                    _prog_genes_tuple = tuple(_df_show["Gene"].tolist())
-                    try:
-                        _prog_drugs_df = query_dgidb(_prog_genes_tuple)
-                        _drug_gene_set = set(_prog_drugs_df["Gene"].unique()) if not _prog_drugs_df.empty else set()
-                    except Exception:
-                        _drug_gene_set = set()
+                    # Use pre-fetched DGIdb result (computed once before tabs)
                     _df_show["💊"] = _df_show["Gene"].apply(
-                        lambda g: "💊" if g in _drug_gene_set else ""
+                        lambda g: "💊" if g in _pre_drug_gene_set else ""
                     )
                     _styled = _df_show.style.apply(
                         lambda row: [
@@ -2736,32 +2767,19 @@ def _render_msg_figures(msg, msg_id):
             elif "error" in _pert_data:
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
-                _d_pert_df  = _pert_data["pert_df"]
-                _d_ko_label = _pert_data["ko_label"]
-                # Top-20 most affected genes at last timepoint (excluding KO gene)
-                _d_times  = sorted(_d_pert_df["time"].unique())
-                _d_last_t = _d_times[-1]
-                _d_summ   = _d_pert_df[
-                    (_d_pert_df["time"] == _d_last_t) &
-                    (_d_pert_df["gene"] != _d_ko_label)
-                ].copy()
-                if "log2fc" not in _d_summ.columns:
-                    _d_summ["log2fc"] = np.log2(
-                        (_d_summ["mean_ko"] + 1e-9) / (_d_summ["mean_wt"] + 1e-9))
-                _d_summ["abs_lfc"] = _d_summ["log2fc"].abs()
-                _d_top20 = _d_summ.nlargest(20, "abs_lfc")["gene"].tolist()
-                # Include the KO gene itself + top-20 affected genes
+                # Reuse pre-fetched DGIdb result (filtered to KO-affected genes only)
+                _d_ko_label   = _pert_data["ko_label"]
                 _d_query_gene = _pert_data.get("query_gene", "")
-                _d_all_genes  = tuple(dict.fromkeys(
-                    [_d_ko_label, _d_query_gene] + _d_top20
-                ))
-                with st.spinner("Querying DGIdb…"):
-                    _drugs_df = query_dgidb(_d_all_genes)
+                _d_highlight  = {_d_ko_label, _d_query_gene}
+                # Filter pre_drugs_df to genes from the KO-affected set
+                if _pre_d_all_genes and not _pre_drugs_df.empty:
+                    _drugs_df = _pre_drugs_df[_pre_drugs_df["Gene"].isin(set(_pre_d_all_genes))]
+                else:
+                    _drugs_df = _pre_drugs_df
 
                 if _drugs_df.empty:
                     st.info(T['no_drugs_found'])
                 else:
-                    _d_highlight = {_d_ko_label, _d_query_gene}
                     st.caption(T['dgidb_caption'])
                     def _style_drug_rows(row):
                         if row["Gene"] in _d_highlight:
