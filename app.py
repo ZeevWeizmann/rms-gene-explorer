@@ -1974,9 +1974,9 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 
     # ── Node visual properties ───────────────────────────────────
     ROLE_COLOR = {
-        "query":         "#D62728",   # red
+        "query":         "#1a6faf",   # blue (same as gene program hub)
         "upstream":      "#FF7F0E",   # orange
-        "downstream":    "#4C72B0",   # blue
+        "downstream":    "#4C72B0",   # steel blue
         "feedback loop": "#9467BD",   # purple
         "intermediate":  "#AAAAAA",   # gray
     }
@@ -3135,7 +3135,7 @@ with st.expander(T['settings'], expanded=False):
     )
     _cg2.slider(
         T['grn_top_n'],
-        min_value=5, max_value=50, value=10, step=5,
+        min_value=5, max_value=150, value=10, step=5,
         key=f"grn_topn_{dataset_key}"
     )
     if _gene_in_any_grn:
