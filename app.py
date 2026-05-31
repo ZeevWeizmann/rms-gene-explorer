@@ -3100,18 +3100,17 @@ with st.expander(T['settings'], expanded=False):
         min_value=5, max_value=200, value=20, step=5,
         key=f"slider_{dataset_key}"
     )
-    if _gene_in_any_grn:
-        _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
-        _cg1.slider(
-            T['grn_hops'],
-            min_value=1, max_value=3, value=1, step=1,
-            key=f"grn_slider_{dataset_key}"
-        )
-        _cg2.slider(
-            T['grn_top_n'],
-            min_value=5, max_value=50, value=10, step=5,
-            key=f"grn_topn_{dataset_key}"
-        )
+    _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
+    _cg1.slider(
+        T['grn_hops'],
+        min_value=1, max_value=3, value=1, step=1,
+        key=f"grn_slider_{dataset_key}"
+    )
+    _cg2.slider(
+        T['grn_top_n'],
+        min_value=5, max_value=50, value=10, step=5,
+        key=f"grn_topn_{dataset_key}"
+    )
     if _gene_in_any_grn:
         if len(grn_options) == 1:
             st.caption(f"{T['grn_model']}: **{grn_options[0]}**")
