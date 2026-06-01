@@ -3030,9 +3030,10 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_COLORS = {"full": "#059669", "mki67": "#0891b2", "tubb": "#7c3aed"}
             _hdr_color  = _ADJ_COLORS.get(_selected_adj_key, "#64748b")
             _hdr_suffix = (
-                f' <span style="display:inline-block;background:{_hdr_color};color:white;'
-                f'border-radius:5px;padding:1px 10px;font-size:13px;font-weight:700;'
-                f'vertical-align:middle;">{_hdr_name}</span>'
+                f' <span style="display:inline-block;background:linear-gradient(180deg,{_hdr_color}ee,{_hdr_color});'
+                f'color:white;border-radius:6px;padding:2px 12px;font-size:13px;font-weight:700;'
+                f'vertical-align:middle;box-shadow:0 2px 4px {_hdr_color}66,0 1px 0 rgba(255,255,255,0.2) inset;'
+                f'border:1px solid {_hdr_color};letter-spacing:0.02em;">{_hdr_name}</span>'
                 f' <span style="color:#9ca3af;font-size:13px;">· {_hdr_size}</span>'
             ) if _hdr_name else ""
 
