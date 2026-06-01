@@ -3676,24 +3676,26 @@ def _upload_section():
             if st.session_state.get("_upload_file_id") != file_id:
                 import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
 
-                with st.spinner(T['reading_file']):
+                with st.status("Processing file…", expanded=True) as _upload_status:
+                    st.write(T['reading_file'])
                     bytes_data = uploaded_file.read()
                     adata = ad.read_h5ad(io.BytesIO(bytes_data))
+                    st.write(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
 
-                st.success(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
+                    if adata.n_obs > 100_000:
+                        st.warning(T['large_dataset'])
 
-                if adata.n_obs > 100_000:
-                    st.warning(T['large_dataset'])
-
-                with st.spinner(T['normalizing']):
+                    st.write(T['normalizing'])
                     sc.pp.normalize_total(adata, target_sum=1e4)
                     sc.pp.log1p(adata)
                     n_top = min(3000, adata.n_vars)
                     sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
                     n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
                     sc.pp.pca(adata, n_comps=n_comps)
+                    st.write("Computing UMAP…")
                     sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
                     sc.tl.umap(adata)
+                    _upload_status.update(label="Done!", state="complete", expanded=False)
 
                 umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
                 for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
