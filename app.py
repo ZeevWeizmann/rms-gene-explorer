@@ -3835,26 +3835,20 @@ with st.expander(T['genes_from_data'], expanded=False):
             )
             return _fig
 
-        # ── Top row: 4 maps (patient + ref) × (cell_type + time) ──────
-        _c1, _c2, _c3, _c4 = st.columns(4)
+        # ── Row 1: cell type (patient + ref) ─────────────────────────
         _has_ct = "cell_type" in umap_up.columns
         _has_tm = "time" in umap_up.columns
 
+        _c1, _c2 = st.columns(2)
         with _c1:
             st.caption("Patient · cell type")
-            if _has_ct:
-                _f = px.scatter(umap_up, x="x", y="y", color="cell_type",
-                                labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                render_mode="webgl", height=380)
-            else:
-                _f = px.scatter(umap_up, x="x", y="y",
-                                labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                render_mode="webgl", height=380)
+            _f = px.scatter(umap_up, x="x", y="y", color="cell_type" if _has_ct else None,
+                            labels={"x": "UMAP 1", "y": "UMAP 2"},
+                            render_mode="webgl", height=420)
             _f.update_traces(marker=dict(size=2.5, opacity=0.8))
             _f.update_layout(plot_bgcolor="white", paper_bgcolor="white",
                              margin=dict(l=0, r=0, t=30, b=0))
             st.plotly_chart(_f, use_container_width=True, key="up_c1")
-
         with _c2:
             st.caption("Reference · cell type")
             if ref_proj is not None:
@@ -3864,21 +3858,17 @@ with st.expander(T['genes_from_data'], expanded=False):
                 _err = st.session_state.get("_ref_model_error", "")
                 st.warning(f"Reference error: {_err}" if _err else "Reference projection not available.")
 
+        # ── Row 2: time (patient + ref) ───────────────────────────────
+        _c3, _c4 = st.columns(2)
         with _c3:
             st.caption("Patient · time")
-            if _has_tm:
-                _f3 = px.scatter(umap_up, x="x", y="y", color="time",
-                                 labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                 render_mode="webgl", height=380)
-            else:
-                _f3 = px.scatter(umap_up, x="x", y="y",
-                                 labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                 render_mode="webgl", height=380)
+            _f3 = px.scatter(umap_up, x="x", y="y", color="time" if _has_tm else None,
+                             labels={"x": "UMAP 1", "y": "UMAP 2"},
+                             render_mode="webgl", height=420)
             _f3.update_traces(marker=dict(size=2.5, opacity=0.8))
             _f3.update_layout(plot_bgcolor="white", paper_bgcolor="white",
                               margin=dict(l=0, r=0, t=30, b=0))
             st.plotly_chart(_f3, use_container_width=True, key="up_c3")
-
         with _c4:
             st.caption("Reference · time")
             if ref_proj is not None:
