@@ -3686,9 +3686,14 @@ with st.expander(T['genes_from_data'], expanded=False):
             with st.spinner(T['normalizing']):
                 sc.pp.normalize_total(adata, target_sum=1e4)
                 sc.pp.log1p(adata)
-                n_comps = min(30, adata.n_obs - 2, adata.n_vars - 1)
+                n_top = min(3000, adata.n_vars)
+                sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
+                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
                 sc.pp.pca(adata, n_comps=n_comps)
-            umap_coords = pd.DataFrame(adata.obsm["X_pca"][:, :2], columns=["x", "y"])
+                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
+                sc.tl.umap(adata)
+
+            umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
             for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
                 if col in adata.obs.columns:
                     umap_coords[col] = adata.obs[col].values
@@ -3719,7 +3724,7 @@ with st.expander(T['genes_from_data'], expanded=False):
                 for col_ui, meta_col in zip(auto_figs, auto_cols):
                     fig_auto = px.scatter(umap_up, x="x", y="y", color=meta_col,
                                          title=meta_col,
-                                         labels={"x": "PC 1", "y": "PC 2"},
+                                         labels={"x": "UMAP 1", "y": "UMAP 2"},
                                          render_mode="webgl", height=400)
                     fig_auto.update_traces(marker=dict(size=2.5, opacity=0.75))
                     fig_auto.update_layout(plot_bgcolor="white", paper_bgcolor="white",
