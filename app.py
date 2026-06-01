@@ -2530,7 +2530,8 @@ def _render_msg_figures(msg, msg_id):
                 else:
                     # Multiple models available — user will select in the tab; default to first
                     _effective_grn_model = _available_ko_models[0]
-                pert_df = compute_ko_perturbation(q_gene, _effective_grn_model)
+                with st.spinner(f"Loading KO simulation for {q_gene}…"):
+                    pert_df = compute_ko_perturbation(q_gene, _effective_grn_model)
 
             if pert_df is None:
                 # Fallback to legacy pre-computed CSVs
@@ -2878,7 +2879,8 @@ def _render_msg_figures(msg, msg_id):
                     )
                     if _sel_model != _effective_grn_model:
                         _effective_grn_model = _sel_model
-                        _reloaded = compute_ko_perturbation(_ko_gene_label, _effective_grn_model)
+                        with st.spinner(f"Loading KO simulation for {_ko_gene_label}…"):
+                            _reloaded = compute_ko_perturbation(_ko_gene_label, _effective_grn_model)
                         if _reloaded is not None:
                             _pert_data = dict(_pert_data)
                             _pert_data["pert_df"] = _reloaded
@@ -2931,7 +2933,8 @@ def _render_msg_figures(msg, msg_id):
                 _ko_label   = f"{_ko_gene_label} KO"
                 _avail_models = _pert_data.get("available_models", [])
                 if _avail_models:
-                    _sim_scored = compute_ko_pop_sim(_ko_gene_label, _effective_grn_model)
+                    with st.spinner(f"Loading population simulation for {_ko_gene_label}…"):
+                        _sim_scored = compute_ko_pop_sim(_ko_gene_label, _effective_grn_model)
                 if _sim_scored is None:
                     # Legacy fallback
                     if _effective_grn_model == "tubb":
