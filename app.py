@@ -68,7 +68,7 @@ _TRANSLATIONS = {
         'search_placeholder': '🔍 Select a gene to explore its program',
         # Main sections
         'settings': 'Settings',
-        'genes_from_data': 'Genes from your data',
+        'genes_from_data': 'Map your data to Explorer',
         'featured_targets': 'Featured drug targets',
         'about': 'About Gene Program Explorer',
         # Settings labels
@@ -208,7 +208,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'search_placeholder': '🔍 Sélectionnez un gène pour explorer son programme',
         # Main sections
         'settings': 'Paramètres',
-        'genes_from_data': 'Gènes depuis vos données',
+        'genes_from_data': 'Cartographier vos données',
         'featured_targets': 'Cibles thérapeutiques',
         'about': "À propos du Gene Program Explorer",
         # Settings labels
