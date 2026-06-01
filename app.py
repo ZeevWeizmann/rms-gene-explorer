@@ -497,6 +497,27 @@ div[data-testid="stSlider"] { padding-top: 4px !important; }
 div[data-testid="stRadio"] label { font-size: 0.82rem !important; }
 div[data-testid="stRadio"] > div { gap: 6px !important; }
 
+/* GRN popover badge — pill with no frame */
+div[data-testid="stPopover"] > button {
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.02em !important;
+    padding: 3px 14px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.18) inset !important;
+    transition: box-shadow 0.15s, transform 0.1s !important;
+}
+div[data-testid="stPopover"] > button:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.22) !important;
+    transform: translateY(-1px) !important;
+    border: none !important;
+}
+div[data-testid="stPopover"] > button:active {
+    transform: translateY(0px) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18) !important;
+}
+
 /* Clear history — small subtle button */
 div[data-testid="stButton"] > button {
     font-size: 0.78rem !important;
@@ -3039,6 +3060,13 @@ def _render_msg_figures(msg, msg_id):
                 '<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
                 'Precalculated Gene Regulation Network applied'
                 '<sup style="color:#9ca3af;font-size:10px;font-weight:400;">*</sup>:</p>',
+                unsafe_allow_html=True,
+            )
+            # Inject color for this specific popover button
+            st.markdown(
+                f'<style>div[data-testid="stPopover"] > button {{'
+                f'background: linear-gradient(180deg,{_hdr_color}dd,{_hdr_color}) !important;'
+                f'color: white !important;}}</style>',
                 unsafe_allow_html=True,
             )
             _pop_col, _spacer = st.columns([1.2, 5])
