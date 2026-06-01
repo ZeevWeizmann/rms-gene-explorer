@@ -3653,40 +3653,6 @@ if query_gene:
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
 
-# ── Settings expander — after results ────────────────────────────
-with st.expander(T['settings'], expanded=False):
-    _c1, _c2 = st.columns([3, 3])
-    dataset_choice = _c1.selectbox(
-        T['vector_db'],
-        options=_ds_options,
-        index=_ds_options.index(dataset_choice),
-        key="dataset_select",
-    )
-    _c2.slider(
-        T['program_size'],
-        min_value=5, max_value=200, value=20, step=5,
-        key=f"slider_{dataset_key}"
-    )
-    _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
-    _cg1.slider(
-        T['grn_hops'],
-        min_value=1, max_value=3, value=1, step=1,
-        key=f"grn_slider_{dataset_key}"
-    )
-    _cg2.slider(
-        T['grn_top_n'],
-        min_value=5, max_value=150, value=10, step=5,
-        key=f"grn_topn_{dataset_key}"
-    )
-    if _gene_in_any_grn:
-        if len(grn_options) == 1:
-            st.caption(f"{T['grn_model']}: **{grn_options[0]}**")
-        else:
-            st.radio(
-                T['grn_model'], options=grn_options,
-                horizontal=True, key=_grn_state_key
-            )
-
 # ── Genes from your data expander — after results ─────────────────
 # st.form prevents ClientDisconnect: file bytes arrive before any rerun is triggered
 with st.expander(T['genes_from_data'], expanded=False):
@@ -3925,6 +3891,40 @@ with st.expander(T['genes_from_data'], expanded=False):
                     st.plotly_chart(_fig_gr, use_container_width=True, key="up_gene2")
                 else:
                     st.info("Reference projection not available.")
+
+# ── Settings expander ────────────────────────────────────────────
+with st.expander(T['settings'], expanded=False):
+    _c1, _c2 = st.columns([3, 3])
+    dataset_choice = _c1.selectbox(
+        T['vector_db'],
+        options=_ds_options,
+        index=_ds_options.index(dataset_choice),
+        key="dataset_select",
+    )
+    _c2.slider(
+        T['program_size'],
+        min_value=5, max_value=200, value=20, step=5,
+        key=f"slider_{dataset_key}"
+    )
+    _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
+    _cg1.slider(
+        T['grn_hops'],
+        min_value=1, max_value=3, value=1, step=1,
+        key=f"grn_slider_{dataset_key}"
+    )
+    _cg2.slider(
+        T['grn_top_n'],
+        min_value=5, max_value=150, value=10, step=5,
+        key=f"grn_topn_{dataset_key}"
+    )
+    if _gene_in_any_grn:
+        if len(grn_options) == 1:
+            st.caption(f"{T['grn_model']}: **{grn_options[0]}**")
+        else:
+            st.radio(
+                T['grn_model'], options=grn_options,
+                horizontal=True, key=_grn_state_key
+            )
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
