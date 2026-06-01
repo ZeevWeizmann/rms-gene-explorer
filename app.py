@@ -3086,18 +3086,28 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Header
-            st.markdown(
-                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
-                'Precalculated Gene Regulation Network applied'
-                '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
-                unsafe_allow_html=True,
-            )
+            # One row: header text | popover button | selectbox (if multiple GRNs)
+            if len(_adj_avail_keys) >= 2:
+                _hdr_col, _pop_col, _sel_col, _spacer = st.columns([2.8, 1, 2.5, 1], vertical_alignment="bottom")
+            else:
+                _hdr_col, _pop_col, _spacer = st.columns([2.8, 1, 4], vertical_alignment="bottom")
 
-            # One row: selectbox (when multiple GRNs) + popover gene-list button
-            _sel_col, _pop_col, _spacer = st.columns([3, 1, 3])
-            with _sel_col:
-                if len(_adj_avail_keys) >= 2:
+            with _hdr_col:
+                st.markdown(
+                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0 0 6px 0;">'
+                    'Precalculated Gene Regulation Network applied'
+                    '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
+                    unsafe_allow_html=True,
+                )
+            with _pop_col:
+                with st.popover(_hdr_name or "GRN", use_container_width=True):
+                    st.markdown(f"**{_hdr_name}** — {_hdr_size}")
+                    st.markdown(
+                        "  ".join(f"`{g}`" for g in _popover_genes)
+                        if _popover_genes else "_No genes loaded_"
+                    )
+            if len(_adj_avail_keys) >= 2:
+                with _sel_col:
                     _adj_chosen_label = st.selectbox(
                         "GRN",
                         options=_adj_radio_options,
@@ -3113,19 +3123,6 @@ def _render_msg_figures(msg, msg_id):
                         )
                         _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
                         _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
-                else:
-                    st.markdown(
-                        f'<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0;">'
-                        f'{_hdr_name}</p>',
-                        unsafe_allow_html=True,
-                    )
-            with _pop_col:
-                with st.popover("genes", use_container_width=True):
-                    st.markdown(f"**{_hdr_name}** — {_hdr_size}")
-                    st.markdown(
-                        "  ".join(f"`{g}`" for g in _popover_genes)
-                        if _popover_genes else "_No genes loaded_"
-                    )
             st.markdown(
                 '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
                 '<sup>*</sup> Contact the Gene Program Explorer team if this network '
