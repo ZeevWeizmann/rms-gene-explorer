@@ -2988,20 +2988,72 @@ def _render_msg_figures(msg, msg_id):
                 _msg_prog_genes  = msg.get("grn_program_genes") or [_msg_q_gene]
             _live_adj      = None
             _live_grn_fig  = None
-            if _msg_grn_key:
-                try:
-                    _live_grn_mat, _live_grn_genes = load_grn(_msg_grn_key)
-                    _live_adj = build_grn_adjacency(
-                        _live_grn_mat, _live_grn_genes,
-                        gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
-                        hops=grn_hops, top_n=program_size,
-                    )
-                    _live_grn_fig, _ = build_grn_figure(
-                        _live_grn_mat, _live_grn_genes, _msg_q_gene,
-                        gene_set=_msg_prog_genes, hops=grn_hops, top_n=grn_top_n,
-                    )
-                except Exception:
-                    pass
+
+            # ── GRN selector (above expander) ────────────────────────────────
+            _ADJ_MODEL_LABELS = {
+                "full":  "Full program (200 genes)",
+                "mki67": "MKI67 program (201 genes)",
+                "tubb":  "TUBB program (201 genes)",
+            }
+            # Filter to models containing the query gene; fall back to all
+            try:
+                _adj_avail_keys = [
+                    k for k, gs in [("full", _full_gene_set), ("mki67", _mki67_gene_set), ("tubb", _tubb_gene_set)]
+                    if not _msg_q_gene or _msg_q_gene in gs
+                ]
+            except Exception:
+                _adj_avail_keys = ["full", "mki67", "tubb"]
+            if not _adj_avail_keys:
+                _adj_avail_keys = ["full", "mki67", "tubb"]
+
+            _adj_radio_options = [_ADJ_MODEL_LABELS[k] for k in _adj_avail_keys]
+            _adj_default_label = _ADJ_MODEL_LABELS.get(_msg_grn_key, _adj_radio_options[0])
+            if _adj_default_label not in _adj_radio_options:
+                _adj_default_label = _adj_radio_options[0]
+
+            _adj_grn_ss_key = f"adj_grn_{msg_id}"
+            if st.session_state.get(_adj_grn_ss_key) not in _adj_radio_options:
+                st.session_state[_adj_grn_ss_key] = _adj_default_label
+
+            st.markdown(
+                '<p style="font-size:12px;font-weight:600;color:#6b7280;'
+                'margin:8px 0 2px 0;">Precalculated Gene Regulation Network applied:</p>'
+                '<p style="font-size:11px;color:#9ca3af;margin:0 0 6px 0;">'
+                'Contact the Gene Program Explorer team if it does not cover your program.</p>',
+                unsafe_allow_html=True,
+            )
+            if len(_adj_avail_keys) >= 2:
+                _adj_chosen_label = st.radio(
+                    "GRN",
+                    options=_adj_radio_options,
+                    index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
+                    horizontal=True,
+                    label_visibility="collapsed",
+                    key=f"adj_grn_radio_{msg_id}",
+                )
+                st.session_state[_adj_grn_ss_key] = _adj_chosen_label
+            else:
+                _adj_chosen_label = _adj_radio_options[0]
+            # map label back to key
+            _selected_adj_key = next(
+                (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
+                _msg_grn_key or "full",
+            )
+            # ────────────────────────────────────────────────────────────────
+
+            try:
+                _live_grn_mat, _live_grn_genes = load_grn(_selected_adj_key)
+                _live_adj = build_grn_adjacency(
+                    _live_grn_mat, _live_grn_genes,
+                    gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
+                    hops=grn_hops, top_n=program_size,
+                )
+                _live_grn_fig, _ = build_grn_figure(
+                    _live_grn_mat, _live_grn_genes, _msg_q_gene,
+                    gene_set=_msg_prog_genes, hops=grn_hops, top_n=grn_top_n,
+                )
+            except Exception:
+                pass
             if _live_adj is None:
                 _live_adj = msg.get("grn_adj")
             if _live_grn_fig is None:
@@ -3010,6 +3062,30 @@ def _render_msg_figures(msg, msg_id):
             if _live_adj is not None:
                 with st.expander("Program Regulatory Interactions", expanded=True):
                     adj_df, genes_list = _live_adj
+                    # ── info badge ────────────────────────────────────────────
+                    _grn_label_map = {
+                        "full":  ("Full program GRN",  "#059669"),
+                        "mki67": ("MKI67 program GRN", "#0891b2"),
+                        "tubb":  ("TUBB program GRN",  "#0891b2"),
+                    }
+                    _glabel, _gcolor = _grn_label_map.get(
+                        _selected_adj_key, (_selected_adj_key or "GRN", "#64748b"))
+                    _n_shown = len(genes_list)
+                    _badge = (
+                        f'<span style="display:inline-flex;align-items:center;gap:8px;'
+                        f'background:{_gcolor}18;border:1px solid {_gcolor}55;'
+                        f'border-radius:8px;padding:5px 14px;font-size:12px;">'
+                        f'<span style="background:{_gcolor};color:white;border-radius:4px;'
+                        f'padding:1px 8px;font-weight:700;font-size:11px;">{_glabel}</span>'
+                        f'<span style="color:#374151;">query: <b>{_msg_q_gene}</b></span>'
+                        f'<span style="color:#d1d5db;">·</span>'
+                        f'<span style="color:#374151;">program size: <b>{program_size}</b></span>'
+                        f'<span style="color:#d1d5db;">·</span>'
+                        f'<span style="color:#374151;">nodes shown: <b>{_n_shown}</b></span>'
+                        f'</span>'
+                    )
+                    st.markdown(_badge, unsafe_allow_html=True)
+                    # ─────────────────────────────────────────────────────────
                     import numpy as _np2
                     adj_slp = adj_df.copy()
                     adj_slp[:] = _np2.sign(adj_df.values) * _np2.log1p(_np2.abs(adj_df.values))
@@ -3021,7 +3097,7 @@ def _render_msg_figures(msg, msg_id):
                         color_continuous_scale="RdYlGn",
                         color_continuous_midpoint=0,
                         zmin=-vmax, zmax=vmax,
-                        title="Program Regulatory Interactions (signed log1p)",
+                        title="",
                         height=600,
                         aspect="auto"
                     )
