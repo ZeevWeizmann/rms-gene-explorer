@@ -1212,6 +1212,26 @@ def get_umap_reducer():
         return None
 
 
+@st.cache_resource(show_spinner=False)
+def load_reference_mapping_models(has_token: bool = False):
+    import pickle
+    try:
+        token = st.secrets.get("HF_TOKEN", None) if has_token else None
+    except Exception:
+        token = None
+    try:
+        pca_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_model.pkl",  repo_type="dataset", token=token)
+        umap_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_model.pkl", repo_type="dataset", token=token)
+        gene_path = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv", repo_type="dataset", token=token)
+        with open(pca_path,  "rb") as f: pca_model  = pickle.load(f)
+        with open(umap_path, "rb") as f: umap_model = pickle.load(f)
+        ref_genes = pd.read_csv(gene_path)["gene"].tolist()
+        return pca_model, umap_model, ref_genes
+    except Exception as e:
+        st.session_state["_ref_model_error"] = str(e)
+        return None, None, None
+
+
 @st.cache_data
 def compute_ko_perturbation(gene: str, grn_model: str):
     """Compute per-gene per-timepoint WT vs KO means from h5ad files.
@@ -3709,6 +3729,34 @@ with st.expander(T['genes_from_data'], expanded=False):
             st.session_state["_upload_umap"]       = umap_coords
             st.session_state["_upload_var_names"]  = uploaded_var_names
             st.session_state["_upload_expr"]       = X_f16
+
+            # ── Project onto reference UMAP ───────────────────────────
+            try:
+                _has_tok = "HF_TOKEN" in st.secrets
+            except Exception:
+                _has_tok = False
+            _pca, _umap_ref, _ref_genes = load_reference_mapping_models(has_token=_has_tok)
+            if _pca is not None and _ref_genes is not None:
+                _var_set = set(uploaded_var_names)
+                _common  = [g for g in _ref_genes if g in _var_set]
+                if len(_common) >= 50:
+                    _pat_idx = [uploaded_var_names.index(g) for g in _common]
+                    _ref_idx = [_ref_genes.index(g) for g in _common]
+                    _X = np.zeros((len(X_f16), len(_ref_genes)), dtype="float32")
+                    _X[:, _ref_idx] = X_f16[:, _pat_idx].astype("float32")
+                    _ref_proj = pd.DataFrame(_umap_ref.transform(_pca.transform(_X)), columns=["x", "y"])
+                    for _c in ["cell_type", "time", "cluster", "leiden", "louvain", "sample"]:
+                        if _c in umap_coords.columns:
+                            _ref_proj[_c] = umap_coords[_c].values
+                    st.session_state["_upload_ref_proj"]   = _ref_proj
+                    st.session_state["_upload_n_common"]   = len(_common)
+                else:
+                    st.session_state["_upload_ref_proj"]   = None
+                    st.session_state["_upload_n_common"]   = len(_common)
+            else:
+                st.session_state["_upload_ref_proj"]   = None
+                st.session_state["_upload_n_common"]   = 0
+
     # ── Render — always show if data in session_state ────────────────
     umap_up   = st.session_state.get("_upload_umap")
     var_names = st.session_state.get("_upload_var_names", [])
