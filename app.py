@@ -561,10 +561,13 @@ details > summary:hover {
     color: #000 !important;
     background: transparent !important;
 }
-details.grey-expander > summary,
-details.grey-expander > summary:hover,
-details.grey-expander > summary * {
-    color: #9aa0a6 !important;
+/* Uniform gap between top-level expanders */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+    margin-bottom: 0 !important;
+}
+div[data-testid="stExpander"] {
+    margin-top: 0 !important;
+    margin-bottom: 6px !important;
 }
 
 /* Disable Streamlit header title link — clicking it would reload the page */
@@ -3953,17 +3956,6 @@ with st.expander(T['featured_targets'], expanded=False):
                 st.session_state[f"recent_clicked_{dataset_key}"] = _fg
                 st.rerun()
 
-st.html("""<script>(function(){
-    var _grey=['Featured drug targets','About Gene Program Explorer','Cibles thérapeutiques','À propos'];
-    function _go(){
-        var doc=window.parent.document;
-        doc.querySelectorAll('details summary').forEach(function(s){
-            if(_grey.some(function(t){return s.textContent.trim().startsWith(t);})){
-                [s].concat(Array.from(s.querySelectorAll('*'))).forEach(function(el){
-                    el.style.setProperty('color','#9aa0a6','important');
-                });}});}
-    setTimeout(_go,600);setTimeout(_go,1500);setTimeout(_go,4000);
-})();</script>""")
 
 # ── About sections (bottom of page) ────────────────────────────
 _about_expander = st.expander(T['about'], expanded=False)
