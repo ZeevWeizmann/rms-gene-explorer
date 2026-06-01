@@ -8,8 +8,8 @@ networkx
 anndata
 scanpy
 leidenalg
-numba
+numba==0.65.1
 joblib
 pot
 seaborn
-umap-learn
+umap-learn==0.5.12
