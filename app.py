@@ -621,6 +621,9 @@ st.html("""
             }
             if (!searchBlock) { setTimeout(setup, 400); return; }
 
+            // Pull search up to reduce gap after Personalise expander
+            searchBlock.style.marginTop = '-0.9rem';
+
             // Height of Streamlit's own fixed header toolbar
             var headerEl = doc.querySelector('[data-testid="stHeader"]');
             var headerH = headerEl ? headerEl.offsetHeight : 0;
@@ -2375,7 +2378,6 @@ st.markdown(f"""
 
 # Personalise expander placeholder — filled after data loads (sits above search)
 _personalise_container = st.container()
-st.markdown('<div style="margin-bottom:-1.2rem"></div>', unsafe_allow_html=True)
 
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
