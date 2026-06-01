@@ -3855,7 +3855,11 @@ with st.expander(T['genes_from_data'], expanded=False):
                 )
                 st.plotly_chart(_fig_r, use_container_width=True, key="upload_right_fig")
             else:
-                st.info("Reference projection not available. Re-upload your file after the app fully loads.")
+                _err = st.session_state.get("_ref_model_error", "")
+                if _err:
+                    st.warning(f"Reference model error: {_err}")
+                else:
+                    st.info("Reference projection not available. Re-upload your file after the app fully loads.")
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
