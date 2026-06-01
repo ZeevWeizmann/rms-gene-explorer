@@ -3117,14 +3117,14 @@ def _render_msg_figures(msg, msg_id):
                     index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
                     key=f"adj_grn_sel_{msg_id}",
                 )
-                    if _adj_chosen_label != _cur_label:
-                        st.session_state[_adj_grn_ss_key] = _adj_chosen_label
-                        _selected_adj_key = next(
-                            (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
-                            _selected_adj_key,
-                        )
-                        _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
-                        _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
+                if _adj_chosen_label != _cur_label:
+                    st.session_state[_adj_grn_ss_key] = _adj_chosen_label
+                    _selected_adj_key = next(
+                        (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
+                        _selected_adj_key,
+                    )
+                    _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
+                    _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
             st.markdown(
                 '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
