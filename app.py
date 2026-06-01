@@ -1219,15 +1219,17 @@ def load_reference_mapping_models(has_token: bool = False):
         token = st.secrets.get("HF_TOKEN", None) if has_token else None
     except Exception:
         token = None
-    # No try/except here — exceptions propagate so @st.cache_resource won't
-    # cache a failure, and the next call will retry automatically.
-    pca_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_model.pkl",  repo_type="dataset", token=token)
-    umap_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_model.pkl", repo_type="dataset", token=token)
-    gene_path = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv", repo_type="dataset", token=token)
-    with open(pca_path,  "rb") as f: pca_model  = pickle.load(f)
-    with open(umap_path, "rb") as f: umap_model = pickle.load(f)
+    # No try/except — failures propagate so @st.cache_resource won't cache them.
+    # Uses KNN in PCA space instead of umap.transform() to avoid numba pickle issues.
+    pca_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_model.pkl",   repo_type="dataset", token=token)
+    pca_coords_path = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_coords.npy",  repo_type="dataset", token=token)
+    umap_coords_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_coords.npy", repo_type="dataset", token=token)
+    gene_path = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv",  repo_type="dataset", token=token)
+    with open(pca_path, "rb") as f: pca_model = pickle.load(f)
+    ref_pca_coords  = np.load(pca_coords_path).astype(np.float32)
+    ref_umap_coords = np.load(umap_coords_path).astype(np.float32)
     ref_genes = pd.read_csv(gene_path)["gene"].tolist()
-    return pca_model, umap_model, ref_genes
+    return pca_model, ref_pca_coords, ref_umap_coords, ref_genes
 
 
 @st.cache_data
@@ -3734,10 +3736,10 @@ with st.expander(T['genes_from_data'], expanded=False):
             except Exception:
                 _has_tok = False
             try:
-                _pca, _umap_ref, _ref_genes = load_reference_mapping_models(has_token=_has_tok)
+                _pca, _ref_pca_coords, _ref_umap_coords, _ref_genes = load_reference_mapping_models(has_token=_has_tok)
                 st.session_state.pop("_ref_model_error", None)
             except Exception as _e:
-                _pca, _umap_ref, _ref_genes = None, None, None
+                _pca, _ref_pca_coords, _ref_umap_coords, _ref_genes = None, None, None, None
                 st.session_state["_ref_model_error"] = str(_e)
             if _pca is not None and _ref_genes is not None:
                 _var_set = set(uploaded_var_names)
@@ -3747,7 +3749,16 @@ with st.expander(T['genes_from_data'], expanded=False):
                     _ref_idx = [_ref_genes.index(g) for g in _common]
                     _X = np.zeros((len(X_f16), len(_ref_genes)), dtype="float32")
                     _X[:, _ref_idx] = X_f16[:, _pat_idx].astype("float32")
-                    _ref_proj = pd.DataFrame(_umap_ref.transform(_pca.transform(_X)), columns=["x", "y"])
+                    _X_pca = _pca.transform(_X)
+                    # KNN projection in PCA space — no umap.transform(), no numba pickle
+                    from sklearn.neighbors import NearestNeighbors
+                    _nn = NearestNeighbors(n_neighbors=5, metric="euclidean", algorithm="auto")
+                    _nn.fit(_ref_pca_coords)
+                    _dists, _idxs = _nn.kneighbors(_X_pca)
+                    _w = 1.0 / (_dists + 1e-8)
+                    _w /= _w.sum(axis=1, keepdims=True)
+                    _proj_xy = np.sum(_ref_umap_coords[_idxs] * _w[:, :, np.newaxis], axis=1)
+                    _ref_proj = pd.DataFrame(_proj_xy, columns=["x", "y"])
                     for _c in ["cell_type", "time", "cluster", "leiden", "louvain", "sample"]:
                         if _c in umap_coords.columns:
                             _ref_proj[_c] = umap_coords[_c].values
