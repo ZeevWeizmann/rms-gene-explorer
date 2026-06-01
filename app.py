@@ -80,6 +80,7 @@ _TRANSLATIONS = {
         # Data upload
         'upload_note': 'Processed in memory only — not stored anywhere. Max ~50k cells.',
         'upload_label': 'Upload .h5ad file',
+        'load_file': 'Load file',
         'loading': 'Loading...',
         'reading_file': 'Reading file...',
         'normalizing': 'Normalizing → PCA → UMAP (1–2 min for ~10k cells)…',
@@ -219,6 +220,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         # Data upload
         'upload_note': 'Traité en mémoire uniquement — aucune donnée stockée. Max ~50k cellules.',
         'upload_label': 'Importer un fichier .h5ad',
+        'load_file': 'Charger le fichier',
         'loading': 'Chargement...',
         'reading_file': 'Lecture du fichier...',
         'normalizing': 'Normalisation → ACP → UMAP (1–2 min pour ~10k cellules)…',
@@ -596,6 +598,8 @@ div[data-baseweb="tab-panel"] div[data-testid="stSelectbox"] > div::before {{
 st.html("""
 <script>
 (function() {
+    if (window._stickySearchDone) return;
+    window._stickySearchDone = true;
     function setup() {
         try {
             var doc = document;
@@ -3664,38 +3668,38 @@ with st.expander(T['settings'], expanded=False):
             )
 
 # ── Genes from your data expander — after results ─────────────────
-@st.fragment
-def _upload_section():
-    with st.expander(T['genes_from_data'], expanded=False):
-        st.caption(T['upload_note'])
+with st.expander(T['genes_from_data'], expanded=False):
+    st.caption(T['upload_note'])
+    with st.form("_upload_form", clear_on_submit=False):
         uploaded_file = st.file_uploader(T['upload_label'], type=["h5ad"], key="h5ad_upload")
+        _submit = st.form_submit_button(T.get('load_file', 'Load file'))
 
-        if uploaded_file is not None:
-            file_id = uploaded_file.name + str(uploaded_file.size)
+    if _submit and uploaded_file is not None:
+        file_id = uploaded_file.name + str(uploaded_file.size)
 
-            if st.session_state.get("_upload_file_id") != file_id:
-                import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
+        if st.session_state.get("_upload_file_id") != file_id:
+            import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
 
-                with st.status("Processing file…", expanded=True) as _upload_status:
-                    st.write(T['reading_file'])
-                    bytes_data = uploaded_file.read()
-                    adata = ad.read_h5ad(io.BytesIO(bytes_data))
-                    st.write(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
+            with st.status("Processing file…", expanded=True) as _upload_status:
+                st.write(T['reading_file'])
+                bytes_data = uploaded_file.read()
+                adata = ad.read_h5ad(io.BytesIO(bytes_data))
+                st.write(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
 
-                    if adata.n_obs > 100_000:
-                        st.warning(T['large_dataset'])
+                if adata.n_obs > 100_000:
+                    st.warning(T['large_dataset'])
 
-                    st.write(T['normalizing'])
-                    sc.pp.normalize_total(adata, target_sum=1e4)
-                    sc.pp.log1p(adata)
-                    n_top = min(3000, adata.n_vars)
-                    sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
-                    n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
-                    sc.pp.pca(adata, n_comps=n_comps)
-                    st.write("Computing UMAP…")
-                    sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
-                    sc.tl.umap(adata)
-                    _upload_status.update(label="Done!", state="complete", expanded=False)
+                st.write(T['normalizing'])
+                sc.pp.normalize_total(adata, target_sum=1e4)
+                sc.pp.log1p(adata)
+                n_top = min(3000, adata.n_vars)
+                sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
+                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
+                sc.pp.pca(adata, n_comps=n_comps)
+                st.write("Computing UMAP…")
+                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
+                sc.tl.umap(adata)
+                _upload_status.update(label="Done!", state="complete", expanded=False)
 
                 umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
                 for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
@@ -3754,8 +3758,6 @@ def _upload_section():
                     fig_gene.update_layout(plot_bgcolor="white", paper_bgcolor="white",
                                            margin=dict(l=0, r=0, t=30, b=0))
                     st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
-
-_upload_section()
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
