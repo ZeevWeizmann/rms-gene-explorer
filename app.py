@@ -2546,7 +2546,8 @@ def _render_msg_figures(msg, msg_id):
     # Only show tabs if at least one slot has data
     if not any(has for _, _, has in _ALL_TAB_SLOTS):
         return
-    _tab_defs   = [(k, t) for k, t, _ in _ALL_TAB_SLOTS]
+    # Only include tabs that have data — hide empty ones entirely
+    _tab_defs   = [(k, t) for k, t, has in _ALL_TAB_SLOTS if has]
     _tab_has    = {k: has for k, _, has in _ALL_TAB_SLOTS}
 
     # ── Pre-load perturbation data (radio rendered inside tabs, value read from session state) ──
