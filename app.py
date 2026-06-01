@@ -1219,17 +1219,15 @@ def load_reference_mapping_models(has_token: bool = False):
         token = st.secrets.get("HF_TOKEN", None) if has_token else None
     except Exception:
         token = None
-    try:
-        pca_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_model.pkl",  repo_type="dataset", token=token)
-        umap_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_model.pkl", repo_type="dataset", token=token)
-        gene_path = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv", repo_type="dataset", token=token)
-        with open(pca_path,  "rb") as f: pca_model  = pickle.load(f)
-        with open(umap_path, "rb") as f: umap_model = pickle.load(f)
-        ref_genes = pd.read_csv(gene_path)["gene"].tolist()
-        return pca_model, umap_model, ref_genes
-    except Exception as e:
-        st.session_state["_ref_model_error"] = str(e)
-        return None, None, None
+    # No try/except here — exceptions propagate so @st.cache_resource won't
+    # cache a failure, and the next call will retry automatically.
+    pca_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_model.pkl",  repo_type="dataset", token=token)
+    umap_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_model.pkl", repo_type="dataset", token=token)
+    gene_path = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv", repo_type="dataset", token=token)
+    with open(pca_path,  "rb") as f: pca_model  = pickle.load(f)
+    with open(umap_path, "rb") as f: umap_model = pickle.load(f)
+    ref_genes = pd.read_csv(gene_path)["gene"].tolist()
+    return pca_model, umap_model, ref_genes
 
 
 @st.cache_data
@@ -3735,7 +3733,12 @@ with st.expander(T['genes_from_data'], expanded=False):
                 _has_tok = "HF_TOKEN" in st.secrets
             except Exception:
                 _has_tok = False
-            _pca, _umap_ref, _ref_genes = load_reference_mapping_models(has_token=_has_tok)
+            try:
+                _pca, _umap_ref, _ref_genes = load_reference_mapping_models(has_token=_has_tok)
+                st.session_state.pop("_ref_model_error", None)
+            except Exception as _e:
+                _pca, _umap_ref, _ref_genes = None, None, None
+                st.session_state["_ref_model_error"] = str(_e)
             if _pca is not None and _ref_genes is not None:
                 _var_set = set(uploaded_var_names)
                 _common  = [g for g in _ref_genes if g in _var_set]
