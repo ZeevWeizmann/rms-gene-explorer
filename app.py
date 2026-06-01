@@ -3711,7 +3711,7 @@ def _upload_render():
                                margin=dict(l=0, r=0, t=30, b=0))
         st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
 
-with st.expander(T['genes_from_data'], expanded=False):
+with st.expander(T['genes_from_data'], expanded=st.session_state.get("_upload_umap") is not None):
     st.caption(T['upload_note'])
     with st.form("_upload_form", clear_on_submit=False):
         uploaded_file = st.file_uploader(T['upload_label'], type=["h5ad"], key="h5ad_upload")
@@ -3737,7 +3737,7 @@ with st.expander(T['genes_from_data'], expanded=False):
                 st.write("Computing UMAP…")
                 sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
                 sc.tl.umap(adata)
-                _upload_status.update(label="Done!", state="complete", expanded=False)
+                _upload_status.update(label="Done!", state="complete", expanded=True)
             umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
             for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
                 if col in adata.obs.columns:
