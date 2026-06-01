@@ -3044,7 +3044,7 @@ def _render_msg_figures(msg, msg_id):
                         st.info(
                             "Population response is not available for program-specific GRN models "
                             f"(**{_p_hdr_name}**). This model was trained on a sub-population of cells "
-                            "and does not cover the full cellular landscape — population scoring "
+                            "and does not cover the full cellular landscape. Population scoring "
                             "would not reflect real state transitions.",
                             icon="⚠️",
                         )
