@@ -3086,19 +3086,19 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # One row: header text | popover button | selectbox (if multiple GRNs)
+            # Header on its own line
+            st.markdown(
+                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
+                'Precalculated Gene Regulation Network applied'
+                '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
+                unsafe_allow_html=True,
+            )
+            # Second row: popover button + selectbox (if multiple GRNs)
             if len(_adj_avail_keys) >= 2:
-                _hdr_col, _pop_col, _sel_col, _spacer = st.columns([2.8, 1.8, 2.5, 0.5], vertical_alignment="bottom")
+                _pop_col, _sel_col, _spacer = st.columns([1.5, 3, 2])
             else:
-                _hdr_col, _pop_col, _spacer = st.columns([2.8, 1.8, 3], vertical_alignment="bottom")
+                _pop_col, _spacer = st.columns([1.5, 5])
 
-            with _hdr_col:
-                st.markdown(
-                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0 0 6px 0;">'
-                    'Precalculated Gene Regulation Network applied'
-                    '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
-                    unsafe_allow_html=True,
-                )
             with _pop_col:
                 with st.popover(_hdr_name or "GRN", use_container_width=True):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
