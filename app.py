@@ -3957,8 +3957,10 @@ st.markdown("""<script>(function(){
     var _grey=['Featured drug targets','About Gene Program Explorer','Cibles thérapeutiques','À propos'];
     function _go(){document.querySelectorAll('details summary').forEach(function(s){
         if(_grey.some(function(t){return s.textContent.trim().startsWith(t);})){
-            s.closest('details').classList.add('grey-expander');}});}
-    setTimeout(_go,800);setTimeout(_go,2500);setTimeout(_go,5000);
+            [s].concat(Array.from(s.querySelectorAll('*'))).forEach(function(el){
+                el.style.setProperty('color','#9aa0a6','important');
+            });}});}
+    setTimeout(_go,600);setTimeout(_go,1500);setTimeout(_go,4000);
 })();</script>""", unsafe_allow_html=True)
 
 # ── About sections (bottom of page) ────────────────────────────
