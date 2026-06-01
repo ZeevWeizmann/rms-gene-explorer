@@ -2375,6 +2375,7 @@ st.markdown(f"""
 
 # Personalise expander placeholder — filled after data loads (sits above search)
 _personalise_container = st.container()
+st.markdown('<div style="margin-bottom:-1.2rem"></div>', unsafe_allow_html=True)
 
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
