@@ -655,7 +655,7 @@ st.html("""
     setTimeout(setup, 2000);
 })();
 </script>
-""", height=1)
+""")
 
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
