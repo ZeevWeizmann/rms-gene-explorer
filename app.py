@@ -3761,40 +3761,101 @@ with st.expander(T['genes_from_data'], expanded=False):
     umap_up   = st.session_state.get("_upload_umap")
     var_names = st.session_state.get("_upload_var_names", [])
     expr_up   = st.session_state.get("_upload_expr")
+    ref_proj  = st.session_state.get("_upload_ref_proj")
+    n_common  = st.session_state.get("_upload_n_common", 0)
     if umap_up is not None:
         overlap = [g for g in var_names if g in set(genes)]
-        st.info(T['genes_found'].format(n_overlap=len(overlap), n_total=len(var_names)))
-        auto_cols = [c for c in ["cell_type", "time"] if c in umap_up.columns]
-        if auto_cols:
-            auto_figs = st.columns(len(auto_cols))
-            for col_ui, meta_col in zip(auto_figs, auto_cols):
-                fig_auto = px.scatter(umap_up, x="x", y="y", color=meta_col,
-                                     title=meta_col,
-                                     labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                     render_mode="webgl", height=400)
-                fig_auto.update_traces(marker=dict(size=2.5, opacity=0.75))
-                fig_auto.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                       margin=dict(l=0, r=0, t=30, b=0))
-                col_ui.plotly_chart(fig_auto, use_container_width=True,
-                                    key=f"upload_auto_{meta_col}")
+        _info = T['genes_found'].format(n_overlap=len(overlap), n_total=len(var_names))
+        if ref_proj is not None:
+            _info += f"  \nReference projection: {n_common} shared genes."
+        elif n_common > 0:
+            _info += f"  \nReference projection unavailable — only {n_common} shared genes (need ≥50). Use HGNC symbols."
+        st.info(_info)
+
+        meta_cols = [c for c in ["cell_type", "time", "cluster", "leiden", "louvain", "sample"] if c in umap_up.columns]
+
+        # ── Gene selector ─────────────────────────────────────────────
         gene_sel_up = st.selectbox(
             T['color_umap'],
             options=[T['select_gene_option']] + sorted(var_names),
             key="upload_gene_sel"
         )
+        gene_expr = None
         if gene_sel_up != T['select_gene_option'] and gene_sel_up in var_names:
             g_idx = var_names.index(gene_sel_up)
-            plot_up = umap_up.copy()
-            plot_up["expression"] = expr_up[:, g_idx].astype(float)
-            fig_gene = px.scatter(plot_up, x="x", y="y", color="expression",
-                                  color_continuous_scale="Viridis",
-                                  title=f"{gene_sel_up}",
-                                  labels={"x": "UMAP 1", "y": "UMAP 2"},
-                                  render_mode="webgl", height=420)
-            fig_gene.update_traces(marker=dict(size=2.5, opacity=0.8))
-            fig_gene.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                                   margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig_gene, use_container_width=True, key="upload_gene_fig")
+            gene_expr = expr_up[:, g_idx].astype(float)
+
+        # ── Two-column layout ─────────────────────────────────────────
+        col_left, col_right = st.columns(2)
+
+        with col_left:
+            st.caption("Your data — UMAP")
+            _plt = umap_up.copy()
+            if gene_expr is not None:
+                _plt["expression"] = gene_expr
+                _fig_l = px.scatter(_plt, x="x", y="y", color="expression",
+                                    color_continuous_scale="Viridis", title=gene_sel_up,
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=420)
+            elif meta_cols:
+                _fig_l = px.scatter(_plt, x="x", y="y", color=meta_cols[0],
+                                    title=meta_cols[0],
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=420)
+            else:
+                _fig_l = px.scatter(_plt, x="x", y="y",
+                                    labels={"x": "UMAP 1", "y": "UMAP 2"},
+                                    render_mode="webgl", height=420)
+            _fig_l.update_traces(marker=dict(size=2.5, opacity=0.8))
+            _fig_l.update_layout(plot_bgcolor="white", paper_bgcolor="white",
+                                 margin=dict(l=0, r=0, t=30, b=0))
+            st.plotly_chart(_fig_l, use_container_width=True, key="upload_left_fig")
+
+        with col_right:
+            st.caption("Your cells on RMS reference UMAP")
+            if ref_proj is not None:
+                import plotly.graph_objects as go
+                _fig_r = go.Figure()
+                _ref_bg = umap_df.sample(min(5000, len(umap_df)), random_state=0) if len(umap_df) > 5000 else umap_df
+                _fig_r.add_trace(go.Scattergl(
+                    x=_ref_bg["x"], y=_ref_bg["y"], mode="markers",
+                    marker=dict(color="lightgrey", size=2, opacity=0.4),
+                    name="RMS reference", showlegend=True,
+                ))
+                _proj = ref_proj.copy()
+                if gene_expr is not None:
+                    _proj["expression"] = gene_expr
+                    _fig_r.add_trace(go.Scattergl(
+                        x=_proj["x"], y=_proj["y"], mode="markers",
+                        marker=dict(color=gene_expr, colorscale="Viridis", size=3,
+                                    opacity=0.85, colorbar=dict(title=gene_sel_up, thickness=10),
+                                    showscale=True),
+                        name="Your cells", showlegend=True,
+                    ))
+                elif meta_cols and meta_cols[0] in _proj.columns:
+                    _pal = px.colors.qualitative.Plotly
+                    for _i, _cat in enumerate(_proj[meta_cols[0]].astype(str).unique()):
+                        _m = _proj[meta_cols[0]].astype(str) == _cat
+                        _fig_r.add_trace(go.Scattergl(
+                            x=_proj.loc[_m, "x"], y=_proj.loc[_m, "y"], mode="markers",
+                            marker=dict(color=_pal[_i % len(_pal)], size=3, opacity=0.85),
+                            name=_cat, showlegend=True,
+                        ))
+                else:
+                    _fig_r.add_trace(go.Scattergl(
+                        x=_proj["x"], y=_proj["y"], mode="markers",
+                        marker=dict(color="#e45756", size=3, opacity=0.85),
+                        name="Your cells", showlegend=True,
+                    ))
+                _fig_r.update_layout(
+                    title="RMS reference", xaxis_title="UMAP 1", yaxis_title="UMAP 2",
+                    plot_bgcolor="white", paper_bgcolor="white",
+                    margin=dict(l=0, r=0, t=30, b=0), height=420,
+                    legend=dict(itemsizing="constant", font=dict(size=10)),
+                )
+                st.plotly_chart(_fig_r, use_container_width=True, key="upload_right_fig")
+            else:
+                st.info("Reference projection not available. Re-upload your file after the app fully loads.")
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
