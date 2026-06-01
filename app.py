@@ -561,6 +561,11 @@ details > summary:hover {
     color: #000 !important;
     background: transparent !important;
 }
+details.grey-expander > summary,
+details.grey-expander > summary:hover,
+details.grey-expander > summary * {
+    color: #9aa0a6 !important;
+}
 
 /* Disable Streamlit header title link — clicking it would reload the page */
 header[data-testid="stHeader"] a,
@@ -3952,8 +3957,8 @@ st.markdown("""<script>(function(){
     var _grey=['Featured drug targets','About Gene Program Explorer','Cibles thérapeutiques','À propos'];
     function _go(){document.querySelectorAll('details summary').forEach(function(s){
         if(_grey.some(function(t){return s.textContent.trim().startsWith(t);})){
-            var p=s.querySelector('p,span');if(p)p.style.color='#9aa0a6';}});}
-    setTimeout(_go,800);setTimeout(_go,2500);
+            s.closest('details').classList.add('grey-expander');}});}
+    setTimeout(_go,800);setTimeout(_go,2500);setTimeout(_go,5000);
 })();</script>""", unsafe_allow_html=True)
 
 # ── About sections (bottom of page) ────────────────────────────
