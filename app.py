@@ -2374,9 +2374,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Personalise expander placeholder — filled after data loads (sits above search)
-_personalise_container = st.container()
-
 # Search bar placeholder — filled after data loads (sits directly below title)
 _search_container = st.container()
 
@@ -3656,9 +3653,9 @@ if query_gene:
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
 
-# ── Genes from your data expander — above search (rendered via placeholder) ──
+# ── Genes from your data expander — after results ─────────────────
 # st.form prevents ClientDisconnect: file bytes arrive before any rerun is triggered
-with _personalise_container.expander(T['genes_from_data'], expanded=False):
+with st.expander(T['genes_from_data'], expanded=False):
     st.caption(T['upload_note'])
     with st.form("_upload_form", clear_on_submit=False):
         uploaded_file = st.file_uploader(T['upload_label'], type=["h5ad"], key="h5ad_upload")
