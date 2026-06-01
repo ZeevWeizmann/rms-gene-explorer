@@ -3042,7 +3042,7 @@ def _render_msg_figures(msg, msg_id):
                 'Contact the Gene Program Explorer team if it does not cover your program.</p>',
                 unsafe_allow_html=True,
             )
-            _pop_col, _size_col, _spacer = st.columns([1.2, 1, 4])
+            _pop_col, _spacer = st.columns([1.2, 5])
             with _pop_col:
                 with st.popover(
                     _hdr_name or "GRN",
@@ -3053,11 +3053,6 @@ def _render_msg_figures(msg, msg_id):
                         " · ".join(f"`{g}`" for g in _popover_genes)
                         if _popover_genes else "_No genes loaded_"
                     )
-            with _size_col:
-                st.markdown(
-                    f'<p style="color:#9ca3af;font-size:13px;margin:6px 0 0 0;">· {_hdr_size}</p>',
-                    unsafe_allow_html=True,
-                )
 
             if len(_adj_avail_keys) >= 2:
                 _adj_chosen_label = st.radio(
