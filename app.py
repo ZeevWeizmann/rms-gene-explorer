@@ -3052,6 +3052,12 @@ def _render_msg_figures(msg, msg_id):
                         " · ".join(f"`{g}`" for g in _popover_genes)
                         if _popover_genes else "_No genes loaded_"
                     )
+            st.markdown(
+                '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
+                '<sup>*</sup> Contact the Gene Program Explorer team if this network '
+                'does not cover your program of interest.</p>',
+                unsafe_allow_html=True,
+            )
 
             if len(_adj_avail_keys) >= 2:
                 _adj_chosen_label = st.radio(
@@ -3112,12 +3118,6 @@ def _render_msg_figures(msg, msg_id):
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
                     st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
-                    st.markdown(
-                        '<p style="font-size:10px;color:#d1d5db;margin:4px 0 0 0;">'
-                        '<sup>*</sup> Contact the Gene Program Explorer team if this network '
-                        'does not cover your program of interest.</p>',
-                        unsafe_allow_html=True,
-                    )
             if _live_grn_fig is not None:
                 with st.expander("Gene Regulatory Interactions", expanded=True):
                     st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
