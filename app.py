@@ -2546,8 +2546,8 @@ def _render_msg_figures(msg, msg_id):
     # Only show tabs if at least one slot has data
     if not any(has for _, _, has in _ALL_TAB_SLOTS):
         return
-    # Only include tabs that have data — hide empty ones entirely
-    _tab_defs   = [(k, t) for k, t, has in _ALL_TAB_SLOTS if has]
+    # Always show all 6 tabs; grey out ones with no data
+    _tab_defs   = [(k, t) for k, t, has in _ALL_TAB_SLOTS]
     _tab_has    = {k: has for k, _, has in _ALL_TAB_SLOTS}
 
     # ── Pre-load perturbation data (radio rendered inside tabs, value read from session state) ──
@@ -2615,9 +2615,9 @@ def _render_msg_figures(msg, msg_id):
                     )
 
             if pert_df is None:
-                # No data at all — remove perturbation tabs retroactively
-                _tab_defs = [(k, t) for k, t in _tab_defs
-                             if k not in ("perturbation", "targets", "drugs")]
+                # No data — mark perturbation tabs as empty so they appear greyed out
+                for _no_data_k in ("perturbation", "targets", "drugs"):
+                    _tab_has[_no_data_k] = False
             else:
                 bar_fig, _ = build_perturbation_figures(
                     pert_df, q_gene, ko_gene=_ko_gene_label,
