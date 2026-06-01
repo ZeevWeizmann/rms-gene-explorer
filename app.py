@@ -3114,7 +3114,7 @@ def _render_msg_figures(msg, msg_id):
                 _lbl_col, _sel_col, _spacer2 = st.columns([2, 3, 2], vertical_alignment="center")
                 with _lbl_col:
                     st.markdown(
-                        '<p style="font-size:13px;color:#6b7280;margin:0;">Select another precalculated GRN:</p>',
+                        '<p style="font-size:17px;font-weight:600;color:#374151;margin:0;">Select another precalculated GRN:</p>',
                         unsafe_allow_html=True,
                     )
                 with _sel_col:
