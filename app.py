@@ -3054,9 +3054,9 @@ def _render_msg_figures(msg, msg_id):
 
             # Header + popover badge
             st.markdown(
-                '<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
+                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
                 'Precalculated Gene Regulation Network applied'
-                '<sup style="color:#9ca3af;font-size:10px;font-weight:400;">*</sup>:</p>',
+                '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                 unsafe_allow_html=True,
             )
             _pop_col, _spacer = st.columns([1.2, 5])
