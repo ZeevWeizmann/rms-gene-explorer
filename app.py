@@ -3948,6 +3948,14 @@ with st.expander(T['featured_targets'], expanded=False):
                 st.session_state[f"recent_clicked_{dataset_key}"] = _fg
                 st.rerun()
 
+st.markdown("""<script>(function(){
+    var _grey=['Featured drug targets','About Gene Program Explorer','Cibles thérapeutiques','À propos'];
+    function _go(){document.querySelectorAll('details summary').forEach(function(s){
+        if(_grey.some(function(t){return s.textContent.trim().startsWith(t);})){
+            var p=s.querySelector('p,span');if(p)p.style.color='#9aa0a6';}});}
+    setTimeout(_go,800);setTimeout(_go,2500);
+})();</script>""", unsafe_allow_html=True)
+
 # ── About sections (bottom of page) ────────────────────────────
 _about_expander = st.expander(T['about'], expanded=False)
 with _about_expander:
