@@ -3015,11 +3015,28 @@ def _render_msg_figures(msg, msg_id):
             if st.session_state.get(_adj_grn_ss_key) not in _adj_radio_options:
                 st.session_state[_adj_grn_ss_key] = _adj_default_label
 
+            _ADJ_SHORT = {
+                "full":  ("Full program",  "200 genes"),
+                "mki67": ("MKI67 program", "201 genes"),
+                "tubb":  ("TUBB program",  "201 genes"),
+            }
+            # Resolve current selection from session state (before rendering radio)
+            _cur_label = st.session_state.get(_adj_grn_ss_key, _adj_default_label)
+            _selected_adj_key = next(
+                (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _cur_label),
+                _msg_grn_key or (_adj_avail_keys[0] if _adj_avail_keys else "full"),
+            )
+            _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
+            _hdr_suffix = (
+                f' <span style="color:#374151;font-weight:700;">{_hdr_name}</span>'
+                f' <span style="color:#9ca3af;">· {_hdr_size}</span>'
+            ) if _hdr_name else ""
+
             st.markdown(
-                '<p style="font-size:12px;font-weight:600;color:#6b7280;'
-                'margin:8px 0 2px 0;">Precalculated Gene Regulation Network applied:</p>'
-                '<p style="font-size:11px;color:#9ca3af;margin:0 0 6px 0;">'
-                'Contact the Gene Program Explorer team if it does not cover your program.</p>',
+                f'<p style="font-size:12px;font-weight:600;color:#6b7280;margin:8px 0 2px 0;">'
+                f'Precalculated Gene Regulation Network applied:{_hdr_suffix}</p>'
+                f'<p style="font-size:11px;color:#9ca3af;margin:0 0 6px 0;">'
+                f'Contact the Gene Program Explorer team if it does not cover your program.</p>',
                 unsafe_allow_html=True,
             )
             if len(_adj_avail_keys) >= 2:
@@ -3031,14 +3048,12 @@ def _render_msg_figures(msg, msg_id):
                     label_visibility="collapsed",
                     key=f"adj_grn_radio_{msg_id}",
                 )
-                st.session_state[_adj_grn_ss_key] = _adj_chosen_label
-            else:
-                _adj_chosen_label = _adj_radio_options[0]
-            # map label back to key
-            _selected_adj_key = next(
-                (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
-                _msg_grn_key or "full",
-            )
+                if _adj_chosen_label != _cur_label:
+                    st.session_state[_adj_grn_ss_key] = _adj_chosen_label
+                    _selected_adj_key = next(
+                        (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
+                        _selected_adj_key,
+                    )
             # ────────────────────────────────────────────────────────────────
 
             try:
@@ -3062,30 +3077,6 @@ def _render_msg_figures(msg, msg_id):
             if _live_adj is not None:
                 with st.expander("Program Regulatory Interactions", expanded=True):
                     adj_df, genes_list = _live_adj
-                    # ── info badge ────────────────────────────────────────────
-                    _grn_label_map = {
-                        "full":  ("Full program GRN",  "#059669"),
-                        "mki67": ("MKI67 program GRN", "#0891b2"),
-                        "tubb":  ("TUBB program GRN",  "#0891b2"),
-                    }
-                    _glabel, _gcolor = _grn_label_map.get(
-                        _selected_adj_key, (_selected_adj_key or "GRN", "#64748b"))
-                    _n_shown = len(genes_list)
-                    _badge = (
-                        f'<span style="display:inline-flex;align-items:center;gap:8px;'
-                        f'background:{_gcolor}18;border:1px solid {_gcolor}55;'
-                        f'border-radius:8px;padding:5px 14px;font-size:12px;">'
-                        f'<span style="background:{_gcolor};color:white;border-radius:4px;'
-                        f'padding:1px 8px;font-weight:700;font-size:11px;">{_glabel}</span>'
-                        f'<span style="color:#374151;">query: <b>{_msg_q_gene}</b></span>'
-                        f'<span style="color:#d1d5db;">·</span>'
-                        f'<span style="color:#374151;">program size: <b>{program_size}</b></span>'
-                        f'<span style="color:#d1d5db;">·</span>'
-                        f'<span style="color:#374151;">nodes shown: <b>{_n_shown}</b></span>'
-                        f'</span>'
-                    )
-                    st.markdown(_badge, unsafe_allow_html=True)
-                    # ─────────────────────────────────────────────────────────
                     import numpy as _np2
                     adj_slp = adj_df.copy()
                     adj_slp[:] = _np2.sign(adj_df.values) * _np2.log1p(_np2.abs(adj_df.values))
