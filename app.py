@@ -1247,9 +1247,10 @@ def compute_ko_perturbation(gene: str, grn_model: str):
 
 @st.cache_data
 def compute_ko_pop_sim(gene: str, grn_model: str):
-    """Project WT and KO simulations through UMAP and score populations.
+    """Score WT and KO simulation populations using CENPF/DNAJB1 thresholds.
+    Uses pre-computed umap_coords.csv for layout (no UMAP fitting needed).
     Returns DataFrame with columns: x_wt, y_wt, time, x_ko, y_ko, pop_wt, pop_ko, or None."""
-    import os
+    import os, sys, traceback as _tb
     import numpy as _np_s
     from scipy.sparse import issparse as _issparse_s
 
@@ -1258,61 +1259,69 @@ def compute_ko_pop_sim(gene: str, grn_model: str):
     ko_path = _get_h5ad_path(f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
     if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
         return None
-    reducer = get_umap_reducer()
-    if reducer is None:
-        return None
+
+    # Load pre-computed UMAP coords (800 KB, no fitting required)
+    coords_local = os.path.join(LOCAL_DIR, "umap_coords.csv")
+    if not os.path.exists(coords_local):
+        try:
+            token = st.secrets.get("HF_TOKEN", None)
+            from huggingface_hub import hf_hub_download as _hf_dl
+            coords_local = _hf_dl(repo_id=REPO_ID, filename="data/umap_coords.csv",
+                                   repo_type="dataset", token=token)
+        except Exception:
+            print("[compute_ko_pop_sim] umap_coords.csv download failed:", _tb.format_exc(), file=sys.stderr)
+            coords_local = None   # proceed without UMAP coords
+
     try:
-        import anndata
+        import anndata, pandas as _pd_s
         adata_wt = anndata.read_h5ad(wt_path)
         adata_ko = anndata.read_h5ad(ko_path)
         X_wt = adata_wt.X.toarray() if _issparse_s(adata_wt.X) else _np_s.array(adata_wt.X)
         X_ko = adata_ko.X.toarray() if _issparse_s(adata_ko.X) else _np_s.array(adata_ko.X)
         wt_times = adata_wt.obs["time"].values if "time" in adata_wt.obs.columns else _np_s.zeros(adata_wt.n_obs)
-        ko_times = adata_ko.obs["time"].values if "time" in adata_ko.obs.columns else _np_s.zeros(adata_ko.n_obs)
-
-        # UMAP projection
-        emb_wt = reducer.transform(X_wt)
-        emb_ko = reducer.transform(X_ko)
-
-        # Population scoring: use WT to compute thresholds
-        genes_list = list(adata_wt.var_names)
-        def _score_pop(X_mat, cenpf_thr, dnajb1_thr, wt_cenpf_mean, wt_cenpf_std, wt_dnajb1_mean, wt_dnajb1_std):
-            pops = []
-            for i in range(X_mat.shape[0]):
-                cenpf_z  = (X_mat[i, genes_list.index("CENPF")]  - wt_cenpf_mean)  / (wt_cenpf_std  + 1e-9)  if "CENPF"  in genes_list else 0.0
-                dnajb1_z = (X_mat[i, genes_list.index("DNAJB1")] - wt_dnajb1_mean) / (wt_dnajb1_std + 1e-9)  if "DNAJB1" in genes_list else 0.0
-                if dnajb1_z >= dnajb1_thr:
-                    pops.append("quiescent")
-                elif cenpf_z >= cenpf_thr:
-                    pops.append("proliferative")
-                else:
-                    pops.append("intermediate")
-            return pops
-
-        if "CENPF" in genes_list and "DNAJB1" in genes_list:
-            ci = genes_list.index("CENPF");  di = genes_list.index("DNAJB1")
-            wt_cenpf_vals  = X_wt[:, ci]; wt_dnajb1_vals = X_wt[:, di]
-            wt_cm = float(wt_cenpf_vals.mean());  wt_cs = float(wt_cenpf_vals.std())
-            wt_dm = float(wt_dnajb1_vals.mean()); wt_ds = float(wt_dnajb1_vals.std())
-            cenpf_z_wt  = (wt_cenpf_vals  - wt_cm)  / (wt_cs  + 1e-9)
-            dnajb1_z_wt = (wt_dnajb1_vals - wt_dm)  / (wt_ds  + 1e-9)
-            cenpf_thr70  = float(_np_s.percentile(cenpf_z_wt,  70))
-            dnajb1_thr70 = float(_np_s.percentile(dnajb1_z_wt, 70))
-            pop_wt = _score_pop(X_wt, cenpf_thr70, dnajb1_thr70, wt_cm, wt_cs, wt_dm, wt_ds)
-            pop_ko = _score_pop(X_ko, cenpf_thr70, dnajb1_thr70, wt_cm, wt_cs, wt_dm, wt_ds)
-        else:
-            pop_wt = ["intermediate"] * X_wt.shape[0]
-            pop_ko = ["intermediate"] * X_ko.shape[0]
-
-        # Align rows: pair WT and KO cells by position (same number of cells assumed)
         n = min(X_wt.shape[0], X_ko.shape[0])
+
+        # UMAP layout: use pre-computed coords (same for WT and KO — same cells, different colours)
+        if coords_local and os.path.exists(coords_local):
+            coords_df = _pd_s.read_csv(coords_local)
+            emb_x = coords_df["x"].values[:n]
+            emb_y = coords_df["y"].values[:n]
+        else:
+            emb_x = _np_s.zeros(n)
+            emb_y = _np_s.zeros(n)
+
+        # Population scoring: CENPF (proliferative) / DNAJB1 (quiescent), thresholds from WT
+        genes_list = list(adata_wt.var_names)
+        if "CENPF" in genes_list and "DNAJB1" in genes_list:
+            ci = genes_list.index("CENPF"); di = genes_list.index("DNAJB1")
+            wt_cm = float(X_wt[:, ci].mean()); wt_cs = float(X_wt[:, ci].std())
+            wt_dm = float(X_wt[:, di].mean()); wt_ds = float(X_wt[:, di].std())
+            cenpf_z_wt  = (X_wt[:, ci] - wt_cm) / (wt_cs + 1e-9)
+            dnajb1_z_wt = (X_wt[:, di] - wt_dm) / (wt_ds + 1e-9)
+            cenpf_thr  = float(_np_s.percentile(cenpf_z_wt,  70))
+            dnajb1_thr = float(_np_s.percentile(dnajb1_z_wt, 70))
+
+            def _score(X_mat):
+                cz = (X_mat[:, ci] - wt_cm) / (wt_cs + 1e-9)
+                dz = (X_mat[:, di] - wt_dm) / (wt_ds + 1e-9)
+                pops = _np_s.where(dz >= dnajb1_thr, "quiescent",
+                       _np_s.where(cz >= cenpf_thr,  "proliferative", "intermediate"))
+                return pops.tolist()
+
+            pop_wt = _score(X_wt)
+            pop_ko = _score(X_ko)
+        else:
+            pop_wt = ["intermediate"] * n
+            pop_ko = ["intermediate"] * n
+
         return pd.DataFrame({
-            "x_wt":  emb_wt[:n, 0], "y_wt": emb_wt[:n, 1],
+            "x_wt":  emb_x,      "y_wt":  emb_y,
             "time":  wt_times[:n],
-            "x_ko":  emb_ko[:n, 0], "y_ko": emb_ko[:n, 1],
-            "pop_wt": pop_wt[:n],   "pop_ko": pop_ko[:n],
+            "x_ko":  emb_x,      "y_ko":  emb_y,   # same layout, different colour
+            "pop_wt": pop_wt[:n], "pop_ko": pop_ko[:n],
         })
     except Exception:
+        print("[compute_ko_pop_sim] failed:", _tb.format_exc(), file=sys.stderr)
         return None
 
 
