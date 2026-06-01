@@ -3686,11 +3686,19 @@ with st.expander(T['genes_from_data'], expanded=False):
             with st.spinner(T['normalizing']):
                 sc.pp.normalize_total(adata, target_sum=1e4)
                 sc.pp.log1p(adata)
-                n_top = min(3000, adata.n_vars)
+
+                _MAX_UMAP = 15_000
+                if adata.n_obs > _MAX_UMAP:
+                    import numpy as _np_up
+                    _idx = _np_up.random.default_rng(42).choice(adata.n_obs, _MAX_UMAP, replace=False)
+                    adata = adata[_idx].copy()
+                    st.caption(f"Subsampled to {_MAX_UMAP:,} cells for UMAP computation.")
+
+                n_top = min(2000, adata.n_vars)
                 sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
-                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
+                n_comps = min(30, adata.n_obs - 2, adata.n_vars - 1)
                 sc.pp.pca(adata, n_comps=n_comps)
-                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
+                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(20, n_comps))
                 sc.tl.umap(adata)
 
             umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
