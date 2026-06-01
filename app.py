@@ -598,7 +598,7 @@ st.html("""
 (function() {
     function setup() {
         try {
-            var doc = window.parent.document;
+            var doc = document;
             var scrollEl = doc.querySelector('[data-testid="stMain"]');
             if (!scrollEl) { setTimeout(setup, 400); return; }
 
@@ -655,7 +655,7 @@ st.html("""
     setTimeout(setup, 2000);
 })();
 </script>
-""")
+""", unsafe_allow_javascript=True)
 
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
@@ -2693,15 +2693,13 @@ def _render_msg_figures(msg, msg_id):
         var EMPTY_IDX = {_empty_indices};
         var PROG_IDX  = {_prog_tab_idx};
         var INIT_KEY  = 'tab_inited_{msg_id}';
+        // Capture script element before any async callbacks
+        var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // window.frameElement = the <iframe> element that contains this script
-            var myIframe = window.frameElement;
-            if (!myIframe) {{ setTimeout(_initTabs, 100); return; }}
-
-            // Walk up from this iframe to find the nearest ancestor containing a tablist
+            // Walk up from our script element to find the nearest tablist
             var myTablist = null;
-            var el = myIframe.parentElement;
+            var el = myScript ? myScript.parentElement : null;
             while (el) {{
                 var tl = el.querySelector('[role="tablist"]');
                 if (tl) {{ myTablist = tl; break; }}
@@ -2712,13 +2710,12 @@ def _render_msg_figures(msg, msg_id):
             var btns = myTablist.querySelectorAll('[role="tab"]');
 
             // Always restore all tabs to full opacity first, then selectively grey.
-            // This ensures re-runs of old-message JS don't leave stale greying.
             btns.forEach(function(b) {{
                 b.style.opacity = '';
                 b.style.pointerEvents = '';
             }});
 
-            // Grey out empty tabs (only when this message actually has empty tabs)
+            // Grey out empty tabs
             if (EMPTY_IDX.length > 0) {{
                 EMPTY_IDX.forEach(function(i) {{
                     if (btns[i]) {{
@@ -2737,7 +2734,7 @@ def _render_msg_figures(msg, msg_id):
         setTimeout(_initTabs, 300);
     }})();
     </script>"""
-    st.html(_js_code)
+    st.html(_js_code, unsafe_allow_javascript=True)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
