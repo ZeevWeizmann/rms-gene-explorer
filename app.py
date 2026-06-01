@@ -2530,11 +2530,19 @@ def _render_msg_figures(msg, msg_id):
             pert_df = None
 
             if _available_ko_models:
-                # Dynamic path: pick model from registry
-                if len(_available_ko_models) == 1:
-                    _effective_grn_model = _available_ko_models[0]
+                # Dynamic path: pick model from registry.
+                # Follow the Network-tab GRN selector (adj_grn_{msg_id}) so that
+                # changing GRN in the Network tab also updates the population simulation.
+                _net_grn_label = st.session_state.get(f"adj_grn_{msg_id}")
+                _NET_LABEL_TO_MODEL_P = {
+                    "HSPA1B · MKI67 program (200 genes)": "full",
+                    "MKI67 program (201 genes)": "mki67",
+                    "TUBB program (201 genes)": "tubb",
+                }
+                _pref_model = _NET_LABEL_TO_MODEL_P.get(_net_grn_label)
+                if _pref_model and _pref_model in _available_ko_models:
+                    _effective_grn_model = _pref_model
                 else:
-                    # Multiple models available — user will select in the tab; default to first
                     _effective_grn_model = _available_ko_models[0]
                 with st.spinner(f"Loading KO simulation for {q_gene}…"):
                     pert_df = compute_ko_perturbation(q_gene, _effective_grn_model)
@@ -2874,28 +2882,14 @@ def _render_msg_figures(msg, msg_id):
                 _ko_gene_label       = _pert_data["ko_label"]
                 _avail_models_tab    = _pert_data.get("available_models", [])
 
-                # ── GRN model selector (only when multiple models available) ──
-                if len(_avail_models_tab) > 1:
-                    _sel_model = st.radio(
-                        "GRN model",
-                        options=_avail_models_tab,
-                        index=_avail_models_tab.index(_effective_grn_model) if _effective_grn_model in _avail_models_tab else 0,
-                        key=f"{msg_id}_pert_model_sel",
-                        horizontal=True,
-                    )
-                    if _sel_model != _effective_grn_model:
-                        _effective_grn_model = _sel_model
-                        with st.spinner(f"Loading KO simulation for {_ko_gene_label}…"):
-                            _reloaded = compute_ko_perturbation(_ko_gene_label, _effective_grn_model)
-                        if _reloaded is not None:
-                            _pert_data = dict(_pert_data)
-                            _pert_data["pert_df"] = _reloaded
-                            _pert_data["effective_model"] = _effective_grn_model
-                            _bar_fig2, _ = build_perturbation_figures(
-                                _reloaded, _pert_data.get("query_gene", ""),
-                                ko_gene=_ko_gene_label,
-                                real_expr_means=load_real_expr_means())
-                            _pert_data["bar_fig"] = _bar_fig2
+                # ── GRN model label (controlled by Network tab selector) ──
+                _PERT_MODEL_SHORT = {
+                    "full":  "HSPA1B · MKI67 (200 genes)",
+                    "mki67": "MKI67 program (201 genes)",
+                    "tubb":  "TUBB program (201 genes)",
+                }
+                _pert_grn_label = _PERT_MODEL_SHORT.get(_effective_grn_model, _effective_grn_model)
+                st.caption(f"🧬 GRN: **{_pert_grn_label}** · change via Regulatory Interactions tab")
 
                 # ── Gene expression dynamics ───────────────────────────────
                 with st.expander(f"Gene expression after {_ko_gene_label} KO", expanded=True):
