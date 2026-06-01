@@ -1170,6 +1170,7 @@ def get_umap_reducer():
     import os
     data_path   = os.path.join(LOCAL_DIR, "data_full.h5ad")
     coords_path = os.path.join(LOCAL_DIR, "umap_coords.csv")
+    import sys, traceback as _tb
     # On cloud: download from HuggingFace if not present locally
     if not os.path.exists(data_path):
         try:
@@ -1178,6 +1179,7 @@ def get_umap_reducer():
             data_path = _hf_dl(repo_id=REPO_ID, filename="data/data_full.h5ad",
                                 repo_type="dataset", token=token)
         except Exception:
+            print("[get_umap_reducer] data_full.h5ad download failed:", _tb.format_exc(), file=sys.stderr)
             return None
     if not os.path.exists(coords_path):
         try:
@@ -1186,6 +1188,7 @@ def get_umap_reducer():
             coords_path = _hf_dl(repo_id=REPO_ID, filename="data/umap_coords.csv",
                                   repo_type="dataset", token=token)
         except Exception:
+            print("[get_umap_reducer] umap_coords.csv download failed:", _tb.format_exc(), file=sys.stderr)
             return None
     try:
         import anndata
@@ -1200,6 +1203,7 @@ def get_umap_reducer():
         reducer.embedding_ = coords_df[["x", "y"]].values
         return reducer
     except Exception:
+        print("[get_umap_reducer] UMAP fit failed:", _tb.format_exc(), file=sys.stderr)
         return None
 
 
