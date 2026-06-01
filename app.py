@@ -3092,11 +3092,11 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Row 1: header text + popover button, vertically centered
-            _hdr_col, _pop_col, _spacer1 = st.columns([4.5, 1.8, 0.5], vertical_alignment="center")
+            # Row 1: header text + popover button, bottom-aligned
+            _hdr_col, _pop_col, _spacer1 = st.columns([4.5, 1.8, 0.5], vertical_alignment="bottom")
             with _hdr_col:
                 st.markdown(
-                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0;">'
+                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0 0 4px 0;">'
                     'Precalculated Gene Regulation Network applied'
                     '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                     unsafe_allow_html=True,
@@ -3109,14 +3109,20 @@ def _render_msg_figures(msg, msg_id):
                         if _popover_genes else "_No genes loaded_"
                     )
 
-            # Row 2: selectbox (only if multiple GRNs)
+            # Row 2: "Select another GRN" label + selectbox on one line
             if len(_adj_avail_keys) >= 2:
-                _sel_col, _spacer2 = st.columns([4, 3])
+                _lbl_col, _sel_col, _spacer2 = st.columns([1.8, 3, 2], vertical_alignment="center")
+                with _lbl_col:
+                    st.markdown(
+                        '<p style="font-size:13px;color:#6b7280;margin:0;text-align:right;">Select another GRN:</p>',
+                        unsafe_allow_html=True,
+                    )
                 with _sel_col:
                     _adj_chosen_label = st.selectbox(
-                        "Select another precalculated GRN",
+                        "GRN",
                         options=_adj_radio_options,
                         index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
+                        label_visibility="collapsed",
                         key=f"adj_grn_sel_{msg_id}",
                     )
                     if _adj_chosen_label != _cur_label:
