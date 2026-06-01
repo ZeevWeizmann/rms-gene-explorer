@@ -497,22 +497,28 @@ div[data-testid="stSlider"] { padding-top: 4px !important; }
 div[data-testid="stRadio"] label { font-size: 0.82rem !important; }
 div[data-testid="stRadio"] > div { gap: 6px !important; }
 
-/* GRN popover badge — no border frame */
+/* GRN popover badge — blue with white text */
 div[data-testid="stPopover"] button,
 div[data-testid="stPopover"] button:focus,
 div[data-testid="stPopover"] button:hover {
+    background-color: #2563eb !important;
+    color: white !important;
     border: none !important;
     outline: none !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.2) inset !important;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.35) !important;
     border-radius: 6px !important;
     font-weight: 700 !important;
     font-size: 0.82rem !important;
     letter-spacing: 0.02em !important;
-    transition: box-shadow 0.15s, transform 0.1s !important;
+    transition: box-shadow 0.15s, transform 0.1s, background-color 0.15s !important;
 }
 div[data-testid="stPopover"] button:hover {
+    background-color: #1d4ed8 !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 4px 10px rgba(37,99,235,0.45) !important;
+}
+div[data-testid="stPopover"] button p {
+    color: white !important;
 }
 
 /* Clear history — small subtle button */
@@ -3086,11 +3092,11 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Row 1: header text + popover button
-            _hdr_col, _pop_col, _spacer1 = st.columns([3.5, 1.5, 2], vertical_alignment="bottom")
+            # Row 1: header text + popover button (one line)
+            _hdr_col, _pop_col, _spacer1 = st.columns([4.5, 1.8, 0.5], vertical_alignment="bottom")
             with _hdr_col:
                 st.markdown(
-                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0 0 6px 0;">'
+                    '<p style="font-size:15px;font-weight:600;color:#374151;margin:0 0 6px 0;white-space:nowrap;">'
                     'Precalculated Gene Regulation Network applied'
                     '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                     unsafe_allow_html=True,
