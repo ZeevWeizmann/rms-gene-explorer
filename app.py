@@ -2561,7 +2561,7 @@ def _render_msg_figures(msg, msg_id):
                 # Dynamic path: pick model from registry.
                 # Follow the Network-tab GRN selector (adj_grn_{msg_id}) so that
                 # changing GRN in the Network tab also updates the population simulation.
-                _net_grn_label = st.session_state.get(f"adj_grn_{msg_id}")
+                _net_grn_label = st.session_state.get(f"adj_grn_sel_{msg_id}")
                 _NET_LABEL_TO_MODEL_P = {
                     "HSPA1B · MKI67 program (200 genes)": "full",
                     "MKI67 program (201 genes)": "mki67",
@@ -3113,7 +3113,8 @@ def _render_msg_figures(msg, msg_id):
             if _adj_default_label not in _adj_radio_options:
                 _adj_default_label = _adj_radio_options[0]
 
-            _adj_grn_ss_key = f"adj_grn_{msg_id}"
+            # Single session-state key = selectbox widget key (no sync lag)
+            _adj_grn_ss_key = f"adj_grn_sel_{msg_id}"
             if st.session_state.get(_adj_grn_ss_key) not in _adj_radio_options:
                 st.session_state[_adj_grn_ss_key] = _adj_default_label
 
@@ -3122,8 +3123,8 @@ def _render_msg_figures(msg, msg_id):
                 "mki67": ("MKI67 program", "201 genes"),
                 "tubb":  ("TUBB program",  "201 genes"),
             }
-            # Resolve current selection from session state (before rendering radio)
-            _cur_label = st.session_state.get(_adj_grn_ss_key, _adj_default_label)
+            # Resolve current selection from selectbox session state (always up-to-date)
+            _cur_label = st.session_state[_adj_grn_ss_key]
             _selected_adj_key = next(
                 (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _cur_label),
                 _msg_grn_key or (_adj_avail_keys[0] if _adj_avail_keys else "full"),
@@ -3153,22 +3154,13 @@ def _render_msg_figures(msg, msg_id):
                         if _popover_genes else "_No genes loaded_"
                     )
 
-            # Row 3+4: label then selectbox (only if multiple GRNs)
+            # Row 3+4: selectbox (only if multiple GRNs available)
             if len(_adj_avail_keys) >= 2:
-                _adj_chosen_label = st.selectbox(
+                st.selectbox(
                     "Select another precalculated GRN",
                     options=_adj_radio_options,
-                    index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
-                    key=f"adj_grn_sel_{msg_id}",
+                    key=_adj_grn_ss_key,   # Streamlit manages value; no index needed
                 )
-                if _adj_chosen_label != _cur_label:
-                    st.session_state[_adj_grn_ss_key] = _adj_chosen_label
-                    _selected_adj_key = next(
-                        (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
-                        _selected_adj_key,
-                    )
-                    _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
-                    _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
             st.markdown(
                 '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
