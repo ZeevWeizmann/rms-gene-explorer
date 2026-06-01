@@ -3109,16 +3109,14 @@ def _render_msg_figures(msg, msg_id):
                         if _popover_genes else "_No genes loaded_"
                     )
 
-            # Rows 3+4: selector (only if multiple GRNs)
+            # Row 3: label + selectbox inline (only if multiple GRNs)
             if len(_adj_avail_keys) >= 2:
-                # Row 3: label
-                st.markdown(
-                    '<p style="font-size:13px;color:#6b7280;margin:8px 0 2px 0;">'
-                    'Select another precalculated GRN:</p>',
-                    unsafe_allow_html=True,
-                )
-                # Row 4: selectbox
-                _sel_col, _spacer2 = st.columns([3, 4])
+                _lbl_col, _sel_col, _spacer2 = st.columns([2, 3, 2], vertical_alignment="center")
+                with _lbl_col:
+                    st.markdown(
+                        '<p style="font-size:13px;color:#6b7280;margin:0;">Select another precalculated GRN:</p>',
+                        unsafe_allow_html=True,
+                    )
                 with _sel_col:
                     _adj_chosen_label = st.selectbox(
                         "GRN",
