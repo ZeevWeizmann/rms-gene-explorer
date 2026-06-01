@@ -3055,31 +3055,37 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Header row: label text + popover badge + gene count
+            # Header + badge button (toggle gene list)
             st.markdown(
                 '<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
                 'Precalculated Gene Regulation Network applied'
                 '<sup style="color:#9ca3af;font-size:10px;font-weight:400;">*</sup>:</p>',
                 unsafe_allow_html=True,
             )
-            # Inject color for this specific popover button
-            st.markdown(
-                f'<style>div[data-testid="stPopover"] > button {{'
-                f'background: linear-gradient(180deg,{_hdr_color}dd,{_hdr_color}) !important;'
-                f'color: white !important;}}</style>',
-                unsafe_allow_html=True,
-            )
-            _pop_col, _spacer = st.columns([1.2, 5])
-            with _pop_col:
-                with st.popover(
-                    _hdr_name or "GRN",
-                    use_container_width=True,
-                ):
-                    st.markdown(f"**{_hdr_name}** — {_hdr_size}")
-                    st.markdown(
-                        " · ".join(f"`{g}`" for g in _popover_genes)
-                        if _popover_genes else "_No genes loaded_"
-                    )
+            _genes_ss_key = f"adj_genes_open_{msg_id}"
+            _btn_col, _spacer = st.columns([1.5, 5])
+            with _btn_col:
+                st.markdown(
+                    f'<div style="background:linear-gradient(180deg,{_hdr_color}dd,{_hdr_color});'
+                    f'color:white;border-radius:6px;padding:4px 14px;font-size:13px;font-weight:700;'
+                    f'box-shadow:0 2px 5px {_hdr_color}55,0 1px 0 rgba(255,255,255,0.2) inset;'
+                    f'display:inline-block;cursor:default;letter-spacing:0.02em;">'
+                    f'{_hdr_name or "GRN"}</div>',
+                    unsafe_allow_html=True,
+                )
+            # Toggle gene list via small link-button
+            _genes_open = st.session_state.get(_genes_ss_key, False)
+            if st.button(
+                "▾ show genes" if not _genes_open else "▴ hide genes",
+                key=f"adj_genes_btn_{msg_id}",
+            ):
+                st.session_state[_genes_ss_key] = not _genes_open
+                st.rerun()
+            if st.session_state.get(_genes_ss_key, False):
+                st.markdown(
+                    f"**{_hdr_name}** — {_hdr_size}\n\n"
+                    + ("  ".join(f"`{g}`" for g in _popover_genes) if _popover_genes else "_No genes loaded_")
+                )
             st.markdown(
                 '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
                 '<sup>*</sup> Contact the Gene Program Explorer team if this network '
