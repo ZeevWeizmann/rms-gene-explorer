@@ -2557,17 +2557,17 @@ def _render_msg_figures(msg, msg_id):
             q_gene = msg.get("query_gene", "MKI67")
             _effective_grn_model = None
             pert_df = None
+            _net_grn_label = st.session_state.get(f"adj_grn_sel_{msg_id}")
+            _NET_LABEL_TO_MODEL_P = {
+                "HSPA1B · MKI67 program (200 genes)": "full",
+                "MKI67 program (201 genes)": "mki67",
+                "TUBB program (201 genes)": "tubb",
+            }
 
             if _available_ko_models:
                 # Dynamic path: pick model from registry.
                 # Follow the Network-tab GRN selector (adj_grn_{msg_id}) so that
                 # changing GRN in the Network tab also updates the population simulation.
-                _net_grn_label = st.session_state.get(f"adj_grn_sel_{msg_id}")
-                _NET_LABEL_TO_MODEL_P = {
-                    "HSPA1B · MKI67 program (200 genes)": "full",
-                    "MKI67 program (201 genes)": "mki67",
-                    "TUBB program (201 genes)": "tubb",
-                }
                 _pref_model = _NET_LABEL_TO_MODEL_P.get(_net_grn_label)
                 if _pref_model and _pref_model in _available_ko_models:
                     _effective_grn_model = _pref_model
@@ -2577,7 +2577,8 @@ def _render_msg_figures(msg, msg_id):
                     pert_df = compute_ko_perturbation(q_gene, _effective_grn_model)
 
             if pert_df is None:
-                # Fallback to legacy pre-computed CSVs
+                # Fallback to legacy pre-computed CSVs — only for exact known gene/model pairs
+                # (avoids loading wrong gene's data when model prefix files aren't on HF)
                 if _msg_grn_model == "full":
                     _ko_map = {
                         "HSPA1B": ("full",       "HSPA1B"),
@@ -2586,22 +2587,50 @@ def _render_msg_figures(msg, msg_id):
                         "CDK1":   ("full_cdk1",  "CDK1"),
                         "TOP2A":  ("full_top2a", "TOP2A"),
                     }
-                    _effective_grn_model, _ko_gene_label = _ko_map.get(q_gene, ("full", "HSPA1B"))
-                else:
-                    _effective_grn_model = _msg_grn_model
-                pert_df = load_perturbation(_effective_grn_model)
+                    _leg_entry = _ko_map.get(q_gene)
+                    if _leg_entry:
+                        _effective_grn_model, _ko_gene_label = _leg_entry
+                        pert_df = load_perturbation(_effective_grn_model)
+                elif _msg_grn_model == "mki67" and q_gene == "BIRC5":
+                    _effective_grn_model = "mki67"
+                    pert_df = load_perturbation("mki67")
+                elif _msg_grn_model == "tubb" and q_gene == "TUBB":
+                    _effective_grn_model = "tubb"
+                    pert_df = load_perturbation("tubb")
+                # Otherwise: pert_df stays None → no valid data for this gene/model
 
-            bar_fig, _ = build_perturbation_figures(
-                pert_df, q_gene, ko_gene=_ko_gene_label,
-                real_expr_means=load_real_expr_means())
-            _pert_data = {
-                "bar_fig": bar_fig,
-                "pert_df": pert_df,
-                "query_gene": q_gene,
-                "effective_model": _effective_grn_model,
-                "ko_label": _ko_gene_label,
-                "available_models": _available_ko_models,
-            }
+            # Track whether we fell back to a different model than user selected
+            _grn_fallback_note = None
+            if pert_df is not None and _effective_grn_model and _net_grn_label:
+                _sel_model = _NET_LABEL_TO_MODEL_P.get(_net_grn_label)
+                if _sel_model and _sel_model != _effective_grn_model:
+                    _ADJ_SHORT_NAMES = {
+                        "full": "HSPA1B · MKI67", "mki67": "MKI67",
+                        "tubb": "TUBB", "full_aurkb": "HSPA1B · MKI67",
+                        "full_foxm1": "HSPA1B · MKI67",
+                    }
+                    _grn_fallback_note = (
+                        f"KO simulation for the selected **{_ADJ_SHORT_NAMES.get(_sel_model, _sel_model)} GRN** "
+                        f"is not available for **{q_gene}** — showing **{_ADJ_SHORT_NAMES.get(_effective_grn_model, _effective_grn_model)} GRN** instead."
+                    )
+
+            if pert_df is None:
+                # No data at all — remove perturbation tabs retroactively
+                _tab_defs = [(k, t) for k, t in _tab_defs
+                             if k not in ("perturbation", "targets", "drugs")]
+            else:
+                bar_fig, _ = build_perturbation_figures(
+                    pert_df, q_gene, ko_gene=_ko_gene_label,
+                    real_expr_means=load_real_expr_means())
+                _pert_data = {
+                    "bar_fig": bar_fig,
+                    "pert_df": pert_df,
+                    "query_gene": q_gene,
+                    "effective_model": _effective_grn_model,
+                    "ko_label": _ko_gene_label,
+                    "available_models": _available_ko_models,
+                    "grn_fallback_note": _grn_fallback_note,
+                }
         except Exception as _pe:
             _pert_data = {"error": str(_pe)}
 
@@ -2936,11 +2965,15 @@ def _render_msg_figures(msg, msg_id):
                             "  ".join(f"`{g}`" for g in _p_pop_genes)
                             if _p_pop_genes else "_No genes loaded_"
                         )
-                st.markdown(
-                    '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
-                    '<sup>*</sup> Change via Regulatory Interactions tab.</p>',
-                    unsafe_allow_html=True,
-                )
+                _grn_fb = _pert_data.get("grn_fallback_note")
+                if _grn_fb:
+                    st.info(_grn_fb, icon="ℹ️")
+                else:
+                    st.markdown(
+                        '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
+                        '<sup>*</sup> Change via Regulatory Interactions tab.</p>',
+                        unsafe_allow_html=True,
+                    )
 
                 # ── Gene expression dynamics ───────────────────────────────
                 with st.expander(f"Gene expression after {_ko_gene_label} KO", expanded=True):
