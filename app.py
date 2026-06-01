@@ -3111,7 +3111,7 @@ def _render_msg_figures(msg, msg_id):
 
             # Row 3: label + selectbox inline (only if multiple GRNs)
             if len(_adj_avail_keys) >= 2:
-                _lbl_col, _sel_col = st.columns([2.5, 4], vertical_alignment="center")
+                _lbl_col, _sel_col = st.columns([2.5, 4])
                 with _lbl_col:
                     st.markdown(
                         '<p style="font-size:17px;font-weight:600;color:#374151;margin:0;">Select another precalculated GRN:</p>',
