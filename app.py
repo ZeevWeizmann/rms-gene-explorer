@@ -3027,13 +3027,17 @@ def _render_msg_figures(msg, msg_id):
                 _msg_grn_key or (_adj_avail_keys[0] if _adj_avail_keys else "full"),
             )
             _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
+            _ADJ_COLORS = {"full": "#059669", "mki67": "#0891b2", "tubb": "#7c3aed"}
+            _hdr_color  = _ADJ_COLORS.get(_selected_adj_key, "#64748b")
             _hdr_suffix = (
-                f' <span style="color:#374151;font-weight:700;">{_hdr_name}</span>'
-                f' <span style="color:#9ca3af;">· {_hdr_size}</span>'
+                f' <span style="display:inline-block;background:{_hdr_color};color:white;'
+                f'border-radius:5px;padding:1px 10px;font-size:13px;font-weight:700;'
+                f'vertical-align:middle;">{_hdr_name}</span>'
+                f' <span style="color:#9ca3af;font-size:13px;">· {_hdr_size}</span>'
             ) if _hdr_name else ""
 
             st.markdown(
-                f'<p style="font-size:12px;font-weight:600;color:#6b7280;margin:8px 0 2px 0;">'
+                f'<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0 2px 0;">'
                 f'Precalculated Gene Regulation Network applied:{_hdr_suffix}</p>'
                 f'<p style="font-size:11px;color:#9ca3af;margin:0 0 6px 0;">'
                 f'Contact the Gene Program Explorer team if it does not cover your program.</p>',
