@@ -2330,7 +2330,7 @@ _full_gene_set   = load_grn_gene_list("full")
 
 # model label → (key, gene_set)
 _ALL_MODELS = {
-    "Full program (200 genes)":               ("full",     _full_gene_set),
+    "HSPA1B · MKI67 program (200 genes)":     ("full",     _full_gene_set),
     "MKI67 program (201 genes, BIRC5 KO)":    ("mki67",    _mki67_gene_set),
     "TUBB program (201 genes, TUBB KO)":       ("tubb",     _tubb_gene_set),
 }
@@ -3009,7 +3009,7 @@ def _render_msg_figures(msg, msg_id):
 
             # ── GRN selector (above expander) ────────────────────────────────
             _ADJ_MODEL_LABELS = {
-                "full":  "Full program (200 genes)",
+                "full":  "HSPA1B · MKI67 program (200 genes)",
                 "mki67": "MKI67 program (201 genes)",
                 "tubb":  "TUBB program (201 genes)",
             }
@@ -3034,7 +3034,7 @@ def _render_msg_figures(msg, msg_id):
                 st.session_state[_adj_grn_ss_key] = _adj_default_label
 
             _ADJ_SHORT = {
-                "full":  ("Full program",  "200 genes"),
+                "full":  ("HSPA1B · MKI67", "200 genes"),
                 "mki67": ("MKI67 program", "201 genes"),
                 "tubb":  ("TUBB program",  "201 genes"),
             }
