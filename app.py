@@ -3086,14 +3086,36 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Header + popover badge
+            # Header
             st.markdown(
                 '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
                 'Precalculated Gene Regulation Network applied'
                 '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                 unsafe_allow_html=True,
             )
-            _pop_col, _spacer = st.columns([1.2, 5])
+
+            # Selectbox (left) + popover gene-list button (right)
+            if len(_adj_avail_keys) >= 2:
+                _sel_col, _pop_col, _spacer = st.columns([3, 1.2, 3])
+                with _sel_col:
+                    _adj_chosen_label = st.selectbox(
+                        "GRN model",
+                        options=_adj_radio_options,
+                        index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
+                        label_visibility="collapsed",
+                        key=f"adj_grn_sel_{msg_id}",
+                    )
+                    if _adj_chosen_label != _cur_label:
+                        st.session_state[_adj_grn_ss_key] = _adj_chosen_label
+                        _selected_adj_key = next(
+                            (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
+                            _selected_adj_key,
+                        )
+                        _hdr_name, _hdr_size = _ADJ_SHORT.get(_selected_adj_key, ("", ""))
+                        _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
+            else:
+                _pop_col, _spacer = st.columns([1.2, 5])
+
             with _pop_col:
                 with st.popover(_hdr_name or "GRN", use_container_width=True):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
@@ -3107,22 +3129,6 @@ def _render_msg_figures(msg, msg_id):
                 'does not cover your program of interest.</p>',
                 unsafe_allow_html=True,
             )
-
-            if len(_adj_avail_keys) >= 2:
-                _adj_chosen_label = st.radio(
-                    "GRN",
-                    options=_adj_radio_options,
-                    index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
-                    horizontal=True,
-                    label_visibility="collapsed",
-                    key=f"adj_grn_radio_{msg_id}",
-                )
-                if _adj_chosen_label != _cur_label:
-                    st.session_state[_adj_grn_ss_key] = _adj_chosen_label
-                    _selected_adj_key = next(
-                        (k for k in _adj_avail_keys if _ADJ_MODEL_LABELS[k] == _adj_chosen_label),
-                        _selected_adj_key,
-                    )
             # ────────────────────────────────────────────────────────────────
 
             try:
