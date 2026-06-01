@@ -3037,9 +3037,7 @@ def _render_msg_figures(msg, msg_id):
             # Header row: label text + popover badge + gene count
             st.markdown(
                 '<p style="font-size:14px;font-weight:600;color:#374151;margin:8px 0 4px 0;">'
-                'Precalculated Gene Regulation Network applied:</p>'
-                '<p style="font-size:11px;color:#9ca3af;margin:0 0 6px 0;">'
-                'Contact the Gene Program Explorer team if it does not cover your program.</p>',
+                'Precalculated Gene Regulation Network applied:</p>',
                 unsafe_allow_html=True,
             )
             _pop_col, _spacer = st.columns([1.2, 5])
@@ -3053,6 +3051,11 @@ def _render_msg_figures(msg, msg_id):
                         " · ".join(f"`{g}`" for g in _popover_genes)
                         if _popover_genes else "_No genes loaded_"
                     )
+            st.markdown(
+                '<p style="font-size:11px;color:#9ca3af;margin:2px 0 6px 0;">'
+                'Contact the Gene Program Explorer team if it does not cover your program.</p>',
+                unsafe_allow_html=True,
+            )
 
             if len(_adj_avail_keys) >= 2:
                 _adj_chosen_label = st.radio(
