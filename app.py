@@ -663,7 +663,32 @@ REPO_ID = "weizmannzeev/rms-gene-programs"
 LOCAL_DIR = "/Users/zeev/CardamomOT/my_project/Data"
 def _get_cardamom_dir():
     import os as _os
-    return _os.path.join("/Users/zeev/CardamomOT/my_project", "cardamomOT")
+    local = _os.path.join("/Users/zeev/CardamomOT/my_project", "cardamomOT")
+    if _os.path.isdir(local):
+        return local
+    # Cloud: use HuggingFace cache directory
+    cache = _os.path.join(_os.path.expanduser("~"), ".cache", "rms_cardamomOT")
+    _os.makedirs(cache, exist_ok=True)
+    return cache
+
+def _get_h5ad_path(fname: str) -> str:
+    """Get local path to an h5ad file, downloading from HuggingFace if needed."""
+    import os
+    local = os.path.join("/Users/zeev/CardamomOT/my_project/cardamomOT", fname)
+    if os.path.exists(local):
+        return local
+    # Cloud: download from HF (uses HF cache at ~/.cache/huggingface/hub/)
+    try:
+        token = st.secrets.get("HF_TOKEN", None)
+        from huggingface_hub import hf_hub_download as _hf_dl
+        return _hf_dl(
+            repo_id=REPO_ID,
+            filename=f"cardamomOT/{fname}",
+            repo_type="dataset",
+            token=token,
+        )
+    except Exception:
+        return os.path.join(_get_cardamom_dir(), fname)  # fallback, may not exist
 
 @st.cache_resource
 def load_data(dataset="v1"):
@@ -1104,26 +1129,32 @@ def load_foxm1_real_timecourse():
 
 @st.cache_resource
 def build_ko_registry():
-    """Scan cardamomOT dir for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
+    """Scan cardamomOT dir (or HuggingFace) for KO h5ad files and return {gene: [list_of_grn_model_strings]}."""
+    import re, os as _os
+    registry = {}
+    pattern = re.compile(
+        r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
+    )
+    prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
     try:
-        import re, os as _os
-        registry = {}
-        _cdir = _get_cardamom_dir()
-        if not _cdir or not _os.path.isdir(_cdir):
-            return registry
-        pattern = re.compile(
-            r'^(foxm1_|mki67_|tubb_|)adata_sim_KO_(.+)_OV_none_stim.*\.h5ad$'
-        )
-        prefix_to_model = {"foxm1_": "foxm1", "mki67_": "mki67", "tubb_": "tubb", "": "full"}
-        for fname in _os.listdir(_cdir):
+        local_dir = _os.path.join("/Users/zeev/CardamomOT/my_project", "cardamomOT")
+        if _os.path.isdir(local_dir):
+            fnames = _os.listdir(local_dir)
+        else:
+            # Cloud: list files from HuggingFace dataset
+            from huggingface_hub import list_repo_files as _lrf
+            token = st.secrets.get("HF_TOKEN", None)
+            all_hf = list(_lrf(REPO_ID, repo_type="dataset", token=token))
+            fnames = [f[len("cardamomOT/"):] for f in all_hf if f.startswith("cardamomOT/")]
+        for fname in fnames:
             m = pattern.match(fname)
             if m:
                 prefix, gene = m.group(1), m.group(2)
                 grn_model = prefix_to_model[prefix]
                 registry.setdefault(gene, []).append(grn_model)
-        return registry
     except Exception:
-        return {}
+        pass
+    return registry
 
 
 @st.cache_resource
@@ -1160,8 +1191,8 @@ def compute_ko_perturbation(gene: str, grn_model: str):
     from scipy.sparse import issparse as _issparse_p
 
     prefix = "" if grn_model == "full" else f"{grn_model}_"
-    wt_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
-    ko_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    wt_path = _get_h5ad_path(f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = _get_h5ad_path(f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
     if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
         return None
     try:
@@ -1198,8 +1229,8 @@ def compute_ko_pop_sim(gene: str, grn_model: str):
     from scipy.sparse import issparse as _issparse_s
 
     prefix = "" if grn_model == "full" else f"{grn_model}_"
-    wt_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
-    ko_path = os.path.join(_get_cardamom_dir(), f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
+    wt_path = _get_h5ad_path(f"{prefix}adata_sim_stim1.0_prior1.0.h5ad")
+    ko_path = _get_h5ad_path(f"{prefix}adata_sim_KO_{gene}_OV_none_stim1.0_prior1.0.h5ad")
     if not (os.path.exists(wt_path) and os.path.exists(ko_path)):
         return None
     reducer = get_umap_reducer()
