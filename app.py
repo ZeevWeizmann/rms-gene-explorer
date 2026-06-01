@@ -3088,9 +3088,9 @@ def _render_msg_figures(msg, msg_id):
 
             # One row: header text | popover button | selectbox (if multiple GRNs)
             if len(_adj_avail_keys) >= 2:
-                _hdr_col, _pop_col, _sel_col, _spacer = st.columns([2.8, 1, 2.5, 1], vertical_alignment="bottom")
+                _hdr_col, _pop_col, _sel_col, _spacer = st.columns([2.8, 1.8, 2.5, 0.5], vertical_alignment="bottom")
             else:
-                _hdr_col, _pop_col, _spacer = st.columns([2.8, 1, 4], vertical_alignment="bottom")
+                _hdr_col, _pop_col, _spacer = st.columns([2.8, 1.8, 3], vertical_alignment="bottom")
 
             with _hdr_col:
                 st.markdown(
