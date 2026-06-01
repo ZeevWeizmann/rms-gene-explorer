@@ -593,7 +593,7 @@ div[data-baseweb="tab-panel"] div[data-testid="stSelectbox"] > div::before {{
 """, unsafe_allow_html=True)
 
 # ── Sticky search bar via components.html (runs real JS in parent frame) ──
-st.iframe("""
+st.html("""
 <script>
 (function() {
     function setup() {
@@ -2737,7 +2737,7 @@ def _render_msg_figures(msg, msg_id):
         setTimeout(_initTabs, 300);
     }})();
     </script>"""
-    st.iframe(_js_code, height=0)
+    st.html(_js_code)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
@@ -4057,20 +4057,9 @@ with _about_expander:
 
 </svg>"""
     _traj_svg = _svg_translate(_traj_svg)
-    st.iframe(
+    st.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
-        <div style='width:100%'>{_traj_svg}</div>
-        <script>
-        var s = document.querySelector('svg');
-        function _sh() {{
-            var h = s.getBoundingClientRect().height;
-            window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.ceil(h) + 4}}, '*');
-        }}
-        window.addEventListener('load', _sh);
-        window.addEventListener('resize', _sh);
-        setTimeout(_sh, 200);
-        </script>""",
-        height=440, scrolling=False
+        <div style='width:100%'>{_traj_svg}</div>"""
     )
 
     _ot_img_local = _os.path.join(LOCAL_DIR, "ot_explanation.png")
@@ -4308,20 +4297,9 @@ with _about_expander:
 # Arch diagram goes into the slot at the TOP of "About this tool"
 _arch_svg = _svg_translate(_arch_svg)
 with _arch_diagram_slot:
-    st.iframe(
+    st.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
-        <div style='width:100%'>{_arch_svg}</div>
-        <script>
-        var s = document.querySelector('svg');
-        function _sh() {{
-            var h = s.getBoundingClientRect().height;
-            window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.ceil(h) + 4}}, '*');
-        }}
-        window.addEventListener('load', _sh);
-        window.addEventListener('resize', _sh);
-        setTimeout(_sh, 200);
-        </script>""",
-        height=440, scrolling=False
+        <div style='width:100%'>{_arch_svg}</div>"""
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
