@@ -2910,14 +2910,36 @@ def _render_msg_figures(msg, msg_id):
                 _ko_gene_label       = _pert_data["ko_label"]
                 _avail_models_tab    = _pert_data.get("available_models", [])
 
-                # ── GRN model label (controlled by Network tab selector) ──
-                _PERT_MODEL_SHORT = {
-                    "full":  "HSPA1B · MKI67 (200 genes)",
-                    "mki67": "MKI67 program (201 genes)",
-                    "tubb":  "TUBB program (201 genes)",
+                # ── GRN label — same style as Regulatory Interactions tab ──
+                _PERT_ADJ_SHORT = {
+                    "full":  ("HSPA1B · MKI67", "200 genes"),
+                    "mki67": ("MKI67 program",   "201 genes"),
+                    "tubb":  ("TUBB program",    "201 genes"),
                 }
-                _pert_grn_label = _PERT_MODEL_SHORT.get(_effective_grn_model, _effective_grn_model)
-                st.caption(f"🧬 GRN: **{_pert_grn_label}** · change via Regulatory Interactions tab")
+                _PERT_GENE_SETS = {
+                    "full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set,
+                }
+                _p_hdr_name, _p_hdr_size = _PERT_ADJ_SHORT.get(_effective_grn_model, ("GRN", ""))
+                _p_pop_genes = sorted(_PERT_GENE_SETS.get(_effective_grn_model, set()))
+                st.markdown(
+                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 2px 0;">'
+                    'Precalculated Gene Regulation Network applied'
+                    '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
+                    unsafe_allow_html=True,
+                )
+                _p_pop_col, _p_spacer = st.columns([1.5, 5])
+                with _p_pop_col:
+                    with st.popover(_p_hdr_name or "GRN", use_container_width=True):
+                        st.markdown(f"**{_p_hdr_name}** — {_p_hdr_size}")
+                        st.markdown(
+                            "  ".join(f"`{g}`" for g in _p_pop_genes)
+                            if _p_pop_genes else "_No genes loaded_"
+                        )
+                st.markdown(
+                    '<p style="font-size:10px;color:#d1d5db;margin:2px 0 6px 0;">'
+                    '<sup>*</sup> Change via Regulatory Interactions tab.</p>',
+                    unsafe_allow_html=True,
+                )
 
                 # ── Gene expression dynamics ───────────────────────────────
                 with st.expander(f"Gene expression after {_ko_gene_label} KO", expanded=True):
