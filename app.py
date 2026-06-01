@@ -3092,20 +3092,15 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Row 1: header text (full width)
+            # Row 1: header label
             st.markdown(
-                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 6px 0;">'
+                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 2px 0;">'
                 'Precalculated Gene Regulation Network applied'
                 '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                 unsafe_allow_html=True,
             )
-
-            # Row 2: popover button + selectbox (same type of widgets → naturally aligned)
-            if len(_adj_avail_keys) >= 2:
-                _pop_col, _sel_col, _spacer = st.columns([1.5, 3, 2])
-            else:
-                _pop_col, _spacer = st.columns([1.5, 5])
-
+            # Row 2: popover button
+            _pop_col, _spacer = st.columns([1.5, 5])
             with _pop_col:
                 with st.popover(_hdr_name or "GRN", use_container_width=True):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
@@ -3113,10 +3108,20 @@ def _render_msg_figures(msg, msg_id):
                         "  ".join(f"`{g}`" for g in _popover_genes)
                         if _popover_genes else "_No genes loaded_"
                     )
+
+            # Rows 3+4: selector (only if multiple GRNs)
             if len(_adj_avail_keys) >= 2:
+                # Row 3: label
+                st.markdown(
+                    '<p style="font-size:13px;color:#6b7280;margin:8px 0 2px 0;">'
+                    'Select another precalculated GRN:</p>',
+                    unsafe_allow_html=True,
+                )
+                # Row 4: selectbox
+                _sel_col, _spacer2 = st.columns([3, 4])
                 with _sel_col:
                     _adj_chosen_label = st.selectbox(
-                        "Select another precalculated GRN",
+                        "GRN",
                         options=_adj_radio_options,
                         index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
                         label_visibility="collapsed",
