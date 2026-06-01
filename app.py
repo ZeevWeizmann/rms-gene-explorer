@@ -3012,34 +3012,43 @@ def _render_msg_figures(msg, msg_id):
                     st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
 
                 # ── Cell population response ───────────────────────────────
-                # Try dynamic UMAP projection first; fall back to legacy pre-computed CSVs
+                # Program-specific GRN models (mki67, tubb, foxm1) are trained on a
+                # cellular sub-population and do not cover the full landscape, so
+                # population scoring is biologically unreliable for them.
+                _PROG_SPECIFIC_MODELS = {"mki67", "tubb", "foxm1"}
+                _pop_model_invalid = _effective_grn_model in _PROG_SPECIFIC_MODELS
+
                 _sim_scored = None
                 _ko_label   = f"{_ko_gene_label} KO"
-                _avail_models = _pert_data.get("available_models", [])
-                if _avail_models:
-                    with st.spinner(f"Loading population simulation for {_ko_gene_label}…"):
-                        _sim_scored = compute_ko_pop_sim(_ko_gene_label, _effective_grn_model)
-                if _sim_scored is None:
-                    # Legacy fallback
-                    if _effective_grn_model == "tubb":
-                        try: _sim_scored = load_tubb_pop_sim();    _ko_label = "TUBB KO"
-                        except Exception: pass
-                    elif _effective_grn_model == "mki67":
-                        try: _sim_scored = load_mki67_pop_sim();   _ko_label = "BIRC5 KO"
-                        except Exception: pass
-                    elif _effective_grn_model == "full_aurkb":
-                        try: _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
-                        except Exception: pass
-                    elif _effective_grn_model in ("full", "full_foxm1", "full_cdk1", "full_top2a"):
-                        _lfc_map = {
-                            "full_foxm1": (load_full_foxm1_pop_sim, "FOXM1 KO"),
-                            "full_aurkb": (load_full_aurkb_pop_sim, "AURKB KO"),
-                        }
-                        _lfc_loader, _lfc_label = _lfc_map.get(_effective_grn_model, (load_full_pop_sim, "HSPA1B KO"))
-                        try: _sim_scored = _lfc_loader(); _ko_label = _lfc_label
-                        except Exception: pass
+                if not _pop_model_invalid:
+                    _avail_models = _pert_data.get("available_models", [])
+                    if _avail_models:
+                        with st.spinner(f"Loading population simulation for {_ko_gene_label}…"):
+                            _sim_scored = compute_ko_pop_sim(_ko_gene_label, _effective_grn_model)
+                    if _sim_scored is None:
+                        # Legacy fallback — only for full-population models
+                        if _effective_grn_model == "full_aurkb":
+                            try: _sim_scored = load_full_aurkb_pop_sim(); _ko_label = "AURKB KO"
+                            except Exception: pass
+                        elif _effective_grn_model in ("full", "full_foxm1", "full_cdk1", "full_top2a"):
+                            _lfc_map = {
+                                "full_foxm1": (load_full_foxm1_pop_sim, "FOXM1 KO"),
+                                "full_aurkb": (load_full_aurkb_pop_sim, "AURKB KO"),
+                            }
+                            _lfc_loader, _lfc_label = _lfc_map.get(_effective_grn_model, (load_full_pop_sim, "HSPA1B KO"))
+                            try: _sim_scored = _lfc_loader(); _ko_label = _lfc_label
+                            except Exception: pass
 
-                if _sim_scored is not None:
+                if _pop_model_invalid:
+                    with st.expander("Cell population response", expanded=False):
+                        st.info(
+                            "Population response is not available for program-specific GRN models "
+                            f"(**{_p_hdr_name}**). This model was trained on a sub-population of cells "
+                            "and does not cover the full cellular landscape — population scoring "
+                            "would not reflect real state transitions.",
+                            icon="⚠️",
+                        )
+                elif _sim_scored is not None:
                   with st.expander("Cell population response", expanded=True):
                     try:
                         _POP_COLORS = {"proliferative": "#e63946", "quiescent": "#1a6faf", "intermediate": "#999999"}
