@@ -1166,12 +1166,27 @@ def build_ko_registry():
 @st.cache_resource
 def get_umap_reducer():
     """Fit UMAP on real data and replace embedding with umap_coords.csv coords.
-    Returns the fitted reducer, or None if local files are unavailable."""
+    Returns the fitted reducer, or None if files are unavailable."""
     import os
-    data_path  = os.path.join(LOCAL_DIR, "data_full.h5ad")
+    data_path   = os.path.join(LOCAL_DIR, "data_full.h5ad")
     coords_path = os.path.join(LOCAL_DIR, "umap_coords.csv")
-    if not (os.path.exists(data_path) and os.path.exists(coords_path)):
-        return None
+    # On cloud: download from HuggingFace if not present locally
+    if not os.path.exists(data_path):
+        try:
+            token = st.secrets.get("HF_TOKEN", None)
+            from huggingface_hub import hf_hub_download as _hf_dl
+            data_path = _hf_dl(repo_id=REPO_ID, filename="data/data_full.h5ad",
+                                repo_type="dataset", token=token)
+        except Exception:
+            return None
+    if not os.path.exists(coords_path):
+        try:
+            token = st.secrets.get("HF_TOKEN", None)
+            from huggingface_hub import hf_hub_download as _hf_dl
+            coords_path = _hf_dl(repo_id=REPO_ID, filename="data/umap_coords.csv",
+                                  repo_type="dataset", token=token)
+        except Exception:
+            return None
     try:
         import anndata
         import umap as umap_lib
