@@ -3092,15 +3092,20 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Row 1: header text + popover button, bottom-aligned
-            _hdr_col, _pop_col, _spacer1 = st.columns([4.5, 1.8, 0.5], vertical_alignment="bottom")
-            with _hdr_col:
-                st.markdown(
-                    '<p style="font-size:17px;font-weight:600;color:#374151;margin:0 0 4px 0;">'
-                    'Precalculated Gene Regulation Network applied'
-                    '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
-                    unsafe_allow_html=True,
-                )
+            # Row 1: header text (full width)
+            st.markdown(
+                '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 6px 0;">'
+                'Precalculated Gene Regulation Network applied'
+                '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
+                unsafe_allow_html=True,
+            )
+
+            # Row 2: popover button + selectbox (same type of widgets → naturally aligned)
+            if len(_adj_avail_keys) >= 2:
+                _pop_col, _sel_col, _spacer = st.columns([1.5, 3, 2])
+            else:
+                _pop_col, _spacer = st.columns([1.5, 5])
+
             with _pop_col:
                 with st.popover(_hdr_name or "GRN", use_container_width=True):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
@@ -3108,18 +3113,10 @@ def _render_msg_figures(msg, msg_id):
                         "  ".join(f"`{g}`" for g in _popover_genes)
                         if _popover_genes else "_No genes loaded_"
                     )
-
-            # Row 2: "Select another GRN" label + selectbox on one line
             if len(_adj_avail_keys) >= 2:
-                _lbl_col, _sel_col, _spacer2 = st.columns([1.8, 3, 2], vertical_alignment="center")
-                with _lbl_col:
-                    st.markdown(
-                        '<p style="font-size:13px;color:#6b7280;margin:0;text-align:right;">Select another GRN:</p>',
-                        unsafe_allow_html=True,
-                    )
                 with _sel_col:
                     _adj_chosen_label = st.selectbox(
-                        "GRN",
+                        "Select another precalculated GRN",
                         options=_adj_radio_options,
                         index=_adj_radio_options.index(st.session_state[_adj_grn_ss_key]),
                         label_visibility="collapsed",
