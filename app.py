@@ -1831,8 +1831,8 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO", real_df=Non
 
     title_text = f"Cell population proportions: {'Real · ' if has_real else ''}WT vs {ko_label} sim *"
     fig.update_layout(
-        height=360,
-        margin=dict(t=60, b=10, l=65, r=15),
+        height=400,
+        margin=dict(t=60, b=80, l=65, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
         title=dict(text=title_text, font=dict(size=15), x=0.5),
@@ -1844,7 +1844,7 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO", real_df=Non
             rangemode="tozero",
         ),
         xaxis=dict(showgrid=False, tickfont=dict(size=14)),
-        legend=dict(orientation="h", yanchor="top", y=-0.06,
+        legend=dict(orientation="h", yanchor="top", y=-0.18,
                     xanchor="center", x=0.5, font=dict(size=13)),
         annotations=annotations,
     )
