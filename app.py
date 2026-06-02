@@ -2859,14 +2859,21 @@ def _render_msg_figures(msg, msg_id):
                 fig_expr = msg["fig"]
                 fig_expr.update_layout(height=CHART_H)
                 st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
-            _row1_keys = ["fig_time", "fig_celltype"]
+            _row1_keys = ["fig_time", "fig_celltype", "fig_pop_real"]
             _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
             if _row1:
-                with st.expander("Reference maps (Time · Cell type)", expanded=False):
+                with st.expander("Reference maps (Time · Cell type · Populations)", expanded=False):
                     cols = st.columns(1 if is_mobile else len(_row1))
                     for col, (k, f) in zip(cols, _row1):
                         f.update_layout(height=CHART_H_SMALL)
                         col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+                    if msg.get("fig_pop_real") is not None:
+                        st.caption(
+                            "**Populations** scored by gene signatures: "
+                            "**Proliferative** — CENPF z-score ≥ 70th percentile of WT · "
+                            "**Quiescent** — DNAJB1 z-score ≥ 70th percentile of WT · "
+                            "**Intermediate** — all remaining cells"
+                        )
 
     # ── Tab: Targets (bar chart — top 20 affected genes) ─────────────────────
     if "targets" in _tab_map:
