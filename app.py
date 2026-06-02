@@ -1764,9 +1764,10 @@ def build_foxm1_population_umap(pop_df):
     return fig
 
 
-def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
-    """Grouped bar chart: % of cells in each population, WT simulation vs KO.
-    sim_df must have columns: pop_wt, pop_ko."""
+def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO", real_df=None):
+    """Grouped bar chart: % of cells in each population, Real data · WT simulation · KO.
+    sim_df must have columns: pop_wt, pop_ko.
+    real_df (optional) must have column: population."""
     import plotly.graph_objects as go
 
     POP_ORDER  = ["proliferative", "quiescent", "intermediate"]
@@ -1779,19 +1780,34 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
     wt_counts = sim_df["pop_wt"].value_counts()
     ko_counts = sim_df["pop_ko"].value_counts()
 
-    wt_pct = {p: wt_counts.get(p, 0) / n * 100 for p in POP_ORDER}
-    ko_pct = {p: ko_counts.get(p, 0) / n * 100 for p in POP_ORDER}
+    wt_pct   = {p: wt_counts.get(p, 0) / n * 100 for p in POP_ORDER}
+    ko_pct   = {p: ko_counts.get(p, 0) / n * 100 for p in POP_ORDER}
+
+    has_real = real_df is not None and "population" in real_df.columns
+    if has_real:
+        nr = len(real_df)
+        real_counts = real_df["population"].value_counts()
+        real_pct = {p: real_counts.get(p, 0) / nr * 100 for p in POP_ORDER}
+        x_groups = ["Real data", "WT simulation", ko_label]
+    else:
+        x_groups = ["WT simulation", ko_label]
 
     fig = go.Figure()
     for pop in POP_ORDER:
         color = POP_COLORS[pop]
         label = POP_LABELS[pop]
+        if has_real:
+            y_vals    = [real_pct[pop], wt_pct[pop], ko_pct[pop]]
+            opacities = [0.9, 0.75, 0.55]
+        else:
+            y_vals    = [wt_pct[pop], ko_pct[pop]]
+            opacities = [0.9, 0.55]
         fig.add_trace(go.Bar(
             name=label,
-            x=["WT simulation", ko_label],
-            y=[wt_pct[pop], ko_pct[pop]],
-            marker_color=[color, color],
-            marker_opacity=[0.9, 0.55],
+            x=x_groups,
+            y=y_vals,
+            marker_color=[color] * len(x_groups),
+            marker_opacity=opacities,
             marker_line=dict(color=color, width=1.5),
             width=0.25,
             hovertemplate=f"<b>{label}</b><br>%{{x}}: %{{y:.1f}}%<extra></extra>",
@@ -1799,12 +1815,13 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
 
     # Δ% annotations above KO bars
     annotations = []
+    ko_x_idx = len(x_groups) - 1
     x_offsets = {"proliferative": -0.26, "quiescent": 0.0, "intermediate": 0.26}
     for pop in POP_ORDER:
         delta = ko_pct[pop] - wt_pct[pop]
         sign = "+" if delta >= 0 else ""
         annotations.append(dict(
-            x=1 + x_offsets[pop],
+            x=ko_x_idx + x_offsets[pop],
             y=ko_pct[pop] + 0.8,
             text=f"{sign}{delta:.1f}%",
             showarrow=False,
@@ -1812,13 +1829,13 @@ def build_population_proportions_figure(sim_df, ko_label="FOXM1 KO"):
             xanchor="center",
         ))
 
+    title_text = f"Cell population proportions: {'Real · ' if has_real else ''}WT vs {ko_label} sim *"
     fig.update_layout(
         height=360,
         margin=dict(t=60, b=10, l=65, r=15),
         plot_bgcolor="white", paper_bgcolor="white",
         barmode="group", bargroupgap=0.18,
-        title=dict(text=f"Cell population proportions: WT vs {ko_label} simulation *",
-                   font=dict(size=15), x=0.5),
+        title=dict(text=title_text, font=dict(size=15), x=0.5),
         yaxis=dict(
             title=dict(text="% of cells", font=dict(size=13)),
             tickfont=dict(size=12),
@@ -3131,8 +3148,13 @@ def _render_msg_figures(msg, msg_id):
                             font=dict(size=12, color="#555"), bgcolor="rgba(255,255,255,0.75)", borderpad=3,
                         )
 
-                        st.plotly_chart(build_population_proportions_figure(_sim_scored, ko_label=_ko_label),
-                                        use_container_width=True, key=f"{msg_id}_pop_prop")
+                        try:
+                            _pop_real_df = load_foxm1_pop_real()
+                        except Exception:
+                            _pop_real_df = None
+                        st.plotly_chart(build_population_proportions_figure(
+                            _sim_scored, ko_label=_ko_label, real_df=_pop_real_df),
+                            use_container_width=True, key=f"{msg_id}_pop_prop")
                         st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
                                         use_container_width=True, key=f"{msg_id}_pop_delta")
                         st.caption(
