@@ -4263,9 +4263,10 @@ with _about_expander:
 
 </svg>"""
     _traj_svg = _svg_translate(_traj_svg)
-    st.html(
+    _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
-        <div style='width:100%'>{_traj_svg}</div>"""
+        <div style='width:100%'>{_traj_svg}</div>""",
+        height=540,
     )
 
     _ot_img_local = _os.path.join(LOCAL_DIR, "ot_explanation.png")
@@ -4503,9 +4504,10 @@ with _about_expander:
 # Arch diagram goes into the slot at the TOP of "About this tool"
 _arch_svg = _svg_translate(_arch_svg)
 with _arch_diagram_slot:
-    st.html(
+    _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
-        <div style='width:100%'>{_arch_svg}</div>"""
+        <div style='width:100%'>{_arch_svg}</div>""",
+        height=540,
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
