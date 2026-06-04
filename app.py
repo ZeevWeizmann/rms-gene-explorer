@@ -2396,7 +2396,8 @@ st.markdown(f"""
   <a href='https://rmsexplorer.com' target='_self' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
-          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span>
+          style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#ED2939;'>Explorer</span><span
+          style='display:inline-block;margin-left:10px;vertical-align:middle;background:#e0e0e0;color:#555;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:3px 8px;border-radius:4px;text-transform:uppercase;line-height:1.4;'>beta</span>
   </a>
 </div>
 """, unsafe_allow_html=True)
