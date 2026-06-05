@@ -3736,6 +3736,7 @@ if query_gene:
             "TUBB":   "💊 **Vincristine** (FDA-approved, RMS standard of care)",
             "BIRC5":  "💊 **YM155** / Sepantronium (clinical trials)",
             "HSPA1B": "🎯 **Novel target** — HSP70 inhibitor class, no approved RMS drug",
+            "HSPA1A": "💊 **CD24Fc** (SL-172154) — HSP70 inhibitor · targets quiescent RMS cells",
             "AURKB":  "💊 **Barasertib** (AZD1152) — selective Aurora B inhibitor · Phase I clinical trials",
         }
         _drug_line = _DRUG_MAP.get(query_gene.upper(), "")
@@ -4056,6 +4057,7 @@ _FEATURED = [
     ("TUBB",   "tubb",  "Vincristine · FDA-approved"),
     ("BIRC5",  "mki67", "YM155 · clinical trials"),
     ("HSPA1B", "full",  "Novel target · HSP70 class"),
+    ("HSPA1A", "full",  "CD24Fc · HSP70 class"),
     ("AURKB",  "full",  "Barasertib · Phase I"),
 ]
 with st.expander(T['featured_targets'], expanded=False):
