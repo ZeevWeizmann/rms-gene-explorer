@@ -3891,7 +3891,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                         x=_proj["x"], y=_proj["y"], mode="markers",
                         marker=dict(color="#2563eb", size=4, opacity=0.85,
                                     line=dict(width=0.5, color="white")),
-                        name="Your cells", showlegend=True,
+                        name="Patient cells", showlegend=True,
                     ))
             _fig.update_layout(
                 xaxis_title="UMAP 1", yaxis_title="UMAP 2",
@@ -3922,7 +3922,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                 # Show reference background colored by cell_type, your cells on top (no metadata needed)
                 st.plotly_chart(_ref_overlay_fig("cell_type", None, "ct"),
                                 use_container_width=True, key="up_c2")
-                st.caption("🔵 Your cells · grey = RMS reference populations")
+                st.caption("🔵 Patient cells projected onto RMS reference UMAP")
             else:
                 _err = st.session_state.get("_ref_model_error", "")
                 st.warning(f"Reference projection unavailable: {_err}" if _err else "Reference projection not available.")
@@ -3965,7 +3965,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                         marker=dict(color=gene_expr, colorscale="Viridis", size=4,
                                     opacity=0.9, colorbar=dict(title=gene_sel_up, thickness=10),
                                     showscale=True),
-                        name="Your cells", showlegend=False,
+                        name="Patient cells", showlegend=False,
                     ))
                     _fig_gr.update_layout(
                         xaxis_title="UMAP 1", yaxis_title="UMAP 2",
