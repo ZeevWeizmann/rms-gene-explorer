@@ -3844,7 +3844,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                 else:
                     _fig.add_trace(go.Scattergl(
                         x=_proj["x"], y=_proj["y"], mode="markers",
-                        marker=dict(color="black", size=4, opacity=0.7,
+                        marker=dict(color="#2563eb", size=4, opacity=0.85,
                                     line=dict(width=0.5, color="white")),
                         name="Your cells", showlegend=True,
                     ))
@@ -3856,14 +3856,15 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
             )
             return _fig
 
-        # ── Row 1: cell type (patient + ref) ─────────────────────────
+        # ── Your UMAP + Reference projection ─────────────────────────
         _has_ct = "cell_type" in umap_up.columns
         _has_tm = "time" in umap_up.columns
 
         _c1, _c2 = st.columns(2)
         with _c1:
-            st.caption("Patient · cell type")
-            _f = px.scatter(umap_up, x="x", y="y", color="cell_type" if _has_ct else None,
+            st.caption("Your data · UMAP")
+            _color_col = "cell_type" if _has_ct else ("time" if _has_tm else None)
+            _f = px.scatter(umap_up, x="x", y="y", color=_color_col,
                             labels={"x": "UMAP 1", "y": "UMAP 2"},
                             render_mode="webgl", height=420)
             _f.update_traces(marker=dict(size=2.5, opacity=0.8))
@@ -3871,32 +3872,15 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                              margin=dict(l=0, r=0, t=30, b=0))
             st.plotly_chart(_f, use_container_width=True, key="up_c1")
         with _c2:
-            st.caption("Reference · cell type")
+            st.caption("Reference UMAP · your cells projected")
             if ref_proj is not None:
-                st.plotly_chart(_ref_overlay_fig("cell_type", "cell_type" if _has_ct else None, "ct"),
+                # Show reference background colored by cell_type, your cells on top (no metadata needed)
+                st.plotly_chart(_ref_overlay_fig("cell_type", None, "ct"),
                                 use_container_width=True, key="up_c2")
+                st.caption("🔵 Your cells · grey = RMS reference populations")
             else:
                 _err = st.session_state.get("_ref_model_error", "")
-                st.warning(f"Reference error: {_err}" if _err else "Reference projection not available.")
-
-        # ── Row 2: time (patient + ref) ───────────────────────────────
-        _c3, _c4 = st.columns(2)
-        with _c3:
-            st.caption("Patient · time")
-            _f3 = px.scatter(umap_up, x="x", y="y", color="time" if _has_tm else None,
-                             labels={"x": "UMAP 1", "y": "UMAP 2"},
-                             render_mode="webgl", height=420)
-            _f3.update_traces(marker=dict(size=2.5, opacity=0.8))
-            _f3.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                              margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(_f3, use_container_width=True, key="up_c3")
-        with _c4:
-            st.caption("Reference · time")
-            if ref_proj is not None:
-                st.plotly_chart(_ref_overlay_fig("time", "time" if _has_tm else None, "tm"),
-                                use_container_width=True, key="up_c4")
-            else:
-                st.warning("Reference projection not available.")
+                st.warning(f"Reference projection unavailable: {_err}" if _err else "Reference projection not available.")
 
         # ── Gene expression row ───────────────────────────────────────
         st.divider()
