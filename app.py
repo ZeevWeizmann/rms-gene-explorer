@@ -552,12 +552,6 @@ div[data-testid="stExpander"] details summary {
     background: transparent !important;
     margin-bottom: 2px !important;
 }
-/* Personalise expander — blue left border (first expander on page) */
-div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] {
-    border-left: 3px solid #2563eb !important;
-    padding-left: 8px !important;
-    border-radius: 0 !important;
-}
 
 details[data-testid],
 details {
