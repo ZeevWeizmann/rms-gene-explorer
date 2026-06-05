@@ -553,9 +553,9 @@ div[data-testid="stExpander"] details summary {
     background: transparent !important;
     margin-bottom: 2px !important;
 }
-/* Personalise expander — blue text (first expander on page) */
+/* Personalise expander — blue text matching title (first expander on page) */
 div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] summary p {
-    color: #2563eb !important;
+    color: #002395 !important;
     font-weight: 500 !important;
 }
 
