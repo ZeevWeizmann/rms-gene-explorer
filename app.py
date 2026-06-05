@@ -552,12 +552,7 @@ div[data-testid="stExpander"] details summary {
     background: transparent !important;
     margin-bottom: 2px !important;
 }
-/* Personalise expander — light blue highlight (first expander on page) */
-div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] details,
-div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] details summary {
-    background: #eff6ff !important;
-    border-radius: 8px !important;
-}
+
 details[data-testid],
 details {
     border: none !important;
