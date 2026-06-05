@@ -1234,8 +1234,11 @@ def load_reference_mapping_models(has_token: bool = False):
     pca_coords_path  = hf_hub_download(repo_id=REPO_ID, filename="reference_pca_coords.npy",  repo_type="dataset", token=token)
     umap_coords_path = hf_hub_download(repo_id=REPO_ID, filename="reference_umap_coords.npy", repo_type="dataset", token=token)
     gene_path        = hf_hub_download(repo_id=REPO_ID, filename="reference_gene_names.csv",  repo_type="dataset", token=token)
-    with open(pca_path, "rb") as f:       pca_model  = pickle.load(f)
-    with open(umap_model_path, "rb") as f: umap_model = pickle.load(f)
+    with open(pca_path, "rb") as f: pca_model = pickle.load(f)
+    try:
+        with open(umap_model_path, "rb") as f: umap_model = pickle.load(f)
+    except Exception:
+        umap_model = None  # fallback to KNN
     ref_pca_coords  = np.load(pca_coords_path).astype(np.float32)
     ref_umap_coords = np.load(umap_coords_path).astype(np.float32)
     ref_genes = pd.read_csv(gene_path)["gene"].tolist()
