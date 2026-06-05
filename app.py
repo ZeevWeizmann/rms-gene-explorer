@@ -3861,6 +3861,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
             else:
                 st.session_state["_upload_ref_proj"]   = None
                 st.session_state["_upload_n_common"]   = 0
+            st.rerun()  # re-render messages so program score picks up uploaded data
 
     # ── Render — always show if data in session_state ────────────────
     umap_up   = st.session_state.get("_upload_umap")
