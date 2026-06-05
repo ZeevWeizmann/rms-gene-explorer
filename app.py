@@ -4054,11 +4054,11 @@ with st.expander(T['settings'], expanded=False):
 
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
-    ("TUBB",   "tubb",  "Vincristine · FDA-approved"),
-    ("BIRC5",  "mki67", "YM155 · clinical trials"),
-    ("HSPA1B", "full",  "Novel target · HSP70 class"),
-    ("HSPA1A", "full",  "CD24Fc · HSP70 class"),
-    ("AURKB",  "full",  "Barasertib · Phase I"),
+    ("TUBB",   "tubb",  "Vincristine · FDA"),
+    ("BIRC5",  "mki67", "YM155 · trials"),
+    ("HSPA1B", "full",  "HSP70 · novel"),
+    ("HSPA1A", "full",  "CD24Fc · HSP70"),
+    ("AURKB",  "full",  "Barasertib · Ph.I"),
 ]
 with st.expander(T['featured_targets'], expanded=False):
     _fcols = st.columns(len(_FEATURED))
