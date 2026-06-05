@@ -3708,13 +3708,34 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                 st.write(T['normalizing'])
                 sc.pp.normalize_total(adata, target_sum=1e4)
                 sc.pp.log1p(adata)
-                n_top = min(3000, adata.n_vars)
+                n_top = min(2000, adata.n_vars)
                 sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
-                n_comps = min(50, adata.n_obs - 2, adata.n_vars - 1)
+                n_comps = min(30, adata.n_obs - 2, adata.n_vars - 1)
                 sc.pp.pca(adata, n_comps=n_comps)
                 st.write("Computing UMAP…")
-                sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(30, n_comps))
-                sc.tl.umap(adata)
+                _UMAP_MAX = 20_000
+                if adata.n_obs > _UMAP_MAX:
+                    st.write(f"Large dataset — computing UMAP on {_UMAP_MAX:,} cells, projecting the rest…")
+                    import numpy as _np_up
+                    _idx_sub = _np_up.random.choice(adata.n_obs, _UMAP_MAX, replace=False)
+                    _idx_sub.sort()
+                    adata_sub = adata[_idx_sub].copy()
+                    sc.pp.neighbors(adata_sub, n_neighbors=15, n_pcs=min(20, n_comps))
+                    sc.tl.umap(adata_sub, min_dist=0.3)
+                    # Project remaining cells via KNN in PCA space
+                    from sklearn.neighbors import NearestNeighbors as _NNup
+                    _pca_sub  = adata_sub.obsm["X_pca"]
+                    _pca_all  = adata.obsm["X_pca"]
+                    _nn_up = _NNup(n_neighbors=5, algorithm="auto").fit(_pca_sub)
+                    _dists_up, _idxs_up = _nn_up.kneighbors(_pca_all)
+                    _w_up = 1.0 / (_dists_up + 1e-8)
+                    _w_up /= _w_up.sum(axis=1, keepdims=True)
+                    _umap_sub = adata_sub.obsm["X_umap"]
+                    _umap_all = (_w_up[:, :, None] * _umap_sub[_idxs_up]).sum(axis=1)
+                    adata.obsm["X_umap"] = _umap_all
+                else:
+                    sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(20, n_comps))
+                    sc.tl.umap(adata, min_dist=0.3)
                 _upload_status.update(label="Done!", state="complete", expanded=True)
             umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
             for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
