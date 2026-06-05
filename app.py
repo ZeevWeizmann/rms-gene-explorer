@@ -581,12 +581,6 @@ div[data-testid="stExpander"] details summary {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
 }
-/* About and Featured — grey text */
-div[data-testid="stVerticalBlock"] > div:nth-last-child(1) div[data-testid="stExpander"] summary p,
-div[data-testid="stVerticalBlock"] > div:nth-last-child(2) div[data-testid="stExpander"] summary p {
-    color: #9ca3af !important;
-    font-weight: 400 !important;
-}
 
 /* Disable Streamlit header title link — clicking it would reload the page */
 header[data-testid="stHeader"] a,
