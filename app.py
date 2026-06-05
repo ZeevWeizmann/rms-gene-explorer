@@ -574,7 +574,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
 }
 div[data-testid="stExpander"] {
     margin-top: 0 !important;
-    margin-bottom: 6px !important;
+    margin-bottom: 2px !important;
 }
 
 /* Disable Streamlit header title link — clicking it would reload the page */
