@@ -2406,11 +2406,15 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Personalise expander placeholder — filled after data loads (sits above search)
-_personalise_container = st.container()
+# Upload toggle button + search bar in one row
+_search_row = st.columns([10, 1])
+_search_container = _search_row[0]
+with _search_row[1]:
+    if st.button("📂", key="upload_toggle", help="Upload your data (.h5ad)", use_container_width=True):
+        st.session_state["_upload_panel_open"] = not st.session_state.get("_upload_panel_open", False)
 
-# Search bar placeholder — filled after data loads (sits directly below title)
-_search_container = st.container()
+# Upload panel — shown below search when toggled
+_personalise_container = st.container()
 
 
 # ================================================================
@@ -3772,9 +3776,10 @@ if query_gene:
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
 
-# ── Genes from your data expander — above search (rendered via placeholder) ──
+# ── Genes from your data — shown when upload icon clicked ──────────
 # st.form prevents ClientDisconnect: file bytes arrive before any rerun is triggered
-with _personalise_container.expander(T['genes_from_data'], expanded=False):
+_upload_open = st.session_state.get("_upload_panel_open", False) or st.session_state.get("_upload_umap") is not None
+with _personalise_container.expander(T['genes_from_data'], expanded=_upload_open):
     st.caption(T['upload_note'])
     with st.form("_upload_form", clear_on_submit=False):
         uploaded_file = st.file_uploader(T['upload_label'], type=["h5ad"], key="h5ad_upload")
