@@ -2910,30 +2910,46 @@ def _render_msg_figures(msg, msg_id):
                         st.markdown("**Program score**")
                         _cols_score = st.columns(2 if _pat_scores is not None else 1)
 
+                        def _umap_score_fig(_umap_df, _scores, _title, _n_found, _n_total, _colorscale):
+                            _vmax = float(np.percentile(np.abs(_scores), 95))
+                            _fig = px.scatter(
+                                x=_umap_df["x"], y=_umap_df["y"],
+                                color=_scores,
+                                color_continuous_scale=_colorscale,
+                                range_color=[-_vmax, _vmax],
+                                labels={"x": "UMAP 1", "y": "UMAP 2", "color": "Score"},
+                                render_mode="webgl", height=340,
+                            )
+                            _fig.update_traces(marker=dict(size=2.5, opacity=0.8))
+                            _fig.update_layout(
+                                plot_bgcolor="white", paper_bgcolor="white",
+                                margin=dict(t=10, b=10, l=0, r=0),
+                                coloraxis_colorbar=dict(thickness=10, len=0.6),
+                            )
+                            return _fig
+
                         with _cols_score[0]:
                             _pct_ref = float((_ref_scores > 0).sum()) / len(_ref_scores) * 100
                             st.caption(f"**RMS reference** · {len(_ref_scores):,} cells · {_ref_found}/{_ref_total} genes")
                             st.metric("Cells with program (score > 0)", f"{_pct_ref:.1f}%")
-                            _fig_ref = px.histogram(x=_ref_scores, nbins=60,
-                                labels={"x": "Score", "y": "Cells"},
-                                color_discrete_sequence=["#94a3b8"], height=160)
-                            _fig_ref.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
-                            _fig_ref.update_layout(margin=dict(t=5,b=30,l=40,r=10),
-                                plot_bgcolor="white", paper_bgcolor="white", showlegend=False)
-                            st.plotly_chart(_fig_ref, use_container_width=True, key=f"{msg_id}_score_ref")
+                            st.plotly_chart(
+                                _umap_score_fig(umap_df, _ref_scores, "RMS reference",
+                                                _ref_found, _ref_total, "RdBu_r"),
+                                use_container_width=True, key=f"{msg_id}_score_ref"
+                            )
 
                         if _pat_scores is not None:
+                            _up_umap_ps = st.session_state.get("_upload_umap")
                             with _cols_score[1]:
                                 _pct_pat = float((_pat_scores > 0).sum()) / len(_pat_scores) * 100
                                 st.caption(f"**Patient data** · {len(_pat_scores):,} cells · {_pat_found}/{_pat_total} genes")
                                 st.metric("Cells with program (score > 0)", f"{_pct_pat:.1f}%")
-                                _fig_pat = px.histogram(x=_pat_scores, nbins=60,
-                                    labels={"x": "Score", "y": "Cells"},
-                                    color_discrete_sequence=["#3b82f6"], height=160)
-                                _fig_pat.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
-                                _fig_pat.update_layout(margin=dict(t=5,b=30,l=40,r=10),
-                                    plot_bgcolor="white", paper_bgcolor="white", showlegend=False)
-                                st.plotly_chart(_fig_pat, use_container_width=True, key=f"{msg_id}_score_pat")
+                                if _up_umap_ps is not None:
+                                    st.plotly_chart(
+                                        _umap_score_fig(_up_umap_ps, _pat_scores, "Patient data",
+                                                        _pat_found, _pat_total, "RdBu_r"),
+                                        use_container_width=True, key=f"{msg_id}_score_pat"
+                                    )
                 except Exception as _e_ps:
                     st.warning(f"Program scoring failed: {_e_ps}")
 
