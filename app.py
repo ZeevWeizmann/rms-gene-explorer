@@ -3683,10 +3683,6 @@ if query_gene:
             "dataset_key": dataset_key,
             "fig_gene_map": fig_gene_map,
         })
-        # Store program genes for uploaded-data scoring
-        st.session_state["_last_program_genes"] = program_genes
-        st.session_state["_last_query_gene"]    = query_gene
-        st.session_state["_last_query_annot"]   = query_annotation
         # Reset selectbox to placeholder (allows re-selecting the same gene next time)
         st.session_state[f"sel_version_{dataset_key}"] = st.session_state.get(f"sel_version_{dataset_key}", 0) + 1
         st.rerun()
@@ -3789,64 +3785,6 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
         elif n_common > 0:
             _info += f"  \nReference projection unavailable — only {n_common} shared genes (need ≥50). Use HGNC symbols."
         st.info(_info)
-
-        # ── Program scoring on uploaded cells ────────────────────────
-        _prog_genes   = st.session_state.get("_last_program_genes")
-        _prog_qgene   = st.session_state.get("_last_query_gene")
-        _prog_annot   = st.session_state.get("_last_query_annot")
-        if _prog_genes and expr_up is not None:
-            _prog_set    = set(_prog_genes)
-            _prog_in_up  = [g for g in var_names if g in _prog_set]
-            _n_prog      = len(_prog_genes)
-            _n_found     = len(_prog_in_up)
-            if _n_found >= 5:
-                # score_genes: mean(program) - mean(control genes of similar expression)
-                import anndata as _ad_sc, scanpy as _sc, scipy.sparse as _sp_sc
-                _adata_sc = _ad_sc.AnnData(
-                    X=_sp_sc.csr_matrix(expr_up.astype("float32")),
-                    var=pd.DataFrame(index=var_names),
-                )
-                _sc.tl.score_genes(_adata_sc, gene_list=_prog_in_up, score_name="_prog_score")
-                _scores  = _adata_sc.obs["_prog_score"].values
-                _pct_pos = float((_scores > 0).sum()) / len(_scores) * 100
-
-                st.markdown(f"**Program score — {_prog_qgene}** (*{_prog_annot}*)")
-                _c1, _c2, _c3 = st.columns(3)
-                _c1.metric("Cells with score > 0", f"{_pct_pos:.1f}%")
-                _c2.metric("Program genes found", f"{_n_found} / {_n_prog}")
-                _c3.metric("Total cells scored", f"{len(_scores):,}")
-
-                # Score distribution histogram
-                import plotly.graph_objects as _go_sc
-                _fig_sc = _go_sc.Figure()
-                _fig_sc.add_trace(_go_sc.Histogram(
-                    x=_scores, nbinsx=60,
-                    marker_color=["#ef4444" if s > 0 else "#93c5fd" for s in [0]],
-                ))
-                # Color positive / negative separately
-                _fig_sc.add_trace(_go_sc.Histogram(
-                    x=_scores[_scores > 0], nbinsx=40,
-                    marker_color="#ef4444", name="score > 0", opacity=0.8,
-                ))
-                _fig_sc.add_trace(_go_sc.Histogram(
-                    x=_scores[_scores <= 0], nbinsx=40,
-                    marker_color="#93c5fd", name="score ≤ 0", opacity=0.8,
-                ))
-                _fig_sc.update_layout(
-                    barmode="overlay",
-                    xaxis_title="Program score",
-                    yaxis_title="Cells",
-                    height=220,
-                    margin=dict(t=10, b=30, l=40, r=10),
-                    plot_bgcolor="white",
-                    paper_bgcolor="white",
-                    showlegend=True,
-                    legend=dict(orientation="h", y=1.1),
-                )
-                _fig_sc.add_vline(x=0, line_dash="dash", line_color="#6b7280", line_width=1)
-                st.plotly_chart(_fig_sc, use_container_width=True)
-            else:
-                st.warning(f"Only {_n_found} program genes found in your data — need ≥ 5 to score.")
 
         import plotly.graph_objects as go
 
