@@ -2,7 +2,7 @@ streamlit==1.57.0
 numpy
 pandas
 plotly
-scikit-learn
+scikit-learn==1.7.2
 huggingface_hub
 networkx
 anndata
