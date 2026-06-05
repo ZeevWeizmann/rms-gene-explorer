@@ -576,6 +576,11 @@ div[data-testid="stExpander"] {
     margin-top: 0 !important;
     margin-bottom: 0px !important;
 }
+/* Tighter expander summary padding */
+div[data-testid="stExpander"] details summary {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+}
 
 /* Disable Streamlit header title link — clicking it would reload the page */
 header[data-testid="stHeader"] a,
