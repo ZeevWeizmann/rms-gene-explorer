@@ -2873,44 +2873,69 @@ def _render_msg_figures(msg, msg_id):
                         else:
                             st.markdown(f"*{_annot_label}*")
 
-            # ── Patient data: program score ───────────────────────────
-            _up_var_ps  = st.session_state.get("_upload_var_names", [])
-            _up_expr_ps = st.session_state.get("_upload_expr")
+            # ── Program score: Reference + Patient data ───────────────
             _msg_prog_ps = msg.get("grn_program_genes") or []
-            if _up_expr_ps is not None and len(_msg_prog_ps) >= 5:
-                _prog_in_ps = [g for g in _msg_prog_ps if g in set(_up_var_ps)]
-                if len(_prog_in_ps) >= 5:
-                    try:
-                        import anndata as _anndata_ps, scanpy as _scanpy_ps
-                        import scipy.sparse as _sparse_ps
-                        _adata_ps = _anndata_ps.AnnData(
-                            X=_sparse_ps.csr_matrix(_up_expr_ps.astype("float32")),
-                            var=pd.DataFrame(index=_up_var_ps),
+            if len(_msg_prog_ps) >= 5:
+                try:
+                    import anndata as _anndata_ps, scanpy as _scanpy_ps
+                    import scipy.sparse as _sparse_ps
+
+                    def _score_expr(_expr_mat, _var_list, _prog_genes, _key):
+                        _prog_in = [g for g in _prog_genes if g in set(_var_list)]
+                        if len(_prog_in) < 5:
+                            return None, 0, 0
+                        _ad = _anndata_ps.AnnData(
+                            X=_sparse_ps.csr_matrix(_expr_mat.astype("float32")),
+                            var=pd.DataFrame(index=_var_list),
                         )
-                        _scanpy_ps.tl.score_genes(_adata_ps, gene_list=_prog_in_ps, score_name="_s")
-                        _scores_ps = _adata_ps.obs["_s"].values
-                        _pct_ps = float((_scores_ps > 0).sum()) / len(_scores_ps) * 100
+                        _scanpy_ps.tl.score_genes(_ad, gene_list=_prog_in, score_name="_s")
+                        _sc = _ad.obs["_s"].values
+                        return _sc, len(_prog_in), len(_msg_prog_ps)
+
+                    # Reference data
+                    _ref_scores, _ref_found, _ref_total = _score_expr(
+                        expr, gene_names, _msg_prog_ps, "ref"
+                    )
+                    # Patient data (if uploaded)
+                    _up_var_ps  = st.session_state.get("_upload_var_names", [])
+                    _up_expr_ps = st.session_state.get("_upload_expr")
+                    _pat_scores, _pat_found, _pat_total = (None, 0, 0)
+                    if _up_expr_ps is not None:
+                        _pat_scores, _pat_found, _pat_total = _score_expr(
+                            _up_expr_ps, _up_var_ps, _msg_prog_ps, "pat"
+                        )
+
+                    if _ref_scores is not None or _pat_scores is not None:
                         st.divider()
-                        st.markdown("**Patient data — program score**")
-                        _ca, _cb, _cc = st.columns(3)
-                        _ca.metric("Cells with program (score > 0)", f"{_pct_ps:.1f}%")
-                        _cb.metric("Program genes found", f"{len(_prog_in_ps)} / {len(_msg_prog_ps)}")
-                        _cc.metric("Total cells", f"{len(_scores_ps):,}")
-                        _fig_ps = px.histogram(
-                            x=_scores_ps, nbins=60,
-                            labels={"x": "Program score", "y": "Cells"},
-                            color_discrete_sequence=["#3b82f6"],
-                            height=200,
-                        )
-                        _fig_ps.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
-                        _fig_ps.update_layout(
-                            margin=dict(t=5, b=30, l=40, r=10),
-                            plot_bgcolor="white", paper_bgcolor="white",
-                            showlegend=False,
-                        )
-                        st.plotly_chart(_fig_ps, use_container_width=True, key=f"{msg_id}_prog_score")
-                    except Exception as _e_ps:
-                        st.warning(f"Program scoring failed: {_e_ps}")
+                        st.markdown("**Program score**")
+                        _cols_score = st.columns(2 if _pat_scores is not None else 1)
+
+                        with _cols_score[0]:
+                            _pct_ref = float((_ref_scores > 0).sum()) / len(_ref_scores) * 100
+                            st.caption(f"**RMS reference** · {len(_ref_scores):,} cells · {_ref_found}/{_ref_total} genes")
+                            st.metric("Cells with program (score > 0)", f"{_pct_ref:.1f}%")
+                            _fig_ref = px.histogram(x=_ref_scores, nbins=60,
+                                labels={"x": "Score", "y": "Cells"},
+                                color_discrete_sequence=["#94a3b8"], height=160)
+                            _fig_ref.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
+                            _fig_ref.update_layout(margin=dict(t=5,b=30,l=40,r=10),
+                                plot_bgcolor="white", paper_bgcolor="white", showlegend=False)
+                            st.plotly_chart(_fig_ref, use_container_width=True, key=f"{msg_id}_score_ref")
+
+                        if _pat_scores is not None:
+                            with _cols_score[1]:
+                                _pct_pat = float((_pat_scores > 0).sum()) / len(_pat_scores) * 100
+                                st.caption(f"**Patient data** · {len(_pat_scores):,} cells · {_pat_found}/{_pat_total} genes")
+                                st.metric("Cells with program (score > 0)", f"{_pct_pat:.1f}%")
+                                _fig_pat = px.histogram(x=_pat_scores, nbins=60,
+                                    labels={"x": "Score", "y": "Cells"},
+                                    color_discrete_sequence=["#3b82f6"], height=160)
+                                _fig_pat.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
+                                _fig_pat.update_layout(margin=dict(t=5,b=30,l=40,r=10),
+                                    plot_bgcolor="white", paper_bgcolor="white", showlegend=False)
+                                st.plotly_chart(_fig_pat, use_container_width=True, key=f"{msg_id}_score_pat")
+                except Exception as _e_ps:
+                    st.warning(f"Program scoring failed: {_e_ps}")
 
     # ── Tab: Expression ───────────────────────────────────────────────────────
     if "expression" in _tab_map:
