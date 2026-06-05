@@ -488,7 +488,7 @@ div[data-testid="column"] div[data-testid="stSelectbox"] > div > div:hover {
 
 /* ── Google-style spacing: search is the hero element ──────────── */
 div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stSelectbox"]:first-child) {
-    margin-top: 8px !important;
+    margin-top: 2px !important;
     margin-bottom: 8px !important;
 }
 
