@@ -2877,38 +2877,33 @@ def _render_msg_figures(msg, msg_id):
             if _up_expr is not None and len(_msg_prog) >= 5:
                 _prog_in_up = [g for g in _msg_prog if g in set(_up_var)]
                 if len(_prog_in_up) >= 5:
-                    try:
-                        import anndata as _anndata_ps
-                        import scanpy as _scanpy_ps
-                        import scipy.sparse as _sparse_ps
-                        _adata_ps = _anndata_ps.AnnData(
-                            X=_sparse_ps.csr_matrix(_up_expr.astype("float32")),
-                            var=pd.DataFrame(index=_up_var),
-                        )
-                        _scanpy_ps.tl.score_genes(_adata_ps, gene_list=_prog_in_up, score_name="_s")
-                        _scores_ps = _adata_ps.obs["_s"].values
-                        _pct_ps = float((_scores_ps > 0).sum()) / len(_scores_ps) * 100
-                        st.divider()
-                        st.markdown("**Your data — program score**")
-                        _ca, _cb, _cc = st.columns(3)
-                        _ca.metric("Cells with program (score > 0)", f"{_pct_ps:.1f}%")
-                        _cb.metric("Program genes found", f"{len(_prog_in_up)} / {len(_msg_prog)}")
-                        _cc.metric("Total cells", f"{len(_scores_ps):,}")
-                        _fig_ps = px.histogram(
-                            x=_scores_ps, nbins=60,
-                            labels={"x": "Program score", "y": "Cells"},
-                            color_discrete_sequence=["#3b82f6"],
-                            height=200,
-                        )
-                        _fig_ps.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
-                        _fig_ps.update_layout(
-                            margin=dict(t=5, b=30, l=40, r=10),
-                            plot_bgcolor="white", paper_bgcolor="white",
-                            showlegend=False,
-                        )
-                        st.plotly_chart(_fig_ps, use_container_width=True, key=f"{msg_id}_prog_score")
-                    except Exception as _e_ps:
-                        st.warning(f"Program scoring failed: {_e_ps}")
+                    import anndata as _ad2, scanpy as _sc2, scipy.sparse as _sp2
+                    _adata2 = _ad2.AnnData(
+                        X=_sp2.csr_matrix(_up_expr.astype("float32")),
+                        var=pd.DataFrame(index=_up_var),
+                    )
+                    _sc2.tl.score_genes(_adata2, gene_list=_prog_in_up, score_name="_s")
+                    _sc = _adata2.obs["_s"].values
+                    _pct = float((_sc > 0).sum()) / len(_sc) * 100
+                    st.divider()
+                    st.markdown("**Your data — program score**")
+                    _ca, _cb, _cc = st.columns(3)
+                    _ca.metric("Cells with program (score > 0)", f"{_pct:.1f}%")
+                    _cb.metric("Program genes found", f"{len(_prog_in_up)} / {len(_msg_prog)}")
+                    _cc.metric("Total cells", f"{len(_sc):,}")
+                    _fig2 = px.histogram(
+                        x=_sc, nbins=60,
+                        labels={"x": "Program score", "y": "Cells"},
+                        color_discrete_sequence=["#3b82f6"],
+                        height=200,
+                    )
+                    _fig2.add_vline(x=0, line_dash="dash", line_color="#ef4444", line_width=1.5)
+                    _fig2.update_layout(
+                        margin=dict(t=5, b=30, l=40, r=10),
+                        plot_bgcolor="white", paper_bgcolor="white",
+                        showlegend=False,
+                    )
+                    st.plotly_chart(_fig2, use_container_width=True, key=f"{msg_id}_prog_score")
 
     # ── Tab: Expression ───────────────────────────────────────────────────────
     if "expression" in _tab_map:
