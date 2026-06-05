@@ -3737,6 +3737,7 @@ if query_gene:
             "BIRC5":  "💊 **YM155** / Sepantronium (clinical trials)",
             "HSPA1B": "🎯 **Novel target** — HSP70 inhibitor class, no approved RMS drug",
             "HSPA1A": "💊 **CD24Fc** (SL-172154) — HSP70 inhibitor · targets quiescent RMS cells",
+            "UBE2C":  "🎯 **Novel target** — APC/C E2 enzyme · proTAME / apcin (preclinical) · reduces quiescent population",
             "AURKB":  "💊 **Barasertib** (AZD1152) — selective Aurora B inhibitor · Phase I clinical trials",
         }
         _drug_line = _DRUG_MAP.get(query_gene.upper(), "")
@@ -4058,6 +4059,7 @@ _FEATURED = [
     ("BIRC5",  "mki67", "YM155 · trials"),
     ("HSPA1B", "full",  "HSP70 · novel"),
     ("HSPA1A", "full",  "CD24Fc · HSP70"),
+    ("UBE2C",  "full",  "APC/C · novel"),
     ("AURKB",  "full",  "Barasertib · Ph.I"),
 ]
 with st.expander(T['featured_targets'], expanded=False):
