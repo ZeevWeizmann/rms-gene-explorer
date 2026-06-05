@@ -4074,6 +4074,9 @@ _FEATURED = [
     ("UBE2C",  "full",  "APC/C · novel"),
     ("AURKB",  "full",  "Barasertib · Ph.I"),
 ]
+# ── About sections (bottom of page) ────────────────────────────
+_about_expander = st.expander(T['about'], expanded=False)
+
 with st.expander(T['featured_targets'], expanded=False):
     _fcols = st.columns(len(_FEATURED))
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
@@ -4083,10 +4086,6 @@ with st.expander(T['featured_targets'], expanded=False):
                 st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
                 st.session_state[f"recent_clicked_{dataset_key}"] = _fg
                 st.rerun()
-
-
-# ── About sections (bottom of page) ────────────────────────────
-_about_expander = st.expander(T['about'], expanded=False)
 with _about_expander:
     st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
