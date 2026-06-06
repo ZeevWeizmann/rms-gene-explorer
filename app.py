@@ -4680,5 +4680,5 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:center;'>Contact: <a href='mailto:zeev.weizmann@etu.univ-cotedazur.fr' style='color:#bbb;'>zeev.weizmann@etu.univ-cotedazur.fr</a></div>", unsafe_allow_html=True)
+st.markdown("<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:right;'>Contact: <a href='mailto:zeev.weizmann@etu.univ-cotedazur.fr' style='color:#bbb;'>zeev.weizmann@etu.univ-cotedazur.fr</a></div>", unsafe_allow_html=True)
 
