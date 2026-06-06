@@ -4670,6 +4670,16 @@ st.markdown("""
 /* Placeholder text grey */
 div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
 
+/* Tighten gap between top-level expanders */
+div[data-testid="stMain"] div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+    gap: 4px !important;
+    row-gap: 4px !important;
+}
+div[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
+    gap: 4px !important;
+    row-gap: 4px !important;
+}
+
 /* Borderless expanders — covers Streamlit 1.3x–1.5x structures */
 div[data-testid="stExpander"] details,
 div[data-testid="stExpander"] > details,
