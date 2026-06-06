@@ -706,21 +706,26 @@ st.components.v1.html("""
 // Reduce gap between top-level expanders
 (function() {
     function fixExpanderGap() {
-        var doc = window.parent ? window.parent.document : document;
-        var expanders = doc.querySelectorAll('[data-testid="stExpander"]');
-        if (!expanders.length) { setTimeout(fixExpanderGap, 500); return; }
+        // Use document directly (same-origin iframe, like sticky search above)
+        var expanders = document.querySelectorAll('[data-testid="stExpander"]');
+        if (!expanders.length) { setTimeout(fixExpanderGap, 600); return; }
+        // Walk up to find the stVerticalBlock flex container that holds all expanders
         expanders.forEach(function(exp) {
-            var parent = exp.parentElement;
-            if (parent) {
-                parent.style.marginTop = '-12px';
-                parent.style.marginBottom = '0';
-                parent.style.paddingTop = '0';
-                parent.style.paddingBottom = '0';
+            var el = exp;
+            // Go up the tree looking for stVerticalBlock parents and zero their gap
+            for (var i = 0; i < 6; i++) {
+                el = el.parentElement;
+                if (!el) break;
+                var testid = el.getAttribute('data-testid');
+                if (testid === 'stVerticalBlock') {
+                    el.style.setProperty('gap', '4px', 'important');
+                    el.style.setProperty('row-gap', '4px', 'important');
+                }
             }
         });
     }
-    setTimeout(fixExpanderGap, 1000);
-    setTimeout(fixExpanderGap, 2500);
+    setTimeout(fixExpanderGap, 1200);
+    setTimeout(fixExpanderGap, 3000);
 })();
 </script>
 """, height=0)
