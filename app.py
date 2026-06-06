@@ -580,7 +580,7 @@ div[data-testid="stExpander"] {
     margin-bottom: 0 !important;
 }
 div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stExpander"]) {
-    margin-top: -24px !important;
+    margin-top: -40px !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
