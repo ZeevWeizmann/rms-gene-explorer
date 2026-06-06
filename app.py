@@ -579,11 +579,12 @@ div[data-testid="stExpander"] {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-div[data-testid="stVerticalBlock"] > div:not(:first-child):has(div[data-testid="stExpander"]) {
-    margin-top: -30px !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+/* Reduce gap between expander wrapper divs */
+section.main > div > div > div > div[data-testid="stVerticalBlock"] {
+    gap: 0px !important;
+}
+div[data-testid="stVerticalBlock"]:has(> div > div[data-testid="stExpander"]) {
+    gap: 0px !important;
 }
 /* Tighter expander summary padding */
 div[data-testid="stExpander"] details summary {
