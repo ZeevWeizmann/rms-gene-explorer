@@ -2868,7 +2868,7 @@ def _render_msg_figures(msg, msg_id):
                     )
                     st.dataframe(
                         _styled,
-                        width="stretch",
+                        use_container_width=True,
                         height=440,
                         hide_index=True,
                         column_config={
@@ -2876,7 +2876,7 @@ def _render_msg_figures(msg, msg_id):
                         },
                     )
             else:
-                st.dataframe(_live_df, width="stretch")
+                st.dataframe(_live_df, use_container_width=True)
                 if _annot_label:
                     with st.popover(f"ℹ️ {_annot_label}"):
                         if _cluster_summary:
@@ -2946,7 +2946,7 @@ def _render_msg_figures(msg, msg_id):
                             st.plotly_chart(
                                 _umap_score_fig(umap_df, _ref_scores, "RMS reference",
                                                 _ref_found, _ref_total, "RdBu_r"),
-                                width="stretch", key=f"{msg_id}_score_ref"
+                                use_container_width=True, key=f"{msg_id}_score_ref"
                             )
 
                         if _pat_scores is not None:
@@ -2959,7 +2959,7 @@ def _render_msg_figures(msg, msg_id):
                                     st.plotly_chart(
                                         _umap_score_fig(_up_umap_ps, _pat_scores, "Patient data",
                                                         _pat_found, _pat_total, "RdBu_r"),
-                                        width="stretch", key=f"{msg_id}_score_pat"
+                                        use_container_width=True, key=f"{msg_id}_score_pat"
                                     )
                 except Exception as _e_ps:
                     st.warning(f"Program scoring failed: {_e_ps}")
@@ -3073,7 +3073,7 @@ def _render_msg_figures(msg, msg_id):
                     _drugs_styled = _drugs_df.style.apply(_style_drug_rows, axis=1).format({"Score": "{:.2f}"})
                     st.dataframe(
                         _drugs_styled,
-                        width="stretch",
+                        use_container_width=True,
                         hide_index=True,
                         column_config={
                             "Approved": st.column_config.TextColumn("FDA"),
@@ -3113,7 +3113,7 @@ def _render_msg_figures(msg, msg_id):
                 )
                 _p_pop_col, _p_spacer = st.columns([1.5, 5])
                 with _p_pop_col:
-                    with st.popover(_p_hdr_name or "GRN", width="stretch"):
+                    with st.popover(_p_hdr_name or "GRN", use_container_width=True):
                         st.markdown(f"**{_p_hdr_name}** — {_p_hdr_size}")
                         st.markdown(
                             "  ".join(f"`{g}`" for g in _p_pop_genes)
@@ -3249,9 +3249,9 @@ def _render_msg_figures(msg, msg_id):
                             _pop_real_df = None
                         st.plotly_chart(build_population_proportions_figure(
                             _sim_scored, ko_label=_ko_label, real_df=_pop_real_df),
-                            width="stretch", key=f"{msg_id}_pop_prop")
+                            use_container_width=True, key=f"{msg_id}_pop_prop")
                         st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
-                                        width="stretch", key=f"{msg_id}_pop_delta")
+                                        use_container_width=True, key=f"{msg_id}_pop_delta")
                         st.caption(
                             "\\* **Populations scored by gene signatures:** "
                             "**Proliferative** — CENPF z-score ≥ 70th percentile of WT · "
@@ -3346,7 +3346,7 @@ def _render_msg_figures(msg, msg_id):
             # Row 2: popover button
             _pop_col, _spacer = st.columns([1.5, 5])
             with _pop_col:
-                with st.popover(_hdr_name or "GRN", width="stretch"):
+                with st.popover(_hdr_name or "GRN", use_container_width=True):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
                     st.markdown(
                         "  ".join(f"`{g}`" for g in _popover_genes)
@@ -3982,7 +3982,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
             if ref_proj is not None:
                 # Show reference background colored by cell_type, your cells on top (no metadata needed)
                 st.plotly_chart(_ref_overlay_fig("cell_type", None, "ct"),
-                                width="stretch", key="up_c2")
+                                use_container_width=True, key="up_c2")
                 st.caption("🔵 Patient cells projected onto RMS reference UMAP")
             else:
                 _err = st.session_state.get("_ref_model_error", "")
@@ -4087,7 +4087,7 @@ with st.expander(T['featured_targets'], expanded=False):
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
         with _fc:
             st.caption(_fdrug)
-            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", width="stretch"):
+            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", use_container_width=True):
                 st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
                 st.session_state[f"recent_clicked_{dataset_key}"] = _fg
                 st.rerun()
@@ -4393,7 +4393,7 @@ with _about_expander:
         st.image(
             _ot_img_local,
             caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
-            width="stretch",
+            use_container_width=True,
         )
 
     st.markdown("""
