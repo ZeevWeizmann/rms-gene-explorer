@@ -4675,6 +4675,14 @@ st.markdown("""
 /* Placeholder text grey */
 div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
 
+/* Remove margin on stExpander elements */
+div[data-testid="stExpander"],
+div.stExpander {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
 /* Tighten gap between top-level expanders — target stElementContainer wrappers */
 div[data-testid="stVerticalBlock"] > div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
     margin-top: 0 !important;
