@@ -4685,15 +4685,15 @@ st.markdown("""
 /* Placeholder text grey */
 div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
 
-/* Remove margin/gap — max specificity to beat emotion CSS */
-html body div[data-testid="stExpander"] {
+/* Remove margin/gap — beat emotion (0,2,0) with (0,3,2) specificity */
+html body div.stExpander[data-testid="stExpander"][class] {
     margin: 0 !important;
 }
-html body section[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
+html body section[data-testid="stMain"] div.stVerticalBlock[data-testid="stVerticalBlock"] {
     gap: 0.2rem !important;
     row-gap: 0.2rem !important;
 }
-html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
+html body div.stElementContainer[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     margin-top: 0 !important;
