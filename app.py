@@ -702,6 +702,26 @@ st.components.v1.html("""
     setTimeout(setup, 800);
     setTimeout(setup, 2000);
 })();
+
+// Reduce gap between top-level expanders
+(function() {
+    function fixExpanderGap() {
+        var doc = window.parent ? window.parent.document : document;
+        var expanders = doc.querySelectorAll('[data-testid="stExpander"]');
+        if (!expanders.length) { setTimeout(fixExpanderGap, 500); return; }
+        expanders.forEach(function(exp) {
+            var parent = exp.parentElement;
+            if (parent) {
+                parent.style.marginTop = '-12px';
+                parent.style.marginBottom = '0';
+                parent.style.paddingTop = '0';
+                parent.style.paddingBottom = '0';
+            }
+        });
+    }
+    setTimeout(fixExpanderGap, 1000);
+    setTimeout(fixExpanderGap, 2500);
+})();
 </script>
 """, height=0)
 
