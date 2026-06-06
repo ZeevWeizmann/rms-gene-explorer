@@ -584,6 +584,18 @@ div[data-testid="stExpander"] details summary {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
 }
+/* Move expander chevron to the left */
+div[data-testid="stExpander"] details summary {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+}
+div[data-testid="stExpander"] details summary svg {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    flex-shrink: 0 !important;
+}
 
 /* Disable Streamlit header title link — clicking it would reload the page */
 header[data-testid="stHeader"] a,
