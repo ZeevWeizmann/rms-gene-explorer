@@ -542,7 +542,7 @@ div[data-testid="stButton"] > button:hover {
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
-div.block-container { padding-top: 0.5rem !important; }
+div.block-container { padding-top: 0 !important; }
 
 /* Borderless expanders */
 div[data-testid="stExpander"],
@@ -2450,11 +2450,11 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
 
 # Logo + title — centered, vertical stack
 st.markdown(f"""
-<div style='text-align:center; margin-bottom:18px;'>
+<div style='text-align:center; margin-bottom:32px;'>
   <a href='https://rmsexplorer.com' target='_self' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
