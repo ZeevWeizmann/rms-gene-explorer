@@ -615,7 +615,7 @@ div[data-baseweb="tab-panel"] div[data-testid="stSelectbox"] > div::before {{
 """, unsafe_allow_html=True)
 
 # ── Sticky search bar via components.html (runs real JS in parent frame) ──
-st.html("""
+st.components.v1.html("""
 <script>
 (function() {
     if (window._stickySearchDone) return;
@@ -2803,7 +2803,7 @@ def _render_msg_figures(msg, msg_id):
         setTimeout(_initTabs, 300);
     }})();
     </script>"""
-    st.html(_js_code, unsafe_allow_javascript=True)
+    st.components.v1.html(_js_code)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
@@ -2849,7 +2849,7 @@ def _render_msg_figures(msg, msg_id):
             if _live_gene_map is not None:
                 _mc, _tc = st.columns([5, 2])
                 with _mc:
-                    st.plotly_chart(_live_gene_map, use_container_width=True,
+                    st.plotly_chart(_live_gene_map, width="stretch",
                                     key=f"{msg_id}_gene_map_{program_size}")
                     if _cluster_summary:
                         with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
@@ -2868,7 +2868,7 @@ def _render_msg_figures(msg, msg_id):
                     )
                     st.dataframe(
                         _styled,
-                        use_container_width=True,
+                        width="stretch",
                         height=440,
                         hide_index=True,
                         column_config={
@@ -2876,7 +2876,7 @@ def _render_msg_figures(msg, msg_id):
                         },
                     )
             else:
-                st.dataframe(_live_df, use_container_width=True)
+                st.dataframe(_live_df, width="stretch")
                 if _annot_label:
                     with st.popover(f"ℹ️ {_annot_label}"):
                         if _cluster_summary:
@@ -2946,7 +2946,7 @@ def _render_msg_figures(msg, msg_id):
                             st.plotly_chart(
                                 _umap_score_fig(umap_df, _ref_scores, "RMS reference",
                                                 _ref_found, _ref_total, "RdBu_r"),
-                                use_container_width=True, key=f"{msg_id}_score_ref"
+                                width="stretch", key=f"{msg_id}_score_ref"
                             )
 
                         if _pat_scores is not None:
@@ -2959,7 +2959,7 @@ def _render_msg_figures(msg, msg_id):
                                     st.plotly_chart(
                                         _umap_score_fig(_up_umap_ps, _pat_scores, "Patient data",
                                                         _pat_found, _pat_total, "RdBu_r"),
-                                        use_container_width=True, key=f"{msg_id}_score_pat"
+                                        width="stretch", key=f"{msg_id}_score_pat"
                                     )
                 except Exception as _e_ps:
                     st.warning(f"Program scoring failed: {_e_ps}")
@@ -2970,7 +2970,7 @@ def _render_msg_figures(msg, msg_id):
             if msg.get("fig") is not None:
                 fig_expr = msg["fig"]
                 fig_expr.update_layout(height=CHART_H)
-                st.plotly_chart(fig_expr, use_container_width=True, key=f"{msg_id}_fig")
+                st.plotly_chart(fig_expr, width="stretch", key=f"{msg_id}_fig")
             _row1_keys = ["fig_time", "fig_celltype", "fig_pop_real"]
             _row1 = [(k, msg.get(k)) for k in _row1_keys if msg.get(k) is not None]
             if _row1:
@@ -2978,7 +2978,7 @@ def _render_msg_figures(msg, msg_id):
                     cols = st.columns(1 if is_mobile else len(_row1))
                     for col, (k, f) in zip(cols, _row1):
                         f.update_layout(height=CHART_H_SMALL)
-                        col.plotly_chart(f, use_container_width=True, key=f"{msg_id}_{k}")
+                        col.plotly_chart(f, width="stretch", key=f"{msg_id}_{k}")
                     if msg.get("fig_pop_real") is not None:
                         st.caption(
                             "**Populations** scored by gene signatures: "
@@ -3033,7 +3033,7 @@ def _render_msg_figures(msg, msg_id):
                                 opacity=0.92,
                             )
                     _bar_fig.update_layout(margin=dict(r=55))
-                st.plotly_chart(_bar_fig, use_container_width=True, key=f"{msg_id}_pert_bar")
+                st.plotly_chart(_bar_fig, width="stretch", key=f"{msg_id}_pert_bar")
                 if _bar_drug_set:
                     st.markdown(
                         '<span style="display:inline-block;background:#2563eb;color:white;'
@@ -3073,7 +3073,7 @@ def _render_msg_figures(msg, msg_id):
                     _drugs_styled = _drugs_df.style.apply(_style_drug_rows, axis=1).format({"Score": "{:.2f}"})
                     st.dataframe(
                         _drugs_styled,
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         column_config={
                             "Approved": st.column_config.TextColumn("FDA"),
@@ -3113,7 +3113,7 @@ def _render_msg_figures(msg, msg_id):
                 )
                 _p_pop_col, _p_spacer = st.columns([1.5, 5])
                 with _p_pop_col:
-                    with st.popover(_p_hdr_name or "GRN", use_container_width=True):
+                    with st.popover(_p_hdr_name or "GRN", width="stretch"):
                         st.markdown(f"**{_p_hdr_name}** — {_p_hdr_size}")
                         st.markdown(
                             "  ".join(f"`{g}`" for g in _p_pop_genes)
@@ -3163,7 +3163,7 @@ def _render_msg_figures(msg, msg_id):
                         plot_bgcolor="white", paper_bgcolor="white",
                         legend=dict(orientation="h", y=1.12),
                     )
-                    st.plotly_chart(_tc_fig, use_container_width=True, key=f"{msg_id}_pert_tc")
+                    st.plotly_chart(_tc_fig, width="stretch", key=f"{msg_id}_pert_tc")
 
                 # ── Cell population response ───────────────────────────────
                 # Program-specific GRN models (mki67, tubb, foxm1) are trained on a
@@ -3249,9 +3249,9 @@ def _render_msg_figures(msg, msg_id):
                             _pop_real_df = None
                         st.plotly_chart(build_population_proportions_figure(
                             _sim_scored, ko_label=_ko_label, real_df=_pop_real_df),
-                            use_container_width=True, key=f"{msg_id}_pop_prop")
+                            width="stretch", key=f"{msg_id}_pop_prop")
                         st.plotly_chart(build_population_delta_figure(_sim_scored, ko_label=_ko_label),
-                                        use_container_width=True, key=f"{msg_id}_pop_delta")
+                                        width="stretch", key=f"{msg_id}_pop_delta")
                         st.caption(
                             "\\* **Populations scored by gene signatures:** "
                             "**Proliferative** — CENPF z-score ≥ 70th percentile of WT · "
@@ -3346,7 +3346,7 @@ def _render_msg_figures(msg, msg_id):
             # Row 2: popover button
             _pop_col, _spacer = st.columns([1.5, 5])
             with _pop_col:
-                with st.popover(_hdr_name or "GRN", use_container_width=True):
+                with st.popover(_hdr_name or "GRN", width="stretch"):
                     st.markdown(f"**{_hdr_name}** — {_hdr_size}")
                     st.markdown(
                         "  ".join(f"`{g}`" for g in _popover_genes)
@@ -3410,10 +3410,10 @@ def _render_msg_figures(msg, msg_id):
                         yaxis=dict(tickfont=dict(size=9)),
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
-                    st.plotly_chart(adj_fig, use_container_width=True, key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
+                    st.plotly_chart(adj_fig, width="stretch", key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
             if _live_grn_fig is not None:
                 with st.expander("Gene Regulatory Interactions", expanded=True):
-                    st.plotly_chart(_live_grn_fig, use_container_width=True, key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
+                    st.plotly_chart(_live_grn_fig, width="stretch", key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
@@ -3976,13 +3976,13 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
             _f.update_traces(marker=dict(size=2.5, opacity=0.8))
             _f.update_layout(plot_bgcolor="white", paper_bgcolor="white",
                              margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(_f, use_container_width=True, key="up_c1")
+            st.plotly_chart(_f, width="stretch", key="up_c1")
         with _c2:
             st.caption("Reference UMAP · your cells projected")
             if ref_proj is not None:
                 # Show reference background colored by cell_type, your cells on top (no metadata needed)
                 st.plotly_chart(_ref_overlay_fig("cell_type", None, "ct"),
-                                use_container_width=True, key="up_c2")
+                                width="stretch", key="up_c2")
                 st.caption("🔵 Patient cells projected onto RMS reference UMAP")
             else:
                 _err = st.session_state.get("_ref_model_error", "")
@@ -4010,7 +4010,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                 _fg1.update_traces(marker=dict(size=2.5, opacity=0.85))
                 _fg1.update_layout(plot_bgcolor="white", paper_bgcolor="white",
                                    margin=dict(l=0, r=0, t=30, b=0))
-                st.plotly_chart(_fg1, use_container_width=True, key="up_gene1")
+                st.plotly_chart(_fg1, width="stretch", key="up_gene1")
             with _gc2:
                 st.caption(f"Reference · {gene_sel_up}")
                 if ref_proj is not None:
@@ -4033,7 +4033,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                         plot_bgcolor="white", paper_bgcolor="white",
                         margin=dict(l=0, r=0, t=30, b=0), height=400,
                     )
-                    st.plotly_chart(_fig_gr, use_container_width=True, key="up_gene2")
+                    st.plotly_chart(_fig_gr, width="stretch", key="up_gene2")
                 else:
                     st.info("Reference projection not available.")
 
@@ -4087,7 +4087,7 @@ with st.expander(T['featured_targets'], expanded=False):
     for _fc, (_fg, _fgrn, _fdrug) in zip(_fcols, _FEATURED):
         with _fc:
             st.caption(_fdrug)
-            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", use_container_width=True):
+            if st.button(f"**{_fg}**", key=f"feat_{_fg}_{dataset_key}", width="stretch"):
                 st.session_state[f"forced_grn_{dataset_key}"] = _fgrn
                 st.session_state[f"recent_clicked_{dataset_key}"] = _fg
                 st.rerun()
@@ -4393,7 +4393,7 @@ with _about_expander:
         st.image(
             _ot_img_local,
             caption="Why optimal transport is needed before computing the trajectory delta: OT normalises the embedding distributions across timepoints so that the delta reflects real context shift rather than a scaling artefact of the WGCNA graph density.",
-            use_container_width=True,
+            width="stretch",
         )
 
     st.markdown("""
