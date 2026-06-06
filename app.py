@@ -703,29 +703,38 @@ st.components.v1.html("""
     setTimeout(setup, 2000);
 })();
 
-// Reduce gap between top-level expanders
+// Inject persistent CSS that stays last in <head> even after Streamlit emotion rerenders
 (function() {
-    function fixExpanderGap() {
-        // Use document directly (same-origin iframe, like sticky search above)
-        var expanders = document.querySelectorAll('[data-testid="stExpander"]');
-        if (!expanders.length) { setTimeout(fixExpanderGap, 600); return; }
-        // Walk up to find the stVerticalBlock flex container that holds all expanders
-        expanders.forEach(function(exp) {
-            var el = exp;
-            // Go up the tree looking for stVerticalBlock parents and zero their gap
-            for (var i = 0; i < 6; i++) {
-                el = el.parentElement;
-                if (!el) break;
-                var testid = el.getAttribute('data-testid');
-                if (testid === 'stVerticalBlock') {
-                    el.style.setProperty('gap', '4px', 'important');
-                    el.style.setProperty('row-gap', '4px', 'important');
-                }
-            }
-        });
+    var STYLE_ID = 'rms-custom-gap-fix';
+    var CSS = [
+        'html body div[data-testid="stExpander"] { margin: 0 !important; }',
+        'html body section[data-testid="stMain"] div[data-testid="stVerticalBlock"] { gap: 0.2rem !important; row-gap: 0.2rem !important; }',
+        'html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) { padding-top:0 !important; padding-bottom:0 !important; margin-top:0 !important; margin-bottom:0 !important; }'
+    ].join('\n');
+
+    function ensureStyle() {
+        var existing = document.getElementById(STYLE_ID);
+        // If our style isn't the last <style> in head, move it to the end
+        var styles = document.head.querySelectorAll('style');
+        var last = styles[styles.length - 1];
+        if (!existing) {
+            existing = document.createElement('style');
+            existing.id = STYLE_ID;
+            existing.textContent = CSS;
+            document.head.appendChild(existing);
+        } else if (existing !== last) {
+            document.head.appendChild(existing); // move to end
+        }
     }
-    setTimeout(fixExpanderGap, 1200);
-    setTimeout(fixExpanderGap, 3000);
+
+    ensureStyle();
+    // Watch for new <style> tags injected by Streamlit emotion and re-move ours to end
+    var observer = new MutationObserver(function(mutations) {
+        for (var m of mutations) {
+            if (m.addedNodes.length) { ensureStyle(); break; }
+        }
+    });
+    observer.observe(document.head, { childList: true });
 })();
 </script>
 """, height=0)
