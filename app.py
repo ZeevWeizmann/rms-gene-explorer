@@ -4680,8 +4680,8 @@ html body div[data-testid="stExpander"] {
     margin: 0 !important;
 }
 html body section[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
-    gap: 0.05rem !important;
-    row-gap: 0.05rem !important;
+    gap: 0.2rem !important;
+    row-gap: 0.2rem !important;
 }
 html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
     padding-top: 0 !important;
