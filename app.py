@@ -4675,14 +4675,17 @@ st.markdown("""
 /* Placeholder text grey */
 div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
 
-/* Tighten gap between top-level expanders */
-div[data-testid="stMain"] div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
-    gap: 4px !important;
-    row-gap: 4px !important;
+/* Tighten gap between top-level expanders — target stElementContainer wrappers */
+div[data-testid="stVerticalBlock"] > div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
-div[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
-    gap: 4px !important;
-    row-gap: 4px !important;
+/* Also zero out gap on the stVerticalBlock parent */
+div[data-testid="stAppViewBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] {
+    gap: 0.2rem !important;
+    row-gap: 0.2rem !important;
 }
 
 /* Borderless expanders — covers Streamlit 1.3x–1.5x structures */
