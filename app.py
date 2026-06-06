@@ -351,6 +351,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+st.markdown("""
+<head>
+<meta name="description" content="Gene Program Explorer — interactive RAG-based tool for exploring transcriptional programs and gene regulatory networks in single-cell RMS (Rhabdomyosarcoma) data.">
+<meta property="og:title" content="Gene Program Explorer">
+<meta property="og:description" content="Explore gene programs, co-expression networks and drug targets in single-cell RMS data.">
+<meta property="og:url" content="https://rmsexplorer.com">
+</head>
+""", unsafe_allow_html=True)
+
 # ── Reset app state when ?reset=1 is in URL ──────────────────────
 if st.query_params.get("reset"):
     for key in list(st.session_state.keys()):
