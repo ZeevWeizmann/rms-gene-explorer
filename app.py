@@ -681,7 +681,7 @@ st.components.v1.html("""
     setTimeout(setup, 2000);
 })();
 </script>
-""", unsafe_allow_javascript=True)
+""", height=0)
 
 # simple mobile detection via screen width stored in session_state
 if "is_mobile" not in st.session_state:
@@ -2803,7 +2803,7 @@ def _render_msg_figures(msg, msg_id):
         setTimeout(_initTabs, 300);
     }})();
     </script>"""
-    st.components.v1.html(_js_code)
+    st.components.v1.html(_js_code, height=0)
 
     # ── Tab: Gene Program ─────────────────────────────────────────────────────
     if "gene_prog" in _tab_map:
