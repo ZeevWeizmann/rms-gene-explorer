@@ -579,8 +579,8 @@ div[data-testid="stExpander"] {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stExpander"]) {
-    margin-top: -40px !important;
+div[data-testid="stVerticalBlock"] > div:not(:first-child):has(div[data-testid="stExpander"]) {
+    margin-top: -30px !important;
     margin-bottom: 0 !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
