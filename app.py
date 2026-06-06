@@ -664,7 +664,7 @@ st.components.v1.html("""
             if (!searchBlock) { setTimeout(setup, 400); return; }
 
             // Pull search up to reduce gap after Personalise expander
-            searchBlock.style.marginTop = '-0.9rem';
+            searchBlock.style.marginTop = '-1.5rem';
 
             // Height of Streamlit's own fixed header toolbar
             var headerEl = doc.querySelector('[data-testid="stHeader"]');
@@ -4680,8 +4680,8 @@ html body div[data-testid="stExpander"] {
     margin: 0 !important;
 }
 html body section[data-testid="stMain"] div[data-testid="stVerticalBlock"] {
-    gap: 0.2rem !important;
-    row-gap: 0.2rem !important;
+    gap: 0.05rem !important;
+    row-gap: 0.05rem !important;
 }
 html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
     padding-top: 0 !important;
