@@ -542,7 +542,7 @@ div[data-testid="stButton"] > button:hover {
 
 /* Reduce gaps between sections */
 div[data-testid="stCaptionContainer"] { margin-top: -4px !important; }
-div.block-container { padding-top: 0 !important; }
+div.block-container { padding-top: 0.5rem !important; }
 
 /* Borderless expanders */
 div[data-testid="stExpander"],
@@ -577,14 +577,7 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
 }
 div[data-testid="stExpander"] {
     margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-/* Reduce gap between expander wrapper divs */
-section.main > div > div > div > div[data-testid="stVerticalBlock"] {
-    gap: 0px !important;
-}
-div[data-testid="stVerticalBlock"]:has(> div > div[data-testid="stExpander"]) {
-    gap: 0px !important;
+    margin-bottom: 0px !important;
 }
 /* Tighter expander summary padding */
 div[data-testid="stExpander"] details summary {
@@ -664,7 +657,7 @@ st.components.v1.html("""
             if (!searchBlock) { setTimeout(setup, 400); return; }
 
             // Pull search up to reduce gap after Personalise expander
-            searchBlock.style.marginTop = '-1.5rem';
+            searchBlock.style.marginTop = '-0.9rem';
 
             // Height of Streamlit's own fixed header toolbar
             var headerEl = doc.querySelector('[data-testid="stHeader"]');
@@ -701,41 +694,6 @@ st.components.v1.html("""
     }
     setTimeout(setup, 800);
     setTimeout(setup, 2000);
-})();
-
-// Inject persistent CSS into PARENT document head, stay last to beat emotion
-(function() {
-    var STYLE_ID = 'rms-custom-gap-fix';
-    var CSS = [
-        'html body div[data-testid="stExpander"] { margin: 0 !important; }',
-        'html body section[data-testid="stMain"] div[data-testid="stVerticalBlock"] { gap: 0.2rem !important; row-gap: 0.2rem !important; }',
-        'html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) { padding-top:0 !important; padding-bottom:0 !important; margin-top:0 !important; margin-bottom:0 !important; }'
-    ].join('\n');
-
-    function ensureStyle(doc) {
-        var existing = doc.getElementById(STYLE_ID);
-        var last = doc.head.querySelector('style:last-of-type');
-        if (!existing) {
-            existing = doc.createElement('style');
-            existing.id = STYLE_ID;
-            existing.textContent = CSS;
-            doc.head.appendChild(existing);
-        } else if (existing !== last) {
-            doc.head.appendChild(existing);
-        }
-    }
-
-    try {
-        var pdoc = window.parent.document;
-        ensureStyle(pdoc);
-        var observer = new MutationObserver(function() { ensureStyle(pdoc); });
-        observer.observe(pdoc.head, { childList: true });
-    } catch(e) {
-        // fallback: same-document
-        ensureStyle(document);
-        var obs2 = new MutationObserver(function() { ensureStyle(document); });
-        obs2.observe(document.head, { childList: true });
-    }
 })();
 </script>
 """, height=0)
@@ -2460,11 +2418,11 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
 # Logo + title — centered, vertical stack
 st.markdown(f"""
-<div style='text-align:center; margin-bottom:32px;'>
+<div style='text-align:center; margin-bottom:18px;'>
   <a href='https://rmsexplorer.com' target='_self' style='text-decoration:none; cursor:pointer;'>
     <span style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#002395;'>Gene</span><span
           style='font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-0.5px;color:#444;'>&nbsp;Program&nbsp;</span><span
@@ -4684,21 +4642,6 @@ st.markdown("""
 <style>
 /* Placeholder text grey */
 div[data-testid="stSelectbox"] [class*="placeholder"] { color: #aaa !important; }
-
-/* Remove margin/gap — beat emotion (0,2,0) with (0,3,2) specificity */
-html body div.stExpander[data-testid="stExpander"][class] {
-    margin: 0 !important;
-}
-html body section[data-testid="stMain"] div.stVerticalBlock[data-testid="stVerticalBlock"] {
-    gap: 0.2rem !important;
-    row-gap: 0.2rem !important;
-}
-html body div.stElementContainer[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
 
 /* Borderless expanders — covers Streamlit 1.3x–1.5x structures */
 div[data-testid="stExpander"] details,
