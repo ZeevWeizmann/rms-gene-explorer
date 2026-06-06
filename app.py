@@ -554,7 +554,10 @@ div[data-testid="stExpander"] details summary {
     margin-bottom: 2px !important;
 }
 /* Personalise expander — blue text matching title (first expander on page) */
-div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] summary p {
+div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] summary p,
+div[data-testid="stVerticalBlock"] > div:first-child div[data-testid="stExpander"] summary span,
+div[data-testid="stVerticalBlock"] > div:first-child details summary p,
+div[data-testid="stVerticalBlock"] > div:first-child details > summary {
     color: #002395 !important;
     font-weight: 500 !important;
 }
