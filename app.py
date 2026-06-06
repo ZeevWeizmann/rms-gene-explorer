@@ -703,7 +703,7 @@ st.components.v1.html("""
     setTimeout(setup, 2000);
 })();
 
-// Inject persistent CSS that stays last in <head> even after Streamlit emotion rerenders
+// Inject persistent CSS into PARENT document head, stay last to beat emotion
 (function() {
     var STYLE_ID = 'rms-custom-gap-fix';
     var CSS = [
@@ -712,29 +712,30 @@ st.components.v1.html("""
         'html body div[data-testid="stElementContainer"]:has(> div[data-testid="stExpander"]) { padding-top:0 !important; padding-bottom:0 !important; margin-top:0 !important; margin-bottom:0 !important; }'
     ].join('\n');
 
-    function ensureStyle() {
-        var existing = document.getElementById(STYLE_ID);
-        // If our style isn't the last <style> in head, move it to the end
-        var styles = document.head.querySelectorAll('style');
-        var last = styles[styles.length - 1];
+    function ensureStyle(doc) {
+        var existing = doc.getElementById(STYLE_ID);
+        var last = doc.head.querySelector('style:last-of-type');
         if (!existing) {
-            existing = document.createElement('style');
+            existing = doc.createElement('style');
             existing.id = STYLE_ID;
             existing.textContent = CSS;
-            document.head.appendChild(existing);
+            doc.head.appendChild(existing);
         } else if (existing !== last) {
-            document.head.appendChild(existing); // move to end
+            doc.head.appendChild(existing);
         }
     }
 
-    ensureStyle();
-    // Watch for new <style> tags injected by Streamlit emotion and re-move ours to end
-    var observer = new MutationObserver(function(mutations) {
-        for (var m of mutations) {
-            if (m.addedNodes.length) { ensureStyle(); break; }
-        }
-    });
-    observer.observe(document.head, { childList: true });
+    try {
+        var pdoc = window.parent.document;
+        ensureStyle(pdoc);
+        var observer = new MutationObserver(function() { ensureStyle(pdoc); });
+        observer.observe(pdoc.head, { childList: true });
+    } catch(e) {
+        // fallback: same-document
+        ensureStyle(document);
+        var obs2 = new MutationObserver(function() { ensureStyle(document); });
+        obs2.observe(document.head, { childList: true });
+    }
 })();
 </script>
 """, height=0)
