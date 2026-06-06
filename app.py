@@ -577,7 +577,13 @@ div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
 }
 div[data-testid="stExpander"] {
     margin-top: 0 !important;
-    margin-bottom: 0px !important;
+    margin-bottom: 0 !important;
+}
+div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stExpander"]) {
+    margin-top: -10px !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 /* Tighter expander summary padding */
 div[data-testid="stExpander"] details summary {
