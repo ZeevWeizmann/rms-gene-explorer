@@ -3258,6 +3258,12 @@ def _render_msg_figures(msg, msg_id):
                             "**Quiescent** — DNAJB1 z-score ≥ 70th percentile of WT · "
                             "**Intermediate** — all remaining cells"
                         )
+                        if _effective_grn_model in ("full", "full_foxm1", "full_cdk1", "full_top2a", "full_aurkb"):
+                            st.caption(
+                                "⚠️ Population shift reflects transcriptional changes only. "
+                                "Apoptotic effects of mitotic inhibitors (e.g. AURKB, CDK1) "
+                                "are not captured by this model."
+                            )
 
                     except Exception as _e:
                         st.info(f"{T['pop_unavail']}: {_e}")
