@@ -4110,6 +4110,8 @@ with _about_expander:
     st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown(T['how_it_works_body'])
+    st.markdown("---")
+    st.markdown("📬 **Contact:** [zeev.weizmann@etu.univ-cotedazur.fr](mailto:zeev.weizmann@etu.univ-cotedazur.fr)")
 
     # ── SVG text translations (applied via .replace() to avoid f-string brace issues) ──
     _svg_fr = {
