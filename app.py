@@ -143,6 +143,7 @@ _TRANSLATIONS = {
         'genes_found': '**{n_overlap:,}** of your {n_total:,} genes found in the Explorer. Select any of them in the 🔍 search above to explore their gene program and GRN.',
         'loaded_success': '✅ Loaded: **{n_obs:,} cells × {n_vars:,} genes**',
         'cluster_details': 'Cluster annotation details',
+        'made_by': 'Made by Zeev Weizmann · <a href="mailto:zeev.weizmann@etu.univ-cotedazur.fr" style="color:#bbb;">zeev.weizmann@etu.univ-cotedazur.fr</a>',
         'how_it_works_body': """
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
@@ -283,6 +284,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'genes_found': '**{n_overlap:,}** de vos {n_total:,} gènes trouvés dans l\'Explorateur. Sélectionnez-en un dans la 🔍 recherche ci-dessus pour explorer son programme génique et son GRN.',
         'loaded_success': '✅ Chargé : **{n_obs:,} cellules × {n_vars:,} gènes**',
         'cluster_details': 'Détails d\'annotation du cluster',
+        'made_by': 'Créé par Zeev Weizmann · <a href="mailto:zeev.weizmann@etu.univ-cotedazur.fr" style="color:#bbb;">zeev.weizmann@etu.univ-cotedazur.fr</a>',
         'how_it_works_body': """
 **Comment ça fonctionne :**
 1. Un gène requête est représenté dans un espace GNN de co-expression (entraîné sur des graphes WGCNA issus de scRNA-seq)
@@ -4680,5 +4682,5 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:right;'>Made by Zeev Weizmann · <a href='mailto:zeev.weizmann@etu.univ-cotedazur.fr' style='color:#bbb;'>zeev.weizmann@etu.univ-cotedazur.fr</a></div>", unsafe_allow_html=True)
+st.markdown(f"<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:right;'>{T['made_by']}</div>", unsafe_allow_html=True)
 
