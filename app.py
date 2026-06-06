@@ -4068,7 +4068,6 @@ with st.expander(T['settings'], expanded=False):
 # ── Featured genes — after results, before About ─────────────────
 _FEATURED = [
     ("TUBB",   "tubb",  "Vincristine · FDA"),
-    ("BIRC5",  "mki67", "YM155 · trials"),
     ("HSPA1B", "full",  "HSP70 · novel"),
     ("HSPA1A", "full",  "CD24Fc · HSP70"),
     ("UBE2C",  "full",  "APC/C · novel"),
