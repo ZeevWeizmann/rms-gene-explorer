@@ -3800,31 +3800,31 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
         file_id = uploaded_file.name + str(uploaded_file.size)
         if st.session_state.get("_upload_file_id") != file_id:
             import io, anndata as ad, scanpy as sc, scipy.sparse as sp_sparse
-            with st.status("Processing file…", expanded=True) as _upload_status:
-                st.write(T['reading_file'])
+            _proc_msg = st.empty()
+            with st.spinner("Processing file…"):
+                _proc_msg.info(T['reading_file'])
                 bytes_data = uploaded_file.read()
                 adata = ad.read_h5ad(io.BytesIO(bytes_data))
-                st.write(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
+                _proc_msg.info(T['loaded_success'].format(n_obs=adata.n_obs, n_vars=adata.n_vars))
                 if adata.n_obs > 100_000:
                     st.warning(T['large_dataset'])
-                st.write(T['normalizing'])
+                _proc_msg.info(T['normalizing'])
                 sc.pp.normalize_total(adata, target_sum=1e4)
                 sc.pp.log1p(adata)
                 n_top = min(2000, adata.n_vars)
                 sc.pp.highly_variable_genes(adata, n_top_genes=n_top)
                 n_comps = min(30, adata.n_obs - 2, adata.n_vars - 1)
                 sc.pp.pca(adata, n_comps=n_comps)
-                st.write("Computing UMAP…")
+                _proc_msg.info("Computing UMAP…")
                 _UMAP_MAX = 20_000
                 if adata.n_obs > _UMAP_MAX:
-                    st.write(f"Large dataset — computing UMAP on {_UMAP_MAX:,} cells, projecting the rest…")
+                    _proc_msg.info(f"Large dataset — computing UMAP on {_UMAP_MAX:,} cells, projecting the rest…")
                     import numpy as _np_up
                     _idx_sub = _np_up.random.choice(adata.n_obs, _UMAP_MAX, replace=False)
                     _idx_sub.sort()
                     adata_sub = adata[_idx_sub].copy()
                     sc.pp.neighbors(adata_sub, n_neighbors=15, n_pcs=min(20, n_comps))
                     sc.tl.umap(adata_sub, min_dist=0.3)
-                    # Project remaining cells via KNN in PCA space
                     from sklearn.neighbors import NearestNeighbors as _NNup
                     _pca_sub  = adata_sub.obsm["X_pca"]
                     _pca_all  = adata.obsm["X_pca"]
@@ -3838,7 +3838,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                 else:
                     sc.pp.neighbors(adata, n_neighbors=15, n_pcs=min(20, n_comps))
                     sc.tl.umap(adata, min_dist=0.3)
-                _upload_status.update(label="Done!", state="complete", expanded=True)
+                _proc_msg.success("Done!")
             umap_coords = pd.DataFrame(adata.obsm["X_umap"], columns=["x", "y"])
             for col in ["time", "cell_type", "cluster", "leiden", "louvain", "sample"]:
                 if col in adata.obs.columns:
