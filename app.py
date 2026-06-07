@@ -4120,6 +4120,17 @@ with _about_expander:
     st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
     st.markdown(T['how_it_works_body'])
+    _ot_img_local2 = _os.path.join(LOCAL_DIR, "ot_explanation.png")
+    if not _os.path.exists(_ot_img_local2):
+        try:
+            _token2 = st.secrets.get("HF_TOKEN", None)
+            _ot_img_local2 = hf_hub_download(repo_id=REPO_ID, filename="ot_explanation.png",
+                                             repo_type="dataset", token=_token2)
+        except Exception:
+            _ot_img_local2 = None
+    if _ot_img_local2:
+        st.markdown("<div style='margin-top:-0.5rem'></div>", unsafe_allow_html=True)
+        st.image(_ot_img_local2, use_container_width=True)
 
     # ── SVG text translations (applied via .replace() to avoid f-string brace issues) ──
     _svg_fr = {
