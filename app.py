@@ -4509,6 +4509,8 @@ with _about_expander:
 <!-- ROW 1 ARROWS -->
 <line x1="170" y1="109" x2="185" y2="109" stroke="#8E44AD" stroke-width="1.5" marker-end="url(#ahPurple)"/>
 <line x1="346" y1="109" x2="361" y2="109" stroke="#8E44AD" stroke-width="1.5" marker-end="url(#ahPurple)"/>
+<!-- Arrow: Gene Overlap → Query Gene -->
+<path d="M 522,109 C 650,109 720,160 795,176" stroke="#8E44AD" stroke-width="1.8" fill="none" stroke-dasharray="5,3" marker-end="url(#ahPurple)"/>
 
 <!-- ═══ ROW 2: Data-driven Gene Program Retrieval ═══ -->
 <text x="460" y="218" text-anchor="middle" font-size="16" font-weight="bold" fill="#2c3e50">Data-driven Gene Program Retrieval</text>
