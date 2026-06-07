@@ -2644,8 +2644,8 @@ def _render_msg_figures(msg, msg_id):
     # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets · Drugs
     # Program tab is auto-selected via JS on first render (see below)
     _ALL_TAB_SLOTS = [
-        ("expression",   T['expression'],       _has_expression),
         ("gene_prog",    T['gene_program'],      _has_gene_prog),
+        ("expression",   T['expression'],        _has_expression),
         ("network",      T['network_graph'],     _has_grn),
         ("perturbation", T['ko_perturbation'],   _has_pert),
         ("targets",      T['ko_targets'],        _has_pert),
@@ -2803,17 +2803,14 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // Walk up from our script element to find the nearest tablist
-            var myTablist = null;
-            var el = myScript ? myScript.parentElement : null;
-            while (el) {{
-                var tl = el.querySelector('[role="tablist"]');
-                if (tl) {{ myTablist = tl; break; }}
-                el = el.parentElement;
-            }}
-            if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
-
+            var doc = document;
+            // Find all tablists in the document
+            var allTablists = doc.querySelectorAll('[role="tablist"]');
+            if (!allTablists.length) {{ setTimeout(_initTabs, 200); return; }}
+            // Use the last tablist (most recently rendered = current result)
+            var myTablist = allTablists[allTablists.length - 1];
             var btns = myTablist.querySelectorAll('[role="tab"]');
+            if (!btns.length) {{ setTimeout(_initTabs, 200); return; }}
 
             // Always restore all tabs to full opacity first, then selectively grey.
             btns.forEach(function(b) {{
@@ -2831,12 +2828,12 @@ def _render_msg_figures(msg, msg_id):
                 }});
             }}
 
-            // Auto-click Program tab on every new result
-            if (PROG_IDX >= 0) {{
-                if (btns[PROG_IDX]) btns[PROG_IDX].click();
+            // Auto-click Program tab
+            if (PROG_IDX >= 0 && btns[PROG_IDX]) {{
+                btns[PROG_IDX].click();
             }}
         }}
-        setTimeout(_initTabs, 300);
+        setTimeout(_initTabs, 500);
     }})();
     </script>"""
     st.components.v1.html(_js_code, height=0)
