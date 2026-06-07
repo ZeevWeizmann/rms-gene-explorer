@@ -2644,8 +2644,8 @@ def _render_msg_figures(msg, msg_id):
     # Order: Expression · Program · Regulatory Network · KO Simulation · Drug Targets · Drugs
     # Program tab is auto-selected via JS on first render (see below)
     _ALL_TAB_SLOTS = [
-        ("gene_prog",    T['gene_program'],      _has_gene_prog),
         ("expression",   T['expression'],        _has_expression),
+        ("gene_prog",    T['gene_program'],      _has_gene_prog),
         ("network",      T['network_graph'],     _has_grn),
         ("perturbation", T['ko_perturbation'],   _has_pert),
         ("targets",      T['ko_targets'],        _has_pert),
