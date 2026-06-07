@@ -118,7 +118,7 @@ _TRANSLATIONS = {
         'time_sim': 'Time (simulation WT)',
         'knocked_out': 'knocked out',
         # About section (short)
-        'about_intro': 'This is a **RAG-based gene program retrieval system** applied to single-cell RMS (Rhabdomyosarcoma) data.',
+        'about_intro': 'Each RMS tumour expresses a unique combination of gene programmes. Gene Program Explorer maps your patient\'s tumour onto these programmes, infers the regulatory network driving each programme, simulates gene knockouts, and translates the results into drug targets and matched clinical compounds.\n\nGene Program Explorer uses a RAG-inspired architecture: GNN-based programme retrieval augmented by mechanistic ODE modelling (CardamomOT) to generate patient-specific drug targets from scRNA-seq data.',
         'how_it_works': '**How it works**',
         'show_results': '📊 Show results for',
         'gene_program_for': 'Gene program for',
