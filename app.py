@@ -2831,9 +2831,8 @@ def _render_msg_figures(msg, msg_id):
                 }});
             }}
 
-            // Auto-click Program tab on first render of this message
-            if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY)) {{
-                sessionStorage.setItem(INIT_KEY, '1');
+            // Auto-click Program tab on every new result
+            if (PROG_IDX >= 0) {{
                 if (btns[PROG_IDX]) btns[PROG_IDX].click();
             }}
         }}
