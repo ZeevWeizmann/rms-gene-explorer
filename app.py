@@ -150,6 +150,8 @@ _TRANSLATIONS = {
 2. Nearest neighbors in embedding space define a **transcriptional program**
 3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
 4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
+5. **Personalisation** — upload your own `.h5ad` patient data to project it onto the RMS reference UMAP and score which genes from your sample overlap with the retrieved program
+6. **Drug matching** — candidate targets are automatically cross-referenced against **DGIdb** to surface known drug–gene interactions, FDA approval status, and interaction scores
 
 > **For two key programs (HSPA1B · MKI67 and TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
 
@@ -290,6 +292,8 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 2. Les voisins les plus proches dans cet espace définissent un **programme transcriptionnel**
 3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle ODE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
 4. Le même modèle CardamomOT est utilisé pour des **simulations de perturbation in silico** (ex : knockout de BIRC5), révélant quels gènes changent et permettant l'**identification de cibles par le réseau**
+5. **Personnalisation** — importez votre propre fichier `.h5ad` pour projeter vos données patient sur l'UMAP de référence RMS et identifier quels gènes de votre échantillon chevauchent le programme récupéré
+6. **Correspondance médicamenteuse** — les cibles candidates sont automatiquement croisées avec **DGIdb** pour révéler les interactions médicament-gène connues, le statut d'approbation FDA et les scores d'interaction
 
 > **Pour deux programmes clés (HSPA1B · MKI67 et TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application. Vous pouvez explorer les cibles thérapeutiques candidates sans exécuter CardamomOT vous-même.
 
