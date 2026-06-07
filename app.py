@@ -2802,38 +2802,31 @@ def _render_msg_figures(msg, msg_id):
         // Capture script element before any async callbacks
         var myScript  = document.currentScript;
 
+        var _done = false;
         function _initTabs() {{
-            var doc = document;
-            // Find all tablists in the document
+            var doc = window.parent ? window.parent.document : document;
             var allTablists = doc.querySelectorAll('[role="tablist"]');
-            if (!allTablists.length) {{ setTimeout(_initTabs, 200); return; }}
-            // Use the last tablist (most recently rendered = current result)
+            if (!allTablists.length) {{ setTimeout(_initTabs, 300); return; }}
             var myTablist = allTablists[allTablists.length - 1];
             var btns = myTablist.querySelectorAll('[role="tab"]');
-            if (!btns.length) {{ setTimeout(_initTabs, 200); return; }}
-
-            // Always restore all tabs to full opacity first, then selectively grey.
-            btns.forEach(function(b) {{
-                b.style.opacity = '';
-                b.style.pointerEvents = '';
-            }});
+            if (btns.length < 2) {{ setTimeout(_initTabs, 300); return; }}
 
             // Grey out empty tabs
+            btns.forEach(function(b) {{ b.style.opacity = ''; b.style.pointerEvents = ''; }});
             if (EMPTY_IDX.length > 0) {{
                 EMPTY_IDX.forEach(function(i) {{
-                    if (btns[i]) {{
-                        btns[i].style.opacity = '0.35';
-                        btns[i].style.pointerEvents = 'none';
-                    }}
+                    if (btns[i]) {{ btns[i].style.opacity = '0.35'; btns[i].style.pointerEvents = 'none'; }}
                 }});
             }}
 
-            // Auto-click Program tab
-            if (PROG_IDX >= 0 && btns[PROG_IDX]) {{
+            // Click Program tab
+            if (PROG_IDX >= 0 && btns[PROG_IDX] && !_done) {{
+                _done = true;
                 btns[PROG_IDX].click();
             }}
         }}
-        setTimeout(_initTabs, 500);
+        setTimeout(_initTabs, 800);
+        setTimeout(_initTabs, 1500);
     }})();
     </script>"""
     st.components.v1.html(_js_code, height=0)
