@@ -346,9 +346,19 @@ Chaque gène reçoit un vecteur encodant **comment son voisinage de co-expressio
     }
 }
 
+try:
+    from PIL import Image as _PIL_Image
+    _icon_path = "/Users/zeev/CardamomOT/my_project/Data/logo.png"
+    if not __import__("os").path.exists(_icon_path):
+        from huggingface_hub import hf_hub_download as _hf_dl
+        _icon_path = _hf_dl(repo_id="weizmannzeev/rms-gene-programs", filename="logo.png", repo_type="dataset")
+    _page_icon = _PIL_Image.open(_icon_path)
+except Exception:
+    _page_icon = "🧬"
+
 st.set_page_config(
     page_title="Gene Program Explorer",
-    page_icon="🧬",
+    page_icon=_page_icon,
     layout="centered",
     initial_sidebar_state="collapsed"
 )
