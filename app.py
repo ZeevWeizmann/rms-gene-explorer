@@ -170,10 +170,7 @@ _TRANSLATIONS = {
 Upload any `.h5ad` file for query of interest.
 
 **Available GRN models:**
-- **Original** — 159 genes, inferred from full RMS scRNA-seq data
-- **Full program** — 200 genes (complete quiescent + proliferative gene set), HSPA1B KO perturbation simulated via CARDAMOM mechanistic model
-- **FOXM1 program** — 198 genes (top-200 GNN neighbors of FOXM1), FOXM1 KO perturbation simulated via CARDAMOM mechanistic model
-- **MKI67 program** — 201 genes (top-200 GNN neighbors of MKI67), BIRC5 KO perturbation simulated via CARDAMOM mechanistic model
+- **HSPA1B · MKI67 program** — 200 genes (complete quiescent + proliferative gene set), HSPA1B KO perturbation simulated via CARDAMOM mechanistic model
 - **TUBB program** — 201 genes (top-200 GNN neighbors of TUBB), TUBB KO perturbation simulated via CARDAMOM mechanistic model
 
 **Population dynamics under knockout (Full program):**
@@ -311,10 +308,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 Importez n'importe quel fichier `.h5ad` pour votre gène d'intérêt.
 
 **Modèles GRN disponibles :**
-- **Original** — 159 gènes, inféré sur les données complètes scRNA-seq RMS
-- **Programme complet** — 200 gènes (ensemble quiescent + prolifératif), perturbation KO HSPA1B simulée via CARDAMOM
-- **Programme FOXM1** — 198 gènes (top-200 voisins GNN de FOXM1), perturbation KO FOXM1 simulée via CARDAMOM
-- **Programme MKI67** — 201 gènes (top-200 voisins GNN de MKI67), perturbation KO BIRC5 simulée via CARDAMOM
+- **HSPA1B · Programme MKI67** — 200 gènes (ensemble quiescent + prolifératif complet), perturbation KO HSPA1B simulée via CARDAMOM
 - **Programme TUBB** — 201 gènes (top-200 voisins GNN de TUBB), perturbation KO TUBB simulée via CARDAMOM
 
 **Dynamique de population sous knockout (programme complet) :**
