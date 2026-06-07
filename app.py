@@ -151,7 +151,7 @@ _TRANSLATIONS = {
 3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
 4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
 
-> **For several key programs (Full, FOXM1, MKI67, TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
+> **For two key programs (HSPA1B · MKI67 and TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
 
 **Vector databases:**
 
@@ -289,7 +289,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle ODE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
 4. Le même modèle CardamomOT est utilisé pour des **simulations de perturbation in silico** (ex : knockout de BIRC5), révélant quels gènes changent et permettant l'**identification de cibles par le réseau**
 
-> **Pour plusieurs programmes clés (Full, FOXM1, MKI67, TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application. Vous pouvez explorer les cibles thérapeutiques candidates sans exécuter CardamomOT vous-même.
+> **Pour deux programmes clés (HSPA1B · MKI67 et TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application. Vous pouvez explorer les cibles thérapeutiques candidates sans exécuter CardamomOT vous-même.
 
 **Bases de données vectorielles :**
 
