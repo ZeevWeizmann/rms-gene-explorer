@@ -376,6 +376,10 @@ T = _TRANSLATIONS[_cur_lang]
 # ── Detect mobile via JS → session_state ────────────────────────
 st.markdown("""
 <style>
+/* Hide sidebar toggle button */
+div[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+button[kind="headerNoPadding"][data-testid="baseButton-headerNoPadding"] { display: none !important; }
+
 /* Stack columns on narrow screens */
 @media screen and (max-width: 640px) {
     div[data-testid="column"] {
