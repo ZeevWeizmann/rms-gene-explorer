@@ -4418,7 +4418,7 @@ with _about_expander:
     _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
         <div style='width:100%'>{_traj_svg}</div>""",
-        height=540,
+        height=460,
     )
 
     st.markdown("""
