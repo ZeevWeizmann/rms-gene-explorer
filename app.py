@@ -346,17 +346,9 @@ Chaque gène reçoit un vecteur encodant **comment son voisinage de co-expressio
     }
 }
 
-try:
-    from PIL import Image as _PIL_Image
-    import os as _os_cfg
-    _icon_path = _os_cfg.path.join(_os_cfg.path.dirname(_os_cfg.path.abspath(__file__)), "logo.png")
-    _page_icon = _PIL_Image.open(_icon_path)
-except Exception:
-    _page_icon = "🧬"
-
 st.set_page_config(
     page_title="Gene Program Explorer",
-    page_icon=_page_icon,
+    page_icon="🧬",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
