@@ -2405,6 +2405,12 @@ if _logo_local:
     with open(_logo_local, "rb") as _f:
         _logo_b64 = _b64.b64encode(_f.read()).decode()
 
+# ── Favicon from logo.png ─────────────────────────────────────────
+if _logo_b64:
+    st.markdown(f"""<link rel="icon" type="image/png" href="data:image/png;base64,{_logo_b64}">
+<link rel="shortcut icon" type="image/png" href="data:image/png;base64,{_logo_b64}">""",
+    unsafe_allow_html=True)
+
 # ── Google-homepage style: centered title above, search below ─────
 
 # Language toggle — HTML flag links (query param based, lang already detected above)
