@@ -144,7 +144,7 @@ _TRANSLATIONS = {
         'loaded_success': '✅ Loaded: **{n_obs:,} cells × {n_vars:,} genes**',
         'cluster_details': 'Cluster annotation details',
         'made_by': 'Made by Zeev Weizmann · <a href="mailto:zeev.weizmann@etu.univ-cotedazur.fr" style="color:#bbb;">zeev.weizmann@etu.univ-cotedazur.fr</a>',
-        'how_it_works_body': """
+        'how_it_works_body_1': """
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
@@ -198,6 +198,8 @@ In real data, this scoring captures a clear temporal transition: at t=0, 88% of 
 Each gene receives a vector that encodes **how its co-expression neighbourhood changed over time**. Two sources of information are combined:
 
 - **Temporal trajectory** — WGCNA co-expression graphs are built per time point, encoded by a shared GAT, and aligned with optimal transport.
+""",
+        'how_it_works_body_2': """
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
 """,
     },
@@ -282,7 +284,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'loaded_success': '✅ Chargé : **{n_obs:,} cellules × {n_vars:,} gènes**',
         'cluster_details': 'Détails d\'annotation du cluster',
         'made_by': 'Créé par Zeev Weizmann · <a href="mailto:zeev.weizmann@etu.univ-cotedazur.fr" style="color:#bbb;">zeev.weizmann@etu.univ-cotedazur.fr</a>',
-        'how_it_works_body': """
+        'how_it_works_body_1': """
 **Comment ça fonctionne :**
 1. Un gène requête est représenté dans un espace GNN de co-expression (entraîné sur des graphes WGCNA issus de scRNA-seq)
 2. Les voisins les plus proches dans cet espace définissent un **programme transcriptionnel**
@@ -333,6 +335,8 @@ Trois états cellulaires RMS coexistants sont définis par des seuils d'expressi
 Chaque gène reçoit un vecteur encodant **comment son voisinage de co-expression a évolué dans le temps**. Deux sources d'information sont combinées :
 
 - **Trajectoire temporelle** — des graphes de co-expression WGCNA sont construits par point temporel, encodés par un GAT partagé et alignés par transport optimal.
+""",
+        'how_it_works_body_2': """
 - **Structure régulatrice** — un PPGN (WL-3) analyse le graphe d'interaction mécaniste OmniPath (via NEKO) et capture les motifs régulateurs tels que boucles de rétroaction et triangles.
 """,
     }
@@ -4119,7 +4123,7 @@ with st.expander(T['featured_targets'], expanded=False):
 with _about_expander:
     st.markdown(T['about_intro'])
     _arch_diagram_slot = st.container()   # arch diagram rendered here (defined later)
-    st.markdown(T['how_it_works_body'])
+    st.markdown(T['how_it_works_body_1'])
     _ot_img_local2 = _os.path.join(LOCAL_DIR, "ot_explanation.png")
     if not _os.path.exists(_ot_img_local2):
         try:
@@ -4129,8 +4133,8 @@ with _about_expander:
         except Exception:
             _ot_img_local2 = None
     if _ot_img_local2:
-        st.markdown("<div style='margin-top:-0.5rem'></div>", unsafe_allow_html=True)
         st.image(_ot_img_local2, use_container_width=True)
+    st.markdown(T['how_it_works_body_2'])
 
     # ── SVG text translations (applied via .replace() to avoid f-string brace issues) ──
     _svg_fr = {
