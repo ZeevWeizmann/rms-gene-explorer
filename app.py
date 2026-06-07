@@ -4644,7 +4644,7 @@ with _arch_diagram_slot:
     _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
         <div style='width:100%'>{_arch_svg}</div>""",
-        height=420,
+        height=370,
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
