@@ -2531,7 +2531,7 @@ else:
         grn_mat, grn_genes = load_grn(grn_key)
 
 # 🔬 icon = gene present in ANY GRN model
-grn_gene_set = _mki67_gene_set | _tubb_gene_set | _full_gene_set
+grn_gene_set = _tubb_gene_set | _full_gene_set
 
 def gene_label(g):
     suffix = " 🔬" if g in grn_gene_set else ""
@@ -2662,7 +2662,6 @@ def _render_msg_figures(msg, msg_id):
             _net_grn_label = st.session_state.get(f"adj_grn_sel_{msg_id}")
             _NET_LABEL_TO_MODEL_P = {
                 "HSPA1B · MKI67 program (200 genes)": "full",
-                "MKI67 program (201 genes)": "mki67",
                 "TUBB program (201 genes)": "tubb",
             }
 
@@ -3129,11 +3128,10 @@ def _render_msg_figures(msg, msg_id):
                 # ── GRN label — same style as Regulatory Interactions tab ──
                 _PERT_ADJ_SHORT = {
                     "full":  ("HSPA1B · MKI67", "200 genes"),
-                    "mki67": ("MKI67 program",   "201 genes"),
                     "tubb":  ("TUBB program",    "201 genes"),
                 }
                 _PERT_GENE_SETS = {
-                    "full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set,
+                    "full": _full_gene_set, "tubb": _tubb_gene_set,
                 }
                 _p_hdr_name, _p_hdr_size = _PERT_ADJ_SHORT.get(_effective_grn_model, ("GRN", ""))
                 _p_pop_genes = sorted(_PERT_GENE_SETS.get(_effective_grn_model, set()))
@@ -3325,17 +3323,16 @@ def _render_msg_figures(msg, msg_id):
             # ── GRN selector (above expander) ────────────────────────────────
             _ADJ_MODEL_LABELS = {
                 "full":  "HSPA1B · MKI67 program (200 genes)",
-                "mki67": "MKI67 program (201 genes)",
                 "tubb":  "TUBB program (201 genes)",
             }
             # Filter to models containing the query gene; fall back to all
             try:
                 _adj_avail_keys = [
-                    k for k, gs in [("full", _full_gene_set), ("mki67", _mki67_gene_set), ("tubb", _tubb_gene_set)]
+                    k for k, gs in [("full", _full_gene_set), ("tubb", _tubb_gene_set)]
                     if not _msg_q_gene or _msg_q_gene in gs
                 ]
             except Exception:
-                _adj_avail_keys = ["full", "mki67", "tubb"]
+                _adj_avail_keys = ["full", "tubb"]
             if not _adj_avail_keys:
                 _adj_avail_keys = ["full", "mki67", "tubb"]
 
@@ -3351,7 +3348,6 @@ def _render_msg_figures(msg, msg_id):
 
             _ADJ_SHORT = {
                 "full":  ("HSPA1B · MKI67", "200 genes"),
-                "mki67": ("MKI67 program", "201 genes"),
                 "tubb":  ("TUBB program",  "201 genes"),
             }
             # Resolve current selection from selectbox session state (always up-to-date)
@@ -3365,7 +3361,7 @@ def _render_msg_figures(msg, msg_id):
             _hdr_color  = _ADJ_COLORS.get(_selected_adj_key, "#64748b")
 
             # Get gene list for selected GRN (for popover)
-            _ADJ_GENE_SETS = {"full": _full_gene_set, "mki67": _mki67_gene_set, "tubb": _tubb_gene_set}
+            _ADJ_GENE_SETS = {"full": _full_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
             # Row 1: header label
@@ -3479,7 +3475,7 @@ if st.session_state.get(f"default_run_{dataset_key}"):
 elif st.session_state.get(f"default_run2_{dataset_key}"):
     st.session_state[f"default_run2_{dataset_key}"] = False
     # Second: BIRC5 (mki67 model)
-    st.session_state[f"forced_grn_{dataset_key}"] = "mki67"
+    st.session_state[f"forced_grn_{dataset_key}"] = "full"
     st.session_state[f"default_run3_{dataset_key}"] = True
     query_gene = "BIRC5" if "BIRC5" in genes else None
 elif st.session_state.get(f"default_run3_{dataset_key}"):
