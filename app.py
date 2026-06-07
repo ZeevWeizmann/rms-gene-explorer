@@ -4181,6 +4181,20 @@ with _about_expander:
         "Targets":                            "Cibles",
         "co-targets · direct targets":        "co-cibles · cibles directes",
         "reshape Waddington landscape":       "remodeler le paysage de Waddington",
+        "Personalisation":                    "Personnalisation",
+        "Patient Data":                       "Données patient",
+        "your scRNA-seq":                     "votre scRNA-seq",
+        "upload your data":                   "importez vos données",
+        "UMAP":                               "UMAP",
+        "Projection":                         "Projection",
+        "project onto RMS reference":         "projeter sur la référence RMS",
+        "Gene Overlap":                       "Chevauchement génique",
+        "patient genes ∩ program":            "gènes patient ∩ programme",
+        "score overlap with program":         "scorer le chevauchement",
+        "Drug Matching":                      "Correspondance médicamenteuse",
+        "FDA status · score":                 "statut FDA · score",
+        "matched compounds":                  "composés identifiés",
+        "drug–gene interactions":             "interactions médicament–gène",
     }
     def _svg_translate(svg):
         if _cur_lang == 'fr':
@@ -4433,7 +4447,7 @@ with _about_expander:
 - OmniPath / NEKO: [omnipathdb.org](https://omnipathdb.org)
     """)
 
-    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 501" style="font-family:Arial,sans-serif">
+    _arch_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -36 920 660" style="font-family:Arial,sans-serif">
 <defs>
   <style>
     @keyframes arrowPulse {
@@ -4640,6 +4654,50 @@ with _about_expander:
 <line x1="522" y1="361" x2="537" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 <line x1="698" y1="361" x2="713" y2="361" stroke="#888" stroke-width="1.5" marker-end="url(#ah)"/>
 
+<!-- ═══ ROW 3: Personalisation ═══ -->
+<text x="380" y="475" text-anchor="middle" font-size="16" font-weight="bold" fill="#6C3483">Personalisation</text>
+
+<!-- Box A: Patient Data -->
+<rect x="12" y="484" width="158" height="150" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="2"/>
+<text x="91" y="506" text-anchor="middle" font-size="13" font-weight="bold" fill="#8E44AD">Patient Data</text>
+<rect x="30" y="516" width="122" height="80" rx="3" fill="none" stroke="#8E44AD" stroke-width="1.5" opacity="0.6"/>
+<text x="91" y="545" text-anchor="middle" font-size="11" fill="#8E44AD">.h5ad upload</text>
+<text x="91" y="560" text-anchor="middle" font-size="10" fill="#666">your scRNA-seq</text>
+<text x="91" y="614" text-anchor="middle" font-size="10" fill="#777">upload your data</text>
+
+<!-- Box B: UMAP Projection -->
+<rect x="188" y="484" width="158" height="150" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="2"/>
+<text x="267" y="506" text-anchor="middle" font-size="13" font-weight="bold" fill="#8E44AD">UMAP</text>
+<text x="267" y="521" text-anchor="middle" font-size="12" font-weight="bold" fill="#8E44AD">Projection</text>
+<circle cx="247" cy="558" r="18" fill="none" stroke="#8E44AD" stroke-width="1.5" opacity="0.5"/>
+<circle cx="253" cy="552" r="4" fill="#8E44AD" opacity="0.8"/>
+<circle cx="265" cy="565" r="3" fill="#E74C3C" opacity="0.9"/>
+<circle cx="258" cy="570" r="3" fill="#E74C3C" opacity="0.7"/>
+<circle cx="275" cy="558" r="3" fill="#3498DB" opacity="0.8"/>
+<circle cx="270" cy="548" r="3" fill="#8E44AD" opacity="0.9"/>
+<text x="267" y="614" text-anchor="middle" font-size="10" fill="#777">project onto RMS reference</text>
+
+<!-- Box C: Gene Overlap -->
+<rect x="364" y="484" width="158" height="150" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="2"/>
+<text x="443" y="506" text-anchor="middle" font-size="13" font-weight="bold" fill="#8E44AD">Gene Overlap</text>
+<text x="443" y="545" text-anchor="middle" font-size="22" fill="#8E44AD">∩</text>
+<text x="443" y="570" text-anchor="middle" font-size="10" fill="#666">patient genes ∩ program</text>
+<text x="443" y="614" text-anchor="middle" font-size="10" fill="#777">score overlap with program</text>
+
+<!-- Box D: Drug Matching -->
+<rect x="540" y="484" width="158" height="150" rx="8" fill="#F5EEF8" stroke="#8E44AD" stroke-width="2"/>
+<text x="619" y="506" text-anchor="middle" font-size="13" font-weight="bold" fill="#8E44AD">Drug Matching</text>
+<text x="619" y="528" text-anchor="middle" font-size="11" fill="#666">DGIdb</text>
+<line x1="594" y1="540" x2="644" y2="540" stroke="#8E44AD" stroke-width="1.5" opacity="0.6"/>
+<text x="619" y="558" text-anchor="middle" font-size="10" fill="#666">FDA status · score</text>
+<text x="619" y="572" text-anchor="middle" font-size="10" fill="#666">matched compounds</text>
+<text x="619" y="614" text-anchor="middle" font-size="10" fill="#777">drug–gene interactions</text>
+
+<!-- ROW 3 ARROWS -->
+<line x1="170" y1="559" x2="185" y2="559" stroke="#8E44AD" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="346" y1="559" x2="361" y2="559" stroke="#8E44AD" stroke-width="1.5" marker-end="url(#ah)"/>
+<line x1="522" y1="559" x2="537" y2="559" stroke="#8E44AD" stroke-width="1.5" marker-end="url(#ah)"/>
+
 </svg>"""
 
 # Arch diagram goes into the slot at the TOP of "About this tool"
@@ -4648,7 +4706,7 @@ with _arch_diagram_slot:
     _components.html(
         f"""<style>html,body{{margin:0;padding:0;overflow:hidden}}</style>
         <div style='width:100%'>{_arch_svg}</div>""",
-        height=370,
+        height=530,
     )
 
 # ── Override styles — injected LAST so they beat emotion CSS ─────
