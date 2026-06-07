@@ -2918,7 +2918,12 @@ def _render_msg_figures(msg, msg_id):
                             st.markdown(f"*{_annot_label}*")
 
             # ── Program score: Reference + Patient data ───────────────
-            _msg_prog_ps = msg.get("grn_program_genes") or []
+            # Use live program_size slice from all_similar if available
+            _all_sim_ps = msg.get("all_similar")
+            if _all_sim_ps:
+                _msg_prog_ps = [g for g, _ in _all_sim_ps[:program_size]]
+            else:
+                _msg_prog_ps = msg.get("grn_program_genes") or []
             if len(_msg_prog_ps) >= 5:
                 try:
                     import anndata as _anndata_ps, scanpy as _scanpy_ps
