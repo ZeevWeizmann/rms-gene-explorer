@@ -2789,9 +2789,6 @@ def _render_msg_figures(msg, msg_id):
     if _prog_tab_idx >= 0 and not st.session_state.get(_tab_click_key):
         st.session_state[_tab_click_key] = True
 
-    # Unique marker injected into parent page DOM — used by JS to find THIS tablist
-    st.markdown(f'<div id="tab-anchor-{msg_id}" style="display:none"></div>', unsafe_allow_html=True)
-
     # Only inject tab JS when there are actually empty tabs OR we need to auto-click.
     # CRITICAL: When _empty_indices is empty (all tabs have data), we must NOT grey anything —
     # old messages' JS components may re-run and find this tablist by DOM walk, causing
@@ -2806,41 +2803,41 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            var anchor = document.getElementById('tab-anchor-{msg_id}');
-            var allTabs = document.querySelectorAll('[role="tablist"]');
-            if (!allTabs.length) {{ setTimeout(_initTabs, 200); return; }}
-
-            // tablist is BEFORE the anchor in DOM — find the closest preceding one
-            var myTablist = allTabs[0];
-            if (anchor) {{
-                for (var i = allTabs.length - 1; i >= 0; i--) {{
-                    if (anchor.compareDocumentPosition(allTabs[i]) & Node.DOCUMENT_POSITION_PRECEDING) {{
-                        myTablist = allTabs[i]; break;
-                    }}
-                }}
-            }} else {{
-                myTablist = allTabs[allTabs.length - 1];
+            // Walk up from our script element to find the nearest tablist
+            var myTablist = null;
+            var el = myScript ? myScript.parentElement : null;
+            while (el) {{
+                var tl = el.querySelector('[role="tablist"]');
+                if (tl) {{ myTablist = tl; break; }}
+                el = el.parentElement;
             }}
+            if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
 
             var btns = myTablist.querySelectorAll('[role="tab"]');
-            if (!btns.length) {{ setTimeout(_initTabs, 200); return; }}
 
-            // Restore all tabs, then grey out empty ones
-            btns.forEach(function(b) {{ b.style.opacity = ''; b.style.pointerEvents = ''; }});
+            // Always restore all tabs to full opacity first, then selectively grey.
+            btns.forEach(function(b) {{
+                b.style.opacity = '';
+                b.style.pointerEvents = '';
+            }});
+
+            // Grey out empty tabs
             if (EMPTY_IDX.length > 0) {{
                 EMPTY_IDX.forEach(function(i) {{
-                    if (btns[i]) {{ btns[i].style.opacity = '0.35'; btns[i].style.pointerEvents = 'none'; }}
+                    if (btns[i]) {{
+                        btns[i].style.opacity = '0.35';
+                        btns[i].style.pointerEvents = 'none';
+                    }}
                 }});
             }}
 
-            // Auto-click Program tab once per message
+            // Auto-click Program tab on first render of this message
             if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY)) {{
                 sessionStorage.setItem(INIT_KEY, '1');
                 if (btns[PROG_IDX]) btns[PROG_IDX].click();
             }}
         }}
-        setTimeout(_initTabs, 400);
-        setTimeout(_initTabs, 1200);
+        setTimeout(_initTabs, 300);
     }})();
     </script>"""
     st.components.v1.html(_js_code, height=0)
