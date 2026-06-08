@@ -2789,6 +2789,9 @@ def _render_msg_figures(msg, msg_id):
     if _prog_tab_idx >= 0 and not st.session_state.get(_tab_click_key):
         st.session_state[_tab_click_key] = True
 
+    # Unique marker injected into parent page DOM — used by JS to find THIS tablist
+    st.markdown(f'<div id="tab-anchor-{msg_id}" style="display:none"></div>', unsafe_allow_html=True)
+
     # Only inject tab JS when there are actually empty tabs OR we need to auto-click.
     # CRITICAL: When _empty_indices is empty (all tabs have data), we must NOT grey anything —
     # old messages' JS components may re-run and find this tablist by DOM walk, causing
@@ -2803,15 +2806,31 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // Walk up from our script element to find the nearest tablist
+            // Find the unique anchor marker in the parent document
+            var anchor = document.getElementById('tab-anchor-{msg_id}');
+            if (!anchor) {{ setTimeout(_initTabs, 200); return; }}
+
+            // Find the next tablist after our anchor
             var myTablist = null;
-            var el = myScript ? myScript.parentElement : null;
+            var el = anchor;
             while (el) {{
                 var tl = el.querySelector('[role="tablist"]');
                 if (tl) {{ myTablist = tl; break; }}
-                el = el.parentElement;
+                el = el.nextElementSibling || (el.parentElement && el.parentElement.nextElementSibling);
+                if (!el) break;
             }}
-            if (!myTablist) {{ setTimeout(_initTabs, 200); return; }}
+            // fallback: first tablist after anchor in full page
+            if (!myTablist) {{
+                var allTabs = document.querySelectorAll('[role="tablist"]');
+                if (!allTabs.length) {{ setTimeout(_initTabs, 200); return; }}
+                myTablist = allTabs[0];
+                for (var i = 0; i < allTabs.length; i++) {{
+                    if (anchor.compareDocumentPosition(allTabs[i]) & Node.DOCUMENT_POSITION_FOLLOWING) {{
+                        myTablist = allTabs[i]; break;
+                    }}
+                }}
+            }}
+
             var btns = myTablist.querySelectorAll('[role="tab"]');
             if (!btns.length) {{ setTimeout(_initTabs, 200); return; }}
 
