@@ -2804,9 +2804,9 @@ def _render_msg_figures(msg, msg_id):
 
         var _retries = 0;
         function _initTabs() {{
-            // Access parent/top frame document (tabs are not in the iframe)
+            // Access parent frame document (same-origin Streamlit frame)
             var doc;
-            try {{ doc = window.top.document; }} catch(e) {{ doc = document; }}
+            try {{ doc = window.parent.document; }} catch(e) {{ doc = document; }}
 
             var btns = doc.querySelectorAll('[role="tab"]');
             if (!btns.length && _retries++ < 10) {{ setTimeout(_initTabs, 200); return; }}
