@@ -2803,14 +2803,13 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // Walk up from our script element to find the nearest tablist
-            var myTablist = null;
-            var el = myScript ? myScript.parentElement : null;
-            while (el) {{
-                var tl = el.querySelector('[role="tablist"]');
-                if (tl) {{ myTablist = tl; break; }}
-                el = el.parentElement;
-            }}
+            // Find all stTabs containers in the page
+            var allStTabs = document.querySelectorAll('[data-testid="stTabs"]');
+            if (!allStTabs.length) {{ setTimeout(_initTabs, 100); return; }}
+            // Use the last stTabs (most recently rendered)
+            var stTabsEl = allStTabs[allStTabs.length - 1];
+            // Find the tab buttons inside it
+            var myTablist = stTabsEl.querySelector('[role="tablist"]') || stTabsEl;
             if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
 
             var btns = myTablist.querySelectorAll('[role="tab"]');
