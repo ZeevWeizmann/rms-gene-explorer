@@ -2803,19 +2803,8 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // Find all stTabs containers in the page
-            var allStTabs = document.querySelectorAll('[data-testid="stTabs"]');
-            if (!allStTabs.length) {{ setTimeout(_initTabs, 100); return; }}
-            // Use the last stTabs (most recently rendered)
-            var stTabsEl = allStTabs[allStTabs.length - 1];
-            // Find the tab buttons inside it
-            var myTablist = stTabsEl.querySelector('[role="tablist"]') || stTabsEl;
-            if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
-
-            // Try multiple selectors for tab buttons
-            var btns = myTablist.querySelectorAll('[role="tab"]');
-            if (!btns.length) btns = stTabsEl.querySelectorAll('[data-baseweb="tab"]');
-            if (!btns.length) btns = stTabsEl.querySelectorAll('[role="tab"]');
+            // Find all tab buttons directly in the document
+            var btns = document.querySelectorAll('[role="tab"]');
             if (!btns.length) {{ setTimeout(_initTabs, 150); return; }}
 
             // Always restore all tabs to full opacity first, then selectively grey.
