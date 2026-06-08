@@ -2802,18 +2802,21 @@ def _render_msg_figures(msg, msg_id):
         // Capture script element before any async callbacks
         var myScript  = document.currentScript;
 
+        var _retries = 0;
         function _initTabs() {{
-            // Find all tab buttons directly in the document
-            var btns = document.querySelectorAll('[role="tab"]');
-            if (!btns.length) {{ setTimeout(_initTabs, 150); return; }}
+            // Access parent/top frame document (tabs are not in the iframe)
+            var doc;
+            try {{ doc = window.top.document; }} catch(e) {{ doc = document; }}
 
-            // Always restore all tabs to full opacity first, then selectively grey.
+            var btns = doc.querySelectorAll('[role="tab"]');
+            if (!btns.length && _retries++ < 10) {{ setTimeout(_initTabs, 200); return; }}
+            if (!btns.length) return;
+
+            // Restore all tabs, then grey out empty ones
             btns.forEach(function(b) {{
                 b.style.opacity = '';
                 b.style.pointerEvents = '';
             }});
-
-            // Grey out empty tabs
             if (EMPTY_IDX.length > 0) {{
                 EMPTY_IDX.forEach(function(i) {{
                     if (btns[i]) {{
@@ -2823,14 +2826,13 @@ def _render_msg_figures(msg, msg_id):
                 }});
             }}
 
-            // Auto-click Program tab on first render of this message
+            // Auto-click Program tab once per message
             if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY)) {{
                 sessionStorage.setItem(INIT_KEY, '1');
                 if (btns[PROG_IDX]) btns[PROG_IDX].click();
             }}
         }}
         setTimeout(_initTabs, 300);
-        setTimeout(_initTabs, 800);
     }})();
     </script>"""
     st.components.v1.html(_js_code, height=0)
