@@ -2806,29 +2806,20 @@ def _render_msg_figures(msg, msg_id):
         var myScript  = document.currentScript;
 
         function _initTabs() {{
-            // Find the unique anchor marker in the parent document
             var anchor = document.getElementById('tab-anchor-{msg_id}');
-            if (!anchor) {{ setTimeout(_initTabs, 200); return; }}
+            var allTabs = document.querySelectorAll('[role="tablist"]');
+            if (!allTabs.length) {{ setTimeout(_initTabs, 200); return; }}
 
-            // Find the next tablist after our anchor
-            var myTablist = null;
-            var el = anchor;
-            while (el) {{
-                var tl = el.querySelector('[role="tablist"]');
-                if (tl) {{ myTablist = tl; break; }}
-                el = el.nextElementSibling || (el.parentElement && el.parentElement.nextElementSibling);
-                if (!el) break;
-            }}
-            // fallback: first tablist after anchor in full page
-            if (!myTablist) {{
-                var allTabs = document.querySelectorAll('[role="tablist"]');
-                if (!allTabs.length) {{ setTimeout(_initTabs, 200); return; }}
-                myTablist = allTabs[0];
-                for (var i = 0; i < allTabs.length; i++) {{
-                    if (anchor.compareDocumentPosition(allTabs[i]) & Node.DOCUMENT_POSITION_FOLLOWING) {{
+            // tablist is BEFORE the anchor in DOM — find the closest preceding one
+            var myTablist = allTabs[0];
+            if (anchor) {{
+                for (var i = allTabs.length - 1; i >= 0; i--) {{
+                    if (anchor.compareDocumentPosition(allTabs[i]) & Node.DOCUMENT_POSITION_PRECEDING) {{
                         myTablist = allTabs[i]; break;
                     }}
                 }}
+            }} else {{
+                myTablist = allTabs[allTabs.length - 1];
             }}
 
             var btns = myTablist.querySelectorAll('[role="tab"]');
