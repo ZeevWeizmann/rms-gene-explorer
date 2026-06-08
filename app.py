@@ -2812,7 +2812,11 @@ def _render_msg_figures(msg, msg_id):
             var myTablist = stTabsEl.querySelector('[role="tablist"]') || stTabsEl;
             if (!myTablist) {{ setTimeout(_initTabs, 100); return; }}
 
+            // Try multiple selectors for tab buttons
             var btns = myTablist.querySelectorAll('[role="tab"]');
+            if (!btns.length) btns = stTabsEl.querySelectorAll('[data-baseweb="tab"]');
+            if (!btns.length) btns = stTabsEl.querySelectorAll('[role="tab"]');
+            if (!btns.length) {{ setTimeout(_initTabs, 150); return; }}
 
             // Always restore all tabs to full opacity first, then selectively grey.
             btns.forEach(function(b) {{
@@ -2837,6 +2841,7 @@ def _render_msg_figures(msg, msg_id):
             }}
         }}
         setTimeout(_initTabs, 300);
+        setTimeout(_initTabs, 800);
     }})();
     </script>"""
     st.components.v1.html(_js_code, height=0)
