@@ -2928,21 +2928,29 @@ def _render_msg_figures(msg, msg_id):
                     import anndata as _anndata_ps, scanpy as _scanpy_ps
                     import scipy.sparse as _sparse_ps
 
-                    def _score_expr(_expr_mat, _var_list, _prog_genes, _key):
+                    def _score_expr(_expr_mat, _var_list, _prog_genes, _cache_key):
+                        if _cache_key in st.session_state:
+                            return st.session_state[_cache_key]
                         _prog_in = [g for g in _prog_genes if g in set(_var_list)]
                         if len(_prog_in) < 5:
-                            return None, 0, 0
+                            result = (None, 0, 0)
+                            st.session_state[_cache_key] = result
+                            return result
                         _ad = _anndata_ps.AnnData(
                             X=_sparse_ps.csr_matrix(_expr_mat.astype("float32")),
                             var=pd.DataFrame(index=_var_list),
                         )
                         _scanpy_ps.tl.score_genes(_ad, gene_list=_prog_in, score_name="_s")
                         _sc = _ad.obs["_s"].values
-                        return _sc, len(_prog_in), len(_msg_prog_ps)
+                        result = (_sc, len(_prog_in), len(_prog_genes))
+                        st.session_state[_cache_key] = result
+                        return result
 
+                    _prog_key = tuple(sorted(_msg_prog_ps))
                     # Reference data
                     _ref_scores, _ref_found, _ref_total = _score_expr(
-                        expr, gene_names, _msg_prog_ps, "ref"
+                        expr, gene_names, _msg_prog_ps,
+                        f"_score_ref_{msg_id}_{_prog_key}"
                     )
                     # Patient data (if uploaded)
                     _up_var_ps  = st.session_state.get("_upload_var_names", [])
@@ -2950,7 +2958,8 @@ def _render_msg_figures(msg, msg_id):
                     _pat_scores, _pat_found, _pat_total = (None, 0, 0)
                     if _up_expr_ps is not None:
                         _pat_scores, _pat_found, _pat_total = _score_expr(
-                            _up_expr_ps, _up_var_ps, _msg_prog_ps, "pat"
+                            _up_expr_ps, _up_var_ps, _msg_prog_ps,
+                            f"_score_pat_{msg_id}_{_prog_key}"
                         )
 
                     if _ref_scores is not None or _pat_scores is not None:
