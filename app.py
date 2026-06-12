@@ -3026,16 +3026,16 @@ def _render_msg_figures(msg, msg_id):
                         st.divider()
                         _ps_col1, _ps_col2 = st.columns([6, 1])
                         _ps_col1.markdown("**Program score**")
-                        with _ps_col2.popover("ℹ info", help=None):
+                        with _ps_col2.popover("ℹ", help=None):
                             st.caption("Scanpy `score_genes`: mean expression of program genes minus mean of random control genes, per cell.")
                         st.markdown("""<style>
                         div[data-testid="stPopover"] button {
                             min-height:unset !important; padding:2px 8px !important;
                             border-radius:6px !important;
-                            background:#0d6efd !important;
-                            color:white !important; font-weight:600 !important;
-                            font-size:0.72rem !important; border:none !important;
-                            box-shadow:0 2px 6px rgba(13,110,253,0.35) !important;
+                            background:linear-gradient(to bottom, #6ea8fe 0%, #0d6efd 60%, #0a58ca 100%) !important;
+                            color:white !important; font-weight:700 !important;
+                            font-size:0.82rem !important; border:none !important;
+                            box-shadow:0 3px 8px rgba(13,110,253,0.45), inset 0 1px 0 rgba(255,255,255,0.35) !important;
                             line-height:1.4 !important;
                         }
                         </style>""", unsafe_allow_html=True)
