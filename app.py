@@ -2011,8 +2011,8 @@ def build_umap_perturbation(umap_expr_df, query_gene):
     return fig
 
 
-def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_means=None):
-    """Build two figures: top-20 barplot + gene dynamics WT vs KO."""
+def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_means=None, n_drug_targets=20):
+    """Build two figures: top-N barplot + gene dynamics WT vs KO."""
     times = sorted(pert_df["time"].unique())
     last_t = times[-1]
 
@@ -2062,7 +2062,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
     # exclude the KO gene itself (handled separately as the primary target)
     summary = pert_df[(pert_df["time"] == last_t) & (pert_df["gene"] != ko_gene)].copy()
     summary["abs_log2fc"] = summary["log2fc"].abs()
-    top20 = summary.nlargest(20, "abs_log2fc").sort_values("log2fc")
+    top20 = summary.nlargest(n_drug_targets, "abs_log2fc").sort_values("log2fc")
 
     # KO gene row — show at bottom (most negative), capped for readability
     _ko_row = pert_df[(pert_df["time"] == last_t) & (pert_df["gene"] == ko_gene)]
@@ -2768,7 +2768,8 @@ def _render_msg_figures(msg, msg_id):
             else:
                 bar_fig, _ = build_perturbation_figures(
                     pert_df, q_gene, ko_gene=_ko_gene_label,
-                    real_expr_means=load_real_expr_means())
+                    real_expr_means=load_real_expr_means(),
+                    n_drug_targets=st.session_state.get(f"drug_targets_{dataset_key}", 20))
                 _pert_data = {
                     "bar_fig": bar_fig,
                     "pert_df": pert_df,
@@ -3083,7 +3084,13 @@ def _render_msg_figures(msg, msg_id):
                 st.info(f"{T['pert_unavail']}. ({_pert_data['error']})")
             elif _pert_data:
                 import copy as _copy
-                _bar_fig = _copy.deepcopy(_pert_data["bar_fig"])
+                # Rebuild bar_fig live so drug_targets slider takes effect immediately
+                _n_dt = st.session_state.get(f"drug_targets_{dataset_key}", 20)
+                _bar_fig, _ = build_perturbation_figures(
+                    _pert_data["pert_df"], _pert_data.get("query_gene", ""),
+                    ko_gene=_pert_data.get("ko_label", ""),
+                    n_drug_targets=_n_dt)
+                _bar_fig = _copy.deepcopy(_bar_fig)
                 # Reuse pre-fetched DGIdb result — no extra network call needed
                 try:
                     _bar_genes_set = {str(g) for g in _bar_fig.data[0].y if g}
@@ -4141,6 +4148,11 @@ with st.expander(T['settings'], expanded=False):
         key=f"slider_{dataset_key}"
     )
     _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
+    _cg1.slider(
+        "Drug targets shown",
+        min_value=5, max_value=50, value=20, step=5,
+        key=f"drug_targets_{dataset_key}"
+    )
     _cg2.slider(
         T['grn_top_n'],
         min_value=5, max_value=150, value=10, step=5,
