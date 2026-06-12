@@ -2215,7 +2215,7 @@ def build_grn_from_program(grn_mat, grn_genes, gene_set):
     return G
 
 
-def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10):
+def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10, edge_threshold=0.1):
     if grn_mat is None or query_gene not in grn_genes:
         return None, None
 
@@ -2227,10 +2227,10 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     if query_gene in grn_genes:
         idx = grn_genes.index(query_gene)
         for j, w in enumerate(grn_mat[idx]):
-            if abs(w) > 0 and grn_genes[j] != query_gene:
+            if abs(w) > edge_threshold and grn_genes[j] != query_gene:
                 G_full.add_edge(query_gene, grn_genes[j], weight=float(w))
         for i, w in enumerate(grn_mat[:, idx]):
-            if abs(w) > 0 and grn_genes[i] != query_gene:
+            if abs(w) > edge_threshold and grn_genes[i] != query_gene:
                 G_full.add_edge(grn_genes[i], query_gene, weight=float(w))
 
     frontier = {query_gene}
@@ -2242,11 +2242,11 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 continue
             idx = grn_genes.index(gene)
             for j, w in enumerate(grn_mat[idx]):
-                if abs(w) > 0 and grn_genes[j] not in visited:
+                if abs(w) > edge_threshold and grn_genes[j] not in visited:
                     G_full.add_edge(gene, grn_genes[j], weight=float(w))
                     next_frontier.add(grn_genes[j]); visited.add(grn_genes[j])
             for i, w in enumerate(grn_mat[:, idx]):
-                if abs(w) > 0 and grn_genes[i] not in visited:
+                if abs(w) > edge_threshold and grn_genes[i] not in visited:
                     G_full.add_edge(grn_genes[i], gene, weight=float(w))
                     next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
@@ -2418,7 +2418,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     return fig, topo_df
 
 
-def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20):
+def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20, edge_threshold=0.1):
     if grn_mat is None or query_gene is None:
         return None
     grn_set   = set(grn_genes)
@@ -2441,7 +2441,7 @@ def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, t
             continue
         gi = grn_index[gene]
         for j, w in enumerate(grn_mat[gi]):
-            if abs(w) > 0 and grn_genes[j] in node_set and grn_genes[j] != gene:
+            if abs(w) > edge_threshold and grn_genes[j] in node_set and grn_genes[j] != gene:
                 adj.loc[gene, grn_genes[j]] = float(w)
 
     return adj, all_nodes
@@ -2605,8 +2605,9 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
 _grn_state_key = f"grn_choice_{dataset_key}"
-grn_hops  = 1
+grn_hops  = st.session_state.get(f"grn_hops_{dataset_key}", 1)
 grn_top_n = st.session_state.get(f"grn_topn_{dataset_key}", 10)
+grn_edge_threshold = st.session_state.get(f"grn_threshold_{dataset_key}", 0.1)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
     grn_options = []
@@ -3597,11 +3598,11 @@ def _render_msg_figures(msg, msg_id):
                 _live_adj = build_grn_adjacency(
                     _live_grn_mat, _live_grn_genes,
                     gene_set=_msg_prog_genes, query_gene=_msg_q_gene,
-                    hops=grn_hops, top_n=program_size,
+                    hops=grn_hops, top_n=program_size, edge_threshold=grn_edge_threshold,
                 )
                 _live_grn_fig, _ = build_grn_figure(
                     _live_grn_mat, _live_grn_genes, _msg_q_gene,
-                    gene_set=_msg_prog_genes, hops=grn_hops, top_n=grn_top_n,
+                    gene_set=_msg_prog_genes, hops=grn_hops, top_n=grn_top_n, edge_threshold=grn_edge_threshold,
                 )
             except Exception:
                 pass
@@ -3866,8 +3867,8 @@ if query_gene:
             _grn_mat_q, _grn_genes_q = None, []
             _grn_model_q = None
 
-        grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops, top_n=grn_top_n)
-        grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops, top_n=grn_top_n)
+        grn_fig, grn_topo = build_grn_figure(_grn_mat_q, _grn_genes_q, query_gene, gene_set=program_genes, hops=grn_hops, top_n=grn_top_n, edge_threshold=grn_edge_threshold)
+        grn_adj = build_grn_adjacency(_grn_mat_q, _grn_genes_q, gene_set=program_genes, query_gene=query_gene, hops=grn_hops, top_n=grn_top_n, edge_threshold=grn_edge_threshold)
 
         # Simulation time UMAP — all GRN models
         # Sim cells projected via UMAP transform (fit on real data, embedding
@@ -4288,6 +4289,19 @@ with st.expander(T['settings'], expanded=False):
         T['grn_top_n'],
         min_value=5, max_value=150, value=10, step=5,
         key=f"grn_topn_{dataset_key}"
+    )
+    _cg1, _cg2, _cg3 = st.columns(3)
+    _cg1.slider(
+        "GRN hops",
+        min_value=1, max_value=3, value=1, step=1,
+        key=f"grn_hops_{dataset_key}",
+        help="1 = direct targets only · 2 = targets of targets · 3 = third-order"
+    )
+    _cg2.slider(
+        "Edge weight threshold",
+        min_value=0.0, max_value=0.5, value=0.1, step=0.05,
+        key=f"grn_threshold_{dataset_key}",
+        help="Edges with |weight| below this value are hidden"
     )
     if _gene_in_any_grn:
         if len(grn_options) == 1:
