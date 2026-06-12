@@ -353,6 +353,22 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ── Auth state ───────────────────────────────────────────────────────────────
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+def _do_login():
+    _pw = st.session_state.get("_login_pw", "")
+    if _pw == st.secrets.get("auth", {}).get("password", ""):
+        st.session_state["authenticated"] = True
+        st.session_state["_login_error"] = False
+    else:
+        st.session_state["_login_error"] = True
+
+def _do_logout():
+    st.session_state["authenticated"] = False
+# ─────────────────────────────────────────────────────────────────────────────
+
 st.markdown("""
 <head>
 <meta name="description" content="Gene Program Explorer — interactive RAG-based tool for exploring transcriptional programs and gene regulatory networks in single-cell RMS (Rhabdomyosarcoma) data.">
@@ -2462,11 +2478,12 @@ _search_container = st.container()
 # DATASET SELECTOR  — read from session_state so widget can live
 # inside _search_container (rendered visually under the banner).
 # ================================================================
-_ds_options = [
+_ds_options_all = [
     "8,442 genes · 13,968 cells · GCN",
     "8,836 genes · 4,706 cells · GCN",
     "3,887 embeddings · 13,968 cells · GNN+OT temporal (beta)",
 ]
+_ds_options = _ds_options_all if st.session_state.get("authenticated") else _ds_options_all[:1]
 dataset_choice = st.session_state.get("dataset_select", _ds_options[0])
 if dataset_choice not in _ds_options:
     dataset_choice = _ds_options[0]
@@ -4078,6 +4095,20 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
 
 # ── Settings expander ────────────────────────────────────────────
 with st.expander(T['settings'], expanded=False):
+    # Login / logout
+    if st.session_state.get("authenticated"):
+        st.caption("🔓 Extended access active")
+        st.button("Sign out", on_click=_do_logout, key="_logout_btn")
+    else:
+        st.markdown("**🔐 Extended access** — unlock additional databases")
+        _lc1, _lc2 = st.columns([3, 1])
+        _lc1.text_input("Password", type="password", key="_login_pw",
+                        on_change=_do_login, placeholder="Password…",
+                        label_visibility="collapsed")
+        _lc2.button("Sign in", on_click=_do_login, key="_login_btn")
+        if st.session_state.get("_login_error"):
+            st.error("Incorrect password")
+    st.divider()
     _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
         T['vector_db'],
