@@ -2428,8 +2428,15 @@ if _logo_b64:
 # Language toggle — HTML flag links (query param based, lang already detected above)
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
+_login_html = ""
+if st.session_state.get("authenticated"):
+    _login_html = '<span style="font-size:0.72rem; color:#888; margin-right:6px;">🔓 logged in</span>'
+else:
+    _login_html = '<span id="_login_chip" style="font-size:0.72rem; color:#555; margin-right:6px; cursor:pointer; border:1px solid #ddd; border-radius:12px; padding:2px 10px; background:#fafafa;" onclick="window.parent.document.querySelector(\'[data-testid=\\\"stExpander\\\"]\')?.scrollIntoView({behavior:\'smooth\'})">Login</span>'
+
 st.markdown(f"""
 <div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:8px; align-items:center;">
+  {_login_html}
   <a href="?lang=en" style="text-decoration:none; opacity:{_en_op}; transition:opacity .2s;">
     <div style="position:relative; width:30px; height:30px; border-radius:50%;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.5);">
