@@ -78,7 +78,7 @@ _TRANSLATIONS = {
         'grn_model': 'GRN model',
         'grn_top_n': 'Network size',
         # Data upload
-        'upload_note': 'Processed in memory only — not stored anywhere. Max ~50k cells.',
+        'upload_note': 'Processed in memory only · not stored anywhere. Max ~50k cells.',
         'upload_label': 'Upload .h5ad file',
         'load_file': 'Load file',
         'loading': 'Loading...',
@@ -229,7 +229,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'grn_model': 'Modèle GRN',
         'grn_top_n': 'Taille du réseau',
         # Data upload
-        'upload_note': 'Traité en mémoire uniquement — aucune donnée stockée. Max ~50k cellules.',
+        'upload_note': 'Traité en mémoire uniquement · aucune donnée stockée. Max ~50k cellules.',
         'upload_label': 'Importer un fichier .h5ad',
         'load_file': 'Charger le fichier',
         'loading': 'Chargement...',
