@@ -3004,15 +3004,17 @@ def _render_msg_figures(msg, msg_id):
                 elif len(_enrich_result) == 0:
                     st.caption("No significant pathways found (FDR < 0.05).")
                 else:
+                    _n_query = len(_enrich_prog_genes)
                     _enrich_show = (
                         _enrich_result[["name", "source", "p_value", "intersection_size", "term_size"]]
                         .rename(columns={"name": "Pathway", "source": "Source",
-                                         "p_value": "FDR", "intersection_size": "Hits",
-                                         "term_size": "Term size"})
+                                         "p_value": "FDR", "term_size": "Term size"})
                         .sort_values("FDR")
                         .reset_index(drop=True)
                     )
                     _enrich_show["FDR"] = _enrich_show["FDR"].map(lambda x: f"{x:.2e}")
+                    _enrich_show["Hits"] = _enrich_show["intersection_size"].map(lambda x: f"{x}/{_n_query}")
+                    _enrich_show = _enrich_show[["Pathway", "Source", "FDR", "Hits", "Term size"]]
                     st.dataframe(_enrich_show, use_container_width=True, height=320)
 
             # ── Program score: Reference + Patient data ───────────────
