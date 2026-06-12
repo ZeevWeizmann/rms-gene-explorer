@@ -4135,7 +4135,7 @@ with st.expander(T['settings'], expanded=False):
         st.caption("🔓 Logged in · all databases available")
         st.button("Sign out", on_click=_do_logout, key="_logout_btn")
     st.divider()
-    _c1, _c2 = st.columns([3, 3])
+    _c1, _c2, _c3, _c4 = st.columns(4)
     dataset_choice = _c1.selectbox(
         T['vector_db'],
         options=_ds_options,
@@ -4147,13 +4147,12 @@ with st.expander(T['settings'], expanded=False):
         min_value=5, max_value=200, value=20, step=5,
         key=f"slider_{dataset_key}"
     )
-    _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
-    _cg1.slider(
+    _c3.slider(
         "Drug targets shown",
         min_value=5, max_value=100, value=20, step=5,
         key=f"drug_targets_{dataset_key}"
     )
-    _cg2.slider(
+    _c4.slider(
         T['grn_top_n'],
         min_value=5, max_value=150, value=10, step=5,
         key=f"grn_topn_{dataset_key}"
