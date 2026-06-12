@@ -202,6 +202,16 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 """,
         'how_it_works_body_2': """
 - **Regulatory structure** — a PPGN (WL-3) runs on the OmniPath mechanistic interaction graph (accessed via NEKO) and captures regulatory motifs such as feedback loops and triangles. Added on top of the trajectory embedding for genes with known OmniPath interactions.
+
+---
+
+**References**
+
+- **CARDAMOM / CardamomOT** — [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
+- **Nebius AI Studio** (Llama 3.1-8B inference) — [studio.nebius.com](https://studio.nebius.com)
+- **Maron et al.** Provably Powerful Graph Networks. NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136)
+- **OmniPath / NEKO** — [omnipathdb.org](https://omnipathdb.org)
+- **Caruso et al.** Fusion-negative RMS 3D organoids to predict effective drug combinations. Cell Reports Medicine 2023 · [doi:10.1016/j.xcrm.2023.101336](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6)
 """,
     },
     'fr': {
@@ -340,6 +350,16 @@ Chaque gène reçoit un vecteur encodant **comment son voisinage de co-expressio
 """,
         'how_it_works_body_2': """
 - **Structure régulatrice** — un PPGN (WL-3) analyse le graphe d'interaction mécaniste OmniPath (via NEKO) et capture les motifs régulateurs tels que boucles de rétroaction et triangles.
+
+---
+
+**Références**
+
+- **CARDAMOM / CardamomOT** — [github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)
+- **Nebius AI Studio** (inférence Llama 3.1-8B) — [studio.nebius.com](https://studio.nebius.com)
+- **Maron et al.** Provably Powerful Graph Networks. NeurIPS 2019 · [arXiv:1905.11136](https://arxiv.org/abs/1905.11136)
+- **OmniPath / NEKO** — [omnipathdb.org](https://omnipathdb.org)
+- **Caruso et al.** Organoïdes RMS fusion-négative 3D pour prédire des combinaisons médicamenteuses efficaces. Cell Reports Medicine 2023 · [doi:10.1016/j.xcrm.2023.101336](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6)
 """,
     }
 }
