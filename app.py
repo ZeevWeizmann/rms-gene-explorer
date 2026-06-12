@@ -2928,6 +2928,18 @@ def _render_msg_figures(msg, msg_id):
             _cluster_summary = summaries.get(msg.get("cluster_id", ""), "") if "cluster_id" in msg else ""
             _q = msg.get("query_gene", "")
 
+            # ── Program Retriever version badge ───────────────────────────────
+            _pr_version_map = {"v1": "GCN v1.0", "v2": "GCN v2.0", "traj": "GNN+OT v1.0 (beta)"}
+            _pr_version = _pr_version_map.get(dataset_key, "v1.0")
+            _pr_c1, _pr_c2 = st.columns([11, 1])
+            _pr_c1.markdown(f'<span style="font-size:0.78rem;color:#6b7280;">Program Retriever · <b>{_pr_version}</b></span>', unsafe_allow_html=True)
+            with _pr_c2.popover("ℹ", help=None):
+                st.markdown(
+                    "**Program Retriever** encodes each gene into a GNN co-expression embedding "
+                    "and retrieves the most similar genes as a program.\n\n"
+                    "For access to newer versions or custom datasets, contact the Gene Program Explorer team."
+                )
+
             # Rebuild program list live using current program_size.
             # Gene map is cached in session_state by (msg_id, program_size) so
             # that changing Network size does NOT trigger a map rebuild.
