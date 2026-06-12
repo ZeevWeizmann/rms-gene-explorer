@@ -2267,19 +2267,37 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             direct_neighbors = top_neighbors - {query_gene}
         nodes_to_keep = {query_gene} | direct_neighbors
     else:
-        # Multi-hop: keep visited nodes sorted by edge weight, cap at top_n total
-        _scored = []
-        for n in visited:
-            if n == query_gene:
-                continue
-            if G_full.has_edge(query_gene, n):
-                _scored.append((n, abs(G_full[query_gene][n]["weight"])))
-            elif G_full.has_edge(n, query_gene):
-                _scored.append((n, abs(G_full[n][query_gene]["weight"])))
-            else:
-                _scored.append((n, 0.0))
-        _scored.sort(key=lambda x: x[1], reverse=True)
-        nodes_to_keep = {query_gene} | {n for n, _ in _scored[:top_n]}
+        # BFS: budget split evenly across hops, top-K per level by edge weight
+        _budget_per_hop = max(1, top_n // hops)
+        _bfs_frontier = {query_gene}
+        _bfs_visited  = {query_gene}
+        nodes_to_keep = {query_gene}
+        for _hop in range(hops):
+            _candidates = []
+            for _src in _bfs_frontier:
+                if _src not in grn_genes:
+                    continue
+                _si = grn_genes.index(_src)
+                for _j, _w in enumerate(grn_mat[_si]):
+                    _nb = grn_genes[_j]
+                    if abs(_w) > edge_threshold and _nb not in _bfs_visited:
+                        _candidates.append((_nb, abs(_w)))
+                for _i, _w in enumerate(grn_mat[:, _si]):
+                    _nb = grn_genes[_i]
+                    if abs(_w) > edge_threshold and _nb not in _bfs_visited:
+                        _candidates.append((_nb, abs(_w)))
+            _candidates.sort(key=lambda x: x[1], reverse=True)
+            _seen_this_hop = set()
+            _new_frontier = set()
+            for _nb, _w in _candidates:
+                if _nb not in _seen_this_hop and len(_new_frontier) < _budget_per_hop:
+                    _new_frontier.add(_nb)
+                    _seen_this_hop.add(_nb)
+            _bfs_visited |= _new_frontier
+            nodes_to_keep |= _new_frontier
+            _bfs_frontier = _new_frontier
+            if not _new_frontier:
+                break
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
