@@ -3024,7 +3024,9 @@ def _render_msg_figures(msg, msg_id):
 
                     if _ref_scores is not None or _pat_scores is not None:
                         st.divider()
-                        with st.expander("Program score", expanded=False):
+                        _ps_col1, _ps_col2 = st.columns([6, 1])
+                        _ps_col1.markdown("**Program score**")
+                        with _ps_col2.popover("ℹ️"):
                             st.caption("Scanpy `score_genes`: mean expression of program genes minus mean of random control genes, per cell.")
                         _cols_score = st.columns(2 if _pat_scores is not None else 1)
 
