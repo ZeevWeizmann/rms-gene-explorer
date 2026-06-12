@@ -362,6 +362,7 @@ def _do_login():
     if _pw == st.secrets.get("auth", {}).get("password", ""):
         st.session_state["authenticated"] = True
         st.session_state["_login_error"] = False
+        st.rerun()
     else:
         st.session_state["_login_error"] = True
 
