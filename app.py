@@ -2425,14 +2425,22 @@ if _logo_b64:
 
 # ── Google-homepage style: centered title above, search below ─────
 
+# ── Login dialog ─────────────────────────────────────────────────────────────
+@st.dialog("Login for additional databases")
+def _show_login_dialog():
+    st.text_input("Password", type="password", key="_login_pw", on_change=_do_login)
+    st.button("Sign in", on_click=_do_login)
+    if st.session_state.get("_login_error"):
+        st.error("Incorrect password")
+
 # Language toggle — HTML flag links (query param based, lang already detected above)
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
-_login_html = ""
+
 if st.session_state.get("authenticated"):
     _login_html = '<span style="font-size:0.72rem; color:#888; margin-right:6px;">🔓 logged in</span>'
 else:
-    _login_html = '<span id="_login_chip" style="font-size:0.72rem; color:#555; margin-right:6px; cursor:pointer; border:1px solid #ddd; border-radius:12px; padding:2px 10px; background:#fafafa;" onclick="window.parent.document.querySelector(\'[data-testid=\\\"stExpander\\\"]\')?.scrollIntoView({behavior:\'smooth\'})">Login</span>'
+    _login_html = ''
 
 st.markdown(f"""
 <div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:8px; align-items:center;">
@@ -2459,6 +2467,15 @@ st.markdown(f"""
   </a>
 </div>
 """, unsafe_allow_html=True)
+
+# Login button — top right via absolute-positioned container
+if not st.session_state.get("authenticated"):
+    _login_cols = st.columns([1, 0.01])
+    with _login_cols[1]:
+        st.markdown('<div style="position:fixed;top:65px;right:90px;z-index:10000;">', unsafe_allow_html=True)
+        if st.button("Login", key="_top_login_btn"):
+            _show_login_dialog()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
