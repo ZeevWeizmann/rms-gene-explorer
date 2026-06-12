@@ -3273,9 +3273,9 @@ def _render_msg_figures(msg, msg_id):
                     st.info(T['no_drugs_found'])
                 else:
                     _dgidb_c1, _dgidb_c2 = st.columns([11, 1])
-                    _dgidb_c1.caption(T['dgidb_caption'])
+                    _dgidb_c1.markdown("**Drug targets**")
                     with _dgidb_c2.popover("ℹ", help=None):
-                        st.markdown(T['dgidb_score_note'])
+                        st.markdown(T['dgidb_caption'] + "\n\n" + T['dgidb_score_note'])
                     def _style_drug_rows(row):
                         if row["Gene"] in _d_highlight:
                             return ["background-color: #dbeeff; color: #1a4a7a; font-weight: 600"] * len(row)
