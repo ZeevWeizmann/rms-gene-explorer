@@ -3024,9 +3024,11 @@ def _render_msg_figures(msg, msg_id):
             _enrich_result = st.session_state.get(_enrich_key)
             if _enrich_result is not None and len(_enrich_result) > 0:
                 _kegg_reac = _enrich_result[_enrich_result["source"].isin(["KEGG", "REAC"])]
-                _top3_src = _kegg_reac if len(_kegg_reac) >= 1 else _enrich_result
+                _top3_src = _kegg_reac if len(_kegg_reac) >= 3 else _enrich_result
+                # Among top hits, pick most specific (smallest term_size) to avoid hierarchy duplicates
+                _candidates = _top3_src.nlargest(20, "intersection_size")
                 _top3 = (
-                    _top3_src.nlargest(3, "intersection_size")["name"]
+                    _candidates.nsmallest(3, "term_size")["name"]
                     .str.replace(r"\s*\(.*?\)", "", regex=True)
                     .tolist()
                 )
