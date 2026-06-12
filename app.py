@@ -142,8 +142,8 @@ _TRANSLATIONS = {
         'pop_unavail': 'Population shift unavailable',
         'pert_unavail': 'Perturbation data not available',
         'dgidb_caption': 'Drug–gene interactions from **[DGIdb](https://dgidb.org)**',
-        'dgidb_score_note': ('\\* **Score** — [DGIdb Interaction Score](https://dgidb.org/about/overview/interaction-score): '
-                             'static evidence-based score for each drug–gene pair, independent of the search context. '
+        'dgidb_score_note': ('**Score** — [DGIdb Interaction Score](https://dgidb.org/about/overview/interaction-score)\n\n'
+                             'Static evidence-based score for each drug–gene pair. '
                              'Combines evidence scores (number and quality of supporting sources) with a '
                              'promiscuity penalty — drugs or genes involved in many interactions receive lower scores. '
                              'Higher score = better-supported, more specific interaction.'),
@@ -305,8 +305,8 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'pop_unavail': 'Changement de population non disponible',
         'pert_unavail': 'Données de perturbation non disponibles',
         'dgidb_caption': 'Interactions médicament–gène depuis **[DGIdb](https://dgidb.org)**',
-        'dgidb_score_note': ('\\* **Score** — [Score d\'interaction DGIdb](https://dgidb.org/about/overview/interaction-score) : '
-                             'score statique basé sur les preuves pour chaque paire médicament–gène, indépendant du contexte de recherche. '
+        'dgidb_score_note': ('**Score** — [Score d\'interaction DGIdb](https://dgidb.org/about/overview/interaction-score)\n\n'
+                             'Score statique basé sur les preuves pour chaque paire médicament–gène. '
                              'Combine les scores de preuves (nombre et qualité des sources) avec une '
                              'pénalité de promiscuité — les médicaments ou gènes impliqués dans de nombreuses interactions reçoivent un score plus faible. '
                              'Score élevé = interaction mieux étayée et plus spécifique.'),
@@ -3272,7 +3272,10 @@ def _render_msg_figures(msg, msg_id):
                 if _drugs_df.empty:
                     st.info(T['no_drugs_found'])
                 else:
-                    st.caption(T['dgidb_caption'])
+                    _dgidb_c1, _dgidb_c2 = st.columns([11, 1])
+                    _dgidb_c1.caption(T['dgidb_caption'])
+                    with _dgidb_c2.popover("ℹ", help=None):
+                        st.markdown(T['dgidb_score_note'])
                     def _style_drug_rows(row):
                         if row["Gene"] in _d_highlight:
                             return ["background-color: #dbeeff; color: #1a4a7a; font-weight: 600"] * len(row)
@@ -3287,7 +3290,6 @@ def _render_msg_figures(msg, msg_id):
                             "Score": st.column_config.NumberColumn("Score *", format="%.2f"),
                         },
                     )
-                    st.caption(T['dgidb_score_note'])
 
     # ── Tab: KO Simulation (line chart + populations) ────────────────────────
     if "perturbation" in _tab_map:
