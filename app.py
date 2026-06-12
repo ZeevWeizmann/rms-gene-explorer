@@ -4150,7 +4150,7 @@ with st.expander(T['settings'], expanded=False):
     _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
     _cg1.slider(
         "Drug targets shown",
-        min_value=5, max_value=50, value=20, step=5,
+        min_value=5, max_value=100, value=20, step=5,
         key=f"drug_targets_{dataset_key}"
     )
     _cg2.slider(
