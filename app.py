@@ -2170,8 +2170,10 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             if abs(w) > 0 and grn_genes[i] != query_gene:
                 G_full.add_edge(grn_genes[i], query_gene, weight=float(w))
 
-    frontier = {query_gene}
-    visited  = {query_gene}
+    # Seed visited with the direct 1-hop neighbours already added to G_full
+    direct_1hop = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
+    frontier = direct_1hop
+    visited  = {query_gene} | direct_1hop
     for hop in range(hops - 1):
         next_frontier = set()
         for gene in frontier:
