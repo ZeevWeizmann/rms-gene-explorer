@@ -4117,7 +4117,7 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
-        st.caption("🔓 Logged in — all databases available")
+        st.caption("🔓 Logged in · all databases available")
         st.button("Sign out", on_click=_do_logout, key="_logout_btn")
     st.divider()
     _c1, _c2 = st.columns([3, 3])
