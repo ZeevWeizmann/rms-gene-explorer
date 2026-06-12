@@ -4949,6 +4949,12 @@ div[data-testid="stColumn"] div[data-testid="stSelectbox"] > div > div:hover,
 div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
     background: #f5f5f5 !important;
 }
+/* Settings / About / Featured targets — last 3 expanders: dark grey */
+div[data-testid="stVerticalBlock"] > div:nth-last-child(-n+3) div[data-testid="stExpander"] details summary p,
+div[data-testid="stVerticalBlock"] > div:nth-last-child(-n+3) div[data-testid="stExpander"] details summary span {
+    color: #374151 !important;
+    font-weight: 500 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
