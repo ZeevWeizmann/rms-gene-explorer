@@ -2267,13 +2267,12 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             direct_neighbors = top_neighbors - {query_gene}
         nodes_to_keep = {query_gene} | direct_neighbors
     else:
-        # BFS: budget split evenly across hops, top-K per level by edge weight
-        _budget_per_hop = max(1, top_n // hops)
+        # BFS to discover all nodes within N hops, then keep top_n by max edge weight
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
-        nodes_to_keep = {query_gene}
+        _node_weight  = {}  # best edge weight seen for each node
         for _hop in range(hops):
-            _candidates = []
+            _new_frontier = set()
             for _src in _bfs_frontier:
                 if _src not in grn_genes:
                     continue
@@ -2281,23 +2280,20 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 for _j, _w in enumerate(grn_mat[_si]):
                     _nb = grn_genes[_j]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _candidates.append((_nb, abs(_w)))
+                        _new_frontier.add(_nb)
+                        _node_weight[_nb] = max(_node_weight.get(_nb, 0), abs(_w))
                 for _i, _w in enumerate(grn_mat[:, _si]):
                     _nb = grn_genes[_i]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _candidates.append((_nb, abs(_w)))
-            _candidates.sort(key=lambda x: x[1], reverse=True)
-            _seen_this_hop = set()
-            _new_frontier = set()
-            for _nb, _w in _candidates:
-                if _nb not in _seen_this_hop and len(_new_frontier) < _budget_per_hop:
-                    _new_frontier.add(_nb)
-                    _seen_this_hop.add(_nb)
+                        _new_frontier.add(_nb)
+                        _node_weight[_nb] = max(_node_weight.get(_nb, 0), abs(_w))
             _bfs_visited |= _new_frontier
-            nodes_to_keep |= _new_frontier
             _bfs_frontier = _new_frontier
             if not _new_frontier:
                 break
+        # Pick top_n nodes by strongest edge weight across all hops
+        _ranked = sorted(_node_weight.items(), key=lambda x: x[1], reverse=True)
+        nodes_to_keep = {query_gene} | {n for n, _ in _ranked[:top_n]}
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
