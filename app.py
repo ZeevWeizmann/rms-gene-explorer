@@ -2998,7 +2998,17 @@ def _render_msg_figures(msg, msg_id):
                     st.session_state[_enrich_key] = None
 
             _enrich_result = st.session_state.get(_enrich_key)
-            with st.expander("Pathway Enrichment", expanded=False):
+            _enrich_hdr_c1, _enrich_hdr_c2 = st.columns([6, 1])
+            _enrich_hdr_c1.markdown("**Pathway Enrichment**")
+            with _enrich_hdr_c2.popover("ℹ", help=None):
+                st.markdown(
+                    "**Pathway** — biological process or pathway name\n\n"
+                    "**Source** — database: `GO:BP` biological process · `GO:MF` molecular function · `KEGG` signalling/metabolism · `REAC` Reactome cascades\n\n"
+                    "**FDR** — adjusted p-value (Benjamini–Hochberg). Smaller = more significant\n\n"
+                    "**Hits** — genes from your program found in this pathway / total program size\n\n"
+                    "**Term size** — total genes annotated to this pathway in the database"
+                )
+            with st.expander("", expanded=False):
                 if _enrich_result is None:
                     st.caption("Enrichment unavailable (check internet connection).")
                 elif len(_enrich_result) == 0:
