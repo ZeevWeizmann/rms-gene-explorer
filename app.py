@@ -2937,7 +2937,7 @@ def _render_msg_figures(msg, msg_id):
                 st.markdown(
                     "**Program Retriever** encodes each gene into a GNN co-expression embedding "
                     "and retrieves the most similar genes as a program.\n\n"
-                    "For access to newer versions or custom datasets, contact the Gene Program Explorer team."
+                    "Contact us for access to newer versions or custom datasets."
                 )
 
             # Rebuild program list live using current program_size.
