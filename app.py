@@ -2188,24 +2188,24 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                     next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
 
-    # Keep all direct GRN neighbours (1-hop ego network).
-    # The program_set filter was removed because GNN program genes and GRN genes
-    # are independent sets and rarely overlap — filtering by program_set produced
-    # an empty graph for almost every gene.
+    # Include all visited nodes (up to `hops` away from query_gene).
     # Limit to top_n neighbours by edge weight to avoid overloaded graphs.
-    direct_neighbors = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
-    if len(direct_neighbors) > top_n:
-        # Keep the top_n edges by absolute weight
-        all_edges = (
-            [(query_gene, n, abs(G_full[query_gene][n]['weight'])) for n in G_full.successors(query_gene)]
-            + [(n, query_gene, abs(G_full[n][query_gene]['weight'])) for n in G_full.predecessors(query_gene)]
-        )
+    all_visited = visited  # includes query_gene + all hop expansions
+    candidate_neighbors = all_visited - {query_gene}
+    if len(candidate_neighbors) > top_n:
+        # Keep the top_n edges by absolute weight across all hop edges
+        all_edges = []
+        for u, v, d in G_full.edges(data=True):
+            if u in all_visited and v in all_visited:
+                all_edges.append((u, v, abs(d.get('weight', 0))))
         all_edges.sort(key=lambda x: x[2], reverse=True)
         top_neighbors = set()
-        for src, dst, _ in all_edges[:top_n]:
+        for src, dst, _ in all_edges:
             top_neighbors.add(src); top_neighbors.add(dst)
-        direct_neighbors = top_neighbors - {query_gene}
-    nodes_to_keep = {query_gene} | direct_neighbors
+            if len(top_neighbors) - (1 if query_gene in top_neighbors else 0) >= top_n:
+                break
+        candidate_neighbors = top_neighbors - {query_gene}
+    nodes_to_keep = {query_gene} | candidate_neighbors
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
