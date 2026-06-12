@@ -2437,14 +2437,15 @@ def _show_login_dialog():
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
 _fr_op = '1.0' if _cur_lang == 'fr' else '0.35'
 
+_lang_param = st.query_params.get("lang", "en")
 if st.session_state.get("authenticated"):
-    _login_html = '<span style="font-size:0.72rem; color:#888; margin-right:6px;">🔓 logged in</span>'
+    _auth_chip = '<span style="font-size:0.72rem;color:#888;white-space:nowrap;">🔓 logged in</span>'
 else:
-    _login_html = ''
+    _auth_chip = f'<a href="?lang={_lang_param}&login=1" style="text-decoration:none;font-size:0.78rem;color:#444;white-space:nowrap;border:1px solid #ccc;border-radius:14px;padding:3px 12px;background:white;">Login</a>'
 
 st.markdown(f"""
 <div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:8px; align-items:center;">
-  {_login_html}
+  {_auth_chip}
   <a href="?lang=en" style="text-decoration:none; opacity:{_en_op}; transition:opacity .2s;">
     <div style="position:relative; width:30px; height:30px; border-radius:50%;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.5);">
@@ -2468,24 +2469,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Login button — styled via CSS injection, placed in normal flow then moved fixed
-if not st.session_state.get("authenticated"):
-    st.markdown("""
-    <style>
-    div[data-testid="stButton"]:has(button[kind="secondary"]#_top_login_btn_btn),
-    div[data-testid="column"]:has(button[kind="secondary"]) { all: unset; }
-    [data-testid="stButton"] button[id*="top_login"] {
-        position: fixed !important; top: 66px !important; right: 90px !important;
-        z-index: 10000 !important; padding: 2px 14px !important;
-        font-size: 0.78rem !important; height: 28px !important;
-        min-height: unset !important; border-radius: 14px !important;
-        background: white !important; border: 1px solid #ccc !important;
-        color: #333 !important; box-shadow: none !important; white-space: nowrap !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    if st.button("Login", key="_top_login_btn"):
-        _show_login_dialog()
+if not st.session_state.get("authenticated") and st.query_params.get("login") == "1":
+    st.query_params.pop("login", None)
+    _show_login_dialog()
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
