@@ -2514,7 +2514,7 @@ _gene_in_any_grn = bool(_check_gene) and any(
 
 # ── Load GRN data (no UI rendering yet) ──────────────────────────
 _grn_state_key = f"grn_choice_{dataset_key}"
-grn_hops  = st.session_state.get(f"grn_slider_{dataset_key}", 1)
+grn_hops  = 1
 grn_top_n = st.session_state.get(f"grn_topn_{dataset_key}", 10)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
@@ -4091,11 +4091,6 @@ with st.expander(T['settings'], expanded=False):
         key=f"slider_{dataset_key}"
     )
     _cg1, _cg2, _cg3 = st.columns([2, 2, 2])
-    _cg1.slider(
-        T['grn_hops'],
-        min_value=1, max_value=3, value=1, step=1,
-        key=f"grn_slider_{dataset_key}"
-    )
     _cg2.slider(
         T['grn_top_n'],
         min_value=5, max_value=150, value=10, step=5,
