@@ -79,6 +79,18 @@ _TRANSLATIONS = {
         'grn_top_n': 'Network size',
         # Data upload
         'upload_note': 'Processed in memory only · not stored anywhere. Max ~50k cells.',
+        'enrich_title': 'Pathway Enrichment',
+        'enrich_col_info': (
+            "**Pathway** — biological process or pathway name\n\n"
+            "**Source** — database:\n"
+            "- `GO:BP` Gene Ontology Biological Process — broad cellular/molecular processes\n"
+            "- `GO:MF` Molecular Function — biochemical activity of the protein\n"
+            "- `KEGG` — signalling pathways and metabolism\n"
+            "- `REAC` Reactome — detailed molecular cascades\n\n"
+            "**FDR** — adjusted p-value (Benjamini–Hochberg). Smaller = more significant\n\n"
+            "**Hits** — genes from your program found in this pathway / total program size\n\n"
+            "**Term size** — total genes annotated to this pathway in the database"
+        ),
         'upload_label': 'Upload .h5ad file',
         'load_file': 'Load file',
         'loading': 'Loading...',
@@ -230,6 +242,18 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'grn_top_n': 'Taille du réseau',
         # Data upload
         'upload_note': 'Traité en mémoire uniquement · aucune donnée stockée. Max ~50k cellules.',
+        'enrich_title': 'Enrichissement de voies',
+        'enrich_col_info': (
+            "**Pathway** — nom du processus biologique ou de la voie\n\n"
+            "**Source** — base de données :\n"
+            "- `GO:BP` Gene Ontology Biological Process — processus cellulaires/moléculaires généraux\n"
+            "- `GO:MF` Molecular Function — activité biochimique de la protéine\n"
+            "- `KEGG` — voies de signalisation et métabolisme\n"
+            "- `REAC` Reactome — cascades moléculaires détaillées\n\n"
+            "**FDR** — p-value ajustée (Benjamini–Hochberg). Plus petit = plus significatif\n\n"
+            "**Hits** — gènes du programme trouvés dans cette voie / taille totale du programme\n\n"
+            "**Term size** — nombre total de gènes annotés à cette voie dans la base de données"
+        ),
         'upload_label': 'Importer un fichier .h5ad',
         'load_file': 'Charger le fichier',
         'loading': 'Chargement...',
@@ -2999,15 +3023,9 @@ def _render_msg_figures(msg, msg_id):
 
             _enrich_result = st.session_state.get(_enrich_key)
             _enrich_hdr_c1, _enrich_hdr_c2 = st.columns([6, 1])
-            _enrich_hdr_c1.markdown("**Pathway Enrichment**")
+            _enrich_hdr_c1.markdown(f"**{T['enrich_title']}**")
             with _enrich_hdr_c2.popover("ℹ", help=None):
-                st.markdown(
-                    "**Pathway** — biological process or pathway name\n\n"
-                    "**Source** — database: `GO:BP` biological process · `GO:MF` molecular function · `KEGG` signalling/metabolism · `REAC` Reactome cascades\n\n"
-                    "**FDR** — adjusted p-value (Benjamini–Hochberg). Smaller = more significant\n\n"
-                    "**Hits** — genes from your program found in this pathway / total program size\n\n"
-                    "**Term size** — total genes annotated to this pathway in the database"
-                )
+                st.markdown(T['enrich_col_info'])
             with st.expander("", expanded=False):
                 if _enrich_result is None:
                     st.caption("Enrichment unavailable (check internet connection).")
