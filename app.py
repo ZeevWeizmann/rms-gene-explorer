@@ -659,8 +659,9 @@ div[data-testid="stExpander"] details summary {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
 }
-div[data-testid="stExpander"] details summary p,
-div[data-testid="stExpander"] details summary span {
+/* Blue only for expanders inside tab panels */
+div[data-testid="stTabsContent"] div[data-testid="stExpander"] details summary p,
+div[data-testid="stTabsContent"] div[data-testid="stExpander"] details summary span {
     color: #2563eb !important;
     font-weight: 500 !important;
 }
@@ -4261,22 +4262,6 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                     st.info("Reference projection not available.")
 
 # ── Settings expander ────────────────────────────────────────────
-_grey_titles = [T['settings'], T['about'], T.get('featured_targets', 'Featured')]
-_grey_js = ";".join([f'"{t}"' for t in _grey_titles])
-st.components.v1.html(f"""<script>
-(function() {{
-  var grey = [{_grey_js}];
-  function applyGrey() {{
-    document.querySelectorAll('[data-testid="stExpander"] details summary p').forEach(function(el) {{
-      if (grey.some(function(t) {{ return el.textContent.trim().startsWith(t.substring(0,10)); }})) {{
-        el.style.setProperty('color', '#374151', 'important');
-      }}
-    }});
-  }}
-  setTimeout(applyGrey, 600);
-  setTimeout(applyGrey, 1500);
-}})();
-</script>""", height=0)
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
