@@ -4262,8 +4262,8 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
 
 # ── Settings expander ────────────────────────────────────────────
 st.markdown("""<style>
-#grey-exp-marker ~ div div[data-testid="stExpander"] details summary p,
-#grey-exp-marker ~ div div[data-testid="stExpander"] details summary span {
+div:has(> #grey-exp-marker) ~ div div[data-testid="stExpander"] details summary p,
+div:has(> #grey-exp-marker) ~ div div[data-testid="stExpander"] details summary span {
     color: #374151 !important;
 }
 </style><div id="grey-exp-marker"></div>""", unsafe_allow_html=True)
