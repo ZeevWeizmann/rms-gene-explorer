@@ -3022,11 +3022,19 @@ def _render_msg_figures(msg, msg_id):
                     st.session_state[_enrich_key] = None
 
             _enrich_result = st.session_state.get(_enrich_key)
-            _enrich_hdr_c1, _enrich_hdr_c2 = st.columns([6, 1])
-            _enrich_hdr_c1.markdown(f"**{T['enrich_title']}**")
+            if _enrich_result is not None and len(_enrich_result) > 0:
+                _top3 = (
+                    _enrich_result.nlargest(3, "intersection_size")["name"]
+                    .str.replace(r"\s*\(.*?\)", "", regex=True)
+                    .tolist()
+                )
+                _enrich_label = f"{T['enrich_title']}: {' · '.join(_top3)}"
+            else:
+                _enrich_label = T['enrich_title']
+            _enrich_hdr_c1, _enrich_hdr_c2 = st.columns([11, 1])
             with _enrich_hdr_c2.popover("ℹ", help=None):
                 st.markdown(T['enrich_col_info'])
-            with st.expander("", expanded=False):
+            with _enrich_hdr_c1.expander(_enrich_label, expanded=False):
                 if _enrich_result is None:
                     st.caption("Enrichment unavailable (check internet connection).")
                 elif len(_enrich_result) == 0:
