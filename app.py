@@ -4097,10 +4097,10 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
-        st.caption("🔓 Extended access active")
+        st.caption("🔓 Logged in — all databases available")
         st.button("Sign out", on_click=_do_logout, key="_logout_btn")
     else:
-        st.markdown("**🔐 Extended access** — unlock additional databases")
+        st.markdown("**Login for additional databases**")
         _lc1, _lc2 = st.columns([3, 1])
         _lc1.text_input("Password", type="password", key="_login_pw",
                         on_change=_do_login, placeholder="Password…",
