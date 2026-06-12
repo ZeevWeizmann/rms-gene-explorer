@@ -362,7 +362,6 @@ def _do_login():
     if _pw == st.secrets.get("auth", {}).get("password", ""):
         st.session_state["authenticated"] = True
         st.session_state["_login_error"] = False
-        st.rerun()
     else:
         st.session_state["_login_error"] = True
 
@@ -2429,10 +2428,14 @@ if _logo_b64:
 # ── Login dialog ─────────────────────────────────────────────────────────────
 @st.dialog("Login for additional databases")
 def _show_login_dialog():
-    st.text_input("Password", type="password", key="_login_pw", on_change=_do_login)
-    st.button("Sign in", on_click=_do_login)
-    if st.session_state.get("_login_error"):
-        st.error("Incorrect password")
+    _pw = st.text_input("Password", type="password", placeholder="Enter password…")
+    if st.button("Sign in"):
+        if _pw == st.secrets.get("auth", {}).get("password", ""):
+            st.session_state["authenticated"] = True
+            st.session_state["_login_error"] = False
+            st.rerun()
+        else:
+            st.error("Incorrect password")
 
 # Language toggle — HTML flag links (query param based, lang already detected above)
 _en_op = '1.0' if _cur_lang == 'en' else '0.35'
@@ -2860,8 +2863,9 @@ def _render_msg_figures(msg, msg_id):
                 }});
             }}
 
-            // Auto-click Program tab once per message
-            if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY)) {{
+            // Auto-click Program tab once per message (skip if a dialog is open)
+            var dialogOpen = doc.querySelector('[role="dialog"]');
+            if (PROG_IDX >= 0 && !sessionStorage.getItem(INIT_KEY) && !dialogOpen) {{
                 sessionStorage.setItem(INIT_KEY, '1');
                 if (btns[PROG_IDX]) btns[PROG_IDX].click();
             }}
