@@ -2468,14 +2468,24 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Login button — top right via absolute-positioned container
+# Login button — styled via CSS injection, placed in normal flow then moved fixed
 if not st.session_state.get("authenticated"):
-    _login_cols = st.columns([1, 0.01])
-    with _login_cols[1]:
-        st.markdown('<div style="position:fixed;top:65px;right:90px;z-index:10000;">', unsafe_allow_html=True)
-        if st.button("Login", key="_top_login_btn"):
-            _show_login_dialog()
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    div[data-testid="stButton"]:has(button[kind="secondary"]#_top_login_btn_btn),
+    div[data-testid="column"]:has(button[kind="secondary"]) { all: unset; }
+    [data-testid="stButton"] button[id*="top_login"] {
+        position: fixed !important; top: 66px !important; right: 90px !important;
+        z-index: 10000 !important; padding: 2px 14px !important;
+        font-size: 0.78rem !important; height: 28px !important;
+        min-height: unset !important; border-radius: 14px !important;
+        background: white !important; border: 1px solid #ccc !important;
+        color: #333 !important; box-shadow: none !important; white-space: nowrap !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button("Login", key="_top_login_btn"):
+        _show_login_dialog()
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
