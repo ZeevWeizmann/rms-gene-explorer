@@ -2976,6 +2976,45 @@ def _render_msg_figures(msg, msg_id):
                         else:
                             st.markdown(f"*{_annot_label}*")
 
+            # ── Pathway Enrichment (g:Profiler) ──────────────────────────────
+            _enrich_prog_genes = (
+                [_q] + [g for g, _ in _all_sim[:program_size]]
+                if _all_sim else (msg.get("grn_program_genes") or [_q])
+            )
+            _enrich_key = f"_enrich_{msg_id}_{program_size}"
+            if _enrich_key not in st.session_state:
+                try:
+                    from gprofiler import GProfiler as _GProfiler
+                    _gp = _GProfiler(return_dataframe=True)
+                    _enrich_df = _gp.profile(
+                        organism="hsapiens",
+                        query=_enrich_prog_genes,
+                        sources=["GO:BP", "GO:MF", "KEGG", "REAC"],
+                        significance_threshold_method="fdr",
+                        user_threshold=0.05,
+                    )
+                    st.session_state[_enrich_key] = _enrich_df
+                except Exception:
+                    st.session_state[_enrich_key] = None
+
+            _enrich_result = st.session_state.get(_enrich_key)
+            with st.expander("Pathway Enrichment", expanded=False):
+                if _enrich_result is None:
+                    st.caption("Enrichment unavailable (check internet connection).")
+                elif len(_enrich_result) == 0:
+                    st.caption("No significant pathways found (FDR < 0.05).")
+                else:
+                    _enrich_show = (
+                        _enrich_result[["name", "source", "p_value", "intersection_size", "term_size"]]
+                        .rename(columns={"name": "Pathway", "source": "Source",
+                                         "p_value": "FDR", "intersection_size": "Hits",
+                                         "term_size": "Term size"})
+                        .sort_values("FDR")
+                        .reset_index(drop=True)
+                    )
+                    _enrich_show["FDR"] = _enrich_show["FDR"].map(lambda x: f"{x:.2e}")
+                    st.dataframe(_enrich_show, use_container_width=True, height=320)
+
             # ── Program score: Reference + Patient data ───────────────
             # Use live program_size slice from all_similar if available
             _all_sim_ps = msg.get("all_similar")
@@ -3537,41 +3576,6 @@ def _render_msg_figures(msg, msg_id):
             if _live_grn_fig is not None:
                 with st.expander("Gene Regulatory Interactions", expanded=True):
                     st.plotly_chart(_live_grn_fig, width="stretch", key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
-
-            # ── Pathway Enrichment (g:Profiler) ──────────────────────────────
-            _enrich_key = f"_enrich_{msg_id}_{tuple(sorted(_msg_prog_genes))}"
-            if _enrich_key not in st.session_state:
-                try:
-                    from gprofiler import GProfiler as _GProfiler
-                    _gp = _GProfiler(return_dataframe=True)
-                    _enrich_df = _gp.profile(
-                        organism="hsapiens",
-                        query=_msg_prog_genes,
-                        sources=["GO:BP", "GO:MF", "KEGG", "REAC"],
-                        significance_threshold_method="fdr",
-                        user_threshold=0.05,
-                    )
-                    st.session_state[_enrich_key] = _enrich_df
-                except Exception as _e:
-                    st.session_state[_enrich_key] = None
-
-            _enrich_result = st.session_state.get(_enrich_key)
-            with st.expander("Pathway Enrichment", expanded=False):
-                if _enrich_result is None:
-                    st.caption("Enrichment unavailable (check internet connection).")
-                elif len(_enrich_result) == 0:
-                    st.caption("No significant pathways found (FDR < 0.05).")
-                else:
-                    _enrich_show = (
-                        _enrich_result[["name", "source", "p_value", "intersection_size", "term_size"]]
-                        .rename(columns={"name": "Pathway", "source": "Source",
-                                         "p_value": "FDR", "intersection_size": "Hits",
-                                         "term_size": "Term size"})
-                        .sort_values("FDR")
-                        .reset_index(drop=True)
-                    )
-                    _enrich_show["FDR"] = _enrich_show["FDR"].map(lambda x: f"{x:.2e}")
-                    st.dataframe(_enrich_show, use_container_width=True, height=320)
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
