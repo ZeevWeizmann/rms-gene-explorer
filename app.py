@@ -2251,20 +2251,25 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                     next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
 
-    # Keep all direct GRN neighbours (1-hop ego network).
-    # Limit to top_n neighbours by edge weight to avoid overloaded graphs.
+    # For hops=1: keep top_n direct neighbours by weight.
+    # For hops>1: keep all visited nodes (multi-hop), limit total to top_n*hops.
     direct_neighbors = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
-    if len(direct_neighbors) > top_n:
-        all_edges = (
-            [(query_gene, n, abs(G_full[query_gene][n]['weight'])) for n in G_full.successors(query_gene)]
-            + [(n, query_gene, abs(G_full[n][query_gene]['weight'])) for n in G_full.predecessors(query_gene)]
-        )
-        all_edges.sort(key=lambda x: x[2], reverse=True)
-        top_neighbors = set()
-        for src, dst, _ in all_edges[:top_n]:
-            top_neighbors.add(src); top_neighbors.add(dst)
-        direct_neighbors = top_neighbors - {query_gene}
-    nodes_to_keep = {query_gene} | direct_neighbors
+    if hops == 1:
+        if len(direct_neighbors) > top_n:
+            all_edges = (
+                [(query_gene, n, abs(G_full[query_gene][n]['weight'])) for n in G_full.successors(query_gene)]
+                + [(n, query_gene, abs(G_full[n][query_gene]['weight'])) for n in G_full.predecessors(query_gene)]
+            )
+            all_edges.sort(key=lambda x: x[2], reverse=True)
+            top_neighbors = set()
+            for src, dst, _ in all_edges[:top_n]:
+                top_neighbors.add(src); top_neighbors.add(dst)
+            direct_neighbors = top_neighbors - {query_gene}
+        nodes_to_keep = {query_gene} | direct_neighbors
+    else:
+        # Multi-hop: include all visited nodes, cap at top_n * hops
+        max_nodes = top_n * hops
+        nodes_to_keep = set(list(visited)[:max_nodes]) | {query_gene}
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
