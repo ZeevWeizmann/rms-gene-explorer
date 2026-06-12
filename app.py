@@ -2170,10 +2170,8 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             if abs(w) > 0 and grn_genes[i] != query_gene:
                 G_full.add_edge(grn_genes[i], query_gene, weight=float(w))
 
-    # Seed visited with the direct 1-hop neighbours already added to G_full
-    direct_1hop = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
-    frontier = direct_1hop
-    visited  = {query_gene} | direct_1hop
+    frontier = {query_gene}
+    visited  = {query_gene}
     for hop in range(hops - 1):
         next_frontier = set()
         for gene in frontier:
@@ -2190,24 +2188,20 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                     next_frontier.add(grn_genes[i]); visited.add(grn_genes[i])
         frontier = next_frontier
 
-    # Include all visited nodes (up to `hops` away from query_gene).
+    # Keep all direct GRN neighbours (1-hop ego network).
     # Limit to top_n neighbours by edge weight to avoid overloaded graphs.
-    all_visited = visited  # includes query_gene + all hop expansions
-    candidate_neighbors = all_visited - {query_gene}
-    if len(candidate_neighbors) > top_n:
-        # Keep the top_n edges by absolute weight across all hop edges
-        all_edges = []
-        for u, v, d in G_full.edges(data=True):
-            if u in all_visited and v in all_visited:
-                all_edges.append((u, v, abs(d.get('weight', 0))))
+    direct_neighbors = set(G_full.successors(query_gene)) | set(G_full.predecessors(query_gene))
+    if len(direct_neighbors) > top_n:
+        all_edges = (
+            [(query_gene, n, abs(G_full[query_gene][n]['weight'])) for n in G_full.successors(query_gene)]
+            + [(n, query_gene, abs(G_full[n][query_gene]['weight'])) for n in G_full.predecessors(query_gene)]
+        )
         all_edges.sort(key=lambda x: x[2], reverse=True)
         top_neighbors = set()
-        for src, dst, _ in all_edges:
+        for src, dst, _ in all_edges[:top_n]:
             top_neighbors.add(src); top_neighbors.add(dst)
-            if len(top_neighbors) - (1 if query_gene in top_neighbors else 0) >= top_n:
-                break
-        candidate_neighbors = top_neighbors - {query_gene}
-    nodes_to_keep = {query_gene} | candidate_neighbors
+        direct_neighbors = top_neighbors - {query_gene}
+    nodes_to_keep = {query_gene} | direct_neighbors
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
