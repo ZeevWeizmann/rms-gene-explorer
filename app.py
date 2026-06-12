@@ -2267,9 +2267,19 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             direct_neighbors = top_neighbors - {query_gene}
         nodes_to_keep = {query_gene} | direct_neighbors
     else:
-        # Multi-hop: include all visited nodes, cap at top_n * hops
-        max_nodes = top_n * hops
-        nodes_to_keep = set(list(visited)[:max_nodes]) | {query_gene}
+        # Multi-hop: keep visited nodes sorted by edge weight, cap at top_n total
+        _scored = []
+        for n in visited:
+            if n == query_gene:
+                continue
+            if G_full.has_edge(query_gene, n):
+                _scored.append((n, abs(G_full[query_gene][n]["weight"])))
+            elif G_full.has_edge(n, query_gene):
+                _scored.append((n, abs(G_full[n][query_gene]["weight"])))
+            else:
+                _scored.append((n, 0.0))
+        _scored.sort(key=lambda x: x[1], reverse=True)
+        nodes_to_keep = {query_gene} | {n for n, _ in _scored[:top_n]}
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
