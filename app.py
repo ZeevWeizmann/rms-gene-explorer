@@ -2356,12 +2356,20 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
         w = abs(d["weight"])
         color = "#2CA02C" if d["weight"] > 0 else "#D62728"
         width = 0.8 + 3.5 * (w / _max_w)
+        mx, my = (x0 + x1) / 2, (y0 + y1) / 2
         fig.add_annotation(
             x=x1, y=y1, ax=x0, ay=y0,
             xref="x", yref="y", axref="x", ayref="y",
             showarrow=True, arrowhead=3, arrowsize=1.2,
             arrowwidth=width, arrowcolor=color,
-            hovertext=f"{u}→{v}: {d['weight']:.3f}",
+        )
+        fig.add_annotation(
+            x=mx, y=my, xref="x", yref="y",
+            text=f"{d['weight']:.2f}",
+            showarrow=False,
+            font=dict(size=7, color=color),
+            bgcolor="rgba(255,255,255,0.7)",
+            borderpad=1,
         )
 
     # Non-query nodes
