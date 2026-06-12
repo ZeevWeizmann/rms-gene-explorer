@@ -2269,12 +2269,13 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     else:
         import numpy as _np_grn
         _grn_arr = _np_grn.array(grn_mat)
-        # BFS to discover all nodes within N hops, then keep top_n by max edge weight
+        # BFS level by level — keep top_n//hops per level, always include parents
+        _budget = max(1, top_n // hops)
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
-        _node_weight  = {}
+        _levels = []  # list of sets, one per hop
         for _hop in range(hops):
-            _new_frontier = set()
+            _candidates = {}
             for _src in _bfs_frontier:
                 if _src not in grn_genes:
                     continue
@@ -2282,19 +2283,21 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 for _j, _w in enumerate(_grn_arr[_si]):
                     _nb = grn_genes[_j]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _new_frontier.add(_nb)
-                        _node_weight[_nb] = max(_node_weight.get(_nb, 0), abs(float(_w)))
+                        _candidates[_nb] = max(_candidates.get(_nb, 0), abs(float(_w)))
                 for _i, _w in enumerate(_grn_arr[:, _si]):
                     _nb = grn_genes[_i]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _new_frontier.add(_nb)
-                        _node_weight[_nb] = max(_node_weight.get(_nb, 0), abs(float(_w)))
-            _bfs_visited |= _new_frontier
-            _bfs_frontier = _new_frontier
-            if not _new_frontier:
+                        _candidates[_nb] = max(_candidates.get(_nb, 0), abs(float(_w)))
+            _top = set(n for n, _ in sorted(_candidates.items(), key=lambda x: x[1], reverse=True)[:_budget])
+            _levels.append(_top)
+            _bfs_visited |= _top
+            _bfs_frontier = _top
+            if not _top:
                 break
-        _ranked = sorted(_node_weight.items(), key=lambda x: x[1], reverse=True)
-        nodes_to_keep = {query_gene} | {n for n, _ in _ranked[:top_n]}
+        # nodes_to_keep = query + all selected nodes at every level (parents included)
+        nodes_to_keep = {query_gene}
+        for _lvl in _levels:
+            nodes_to_keep |= _lvl
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
