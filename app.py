@@ -659,9 +659,8 @@ div[data-testid="stExpander"] details summary {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
 }
-/* Blue only for expanders inside tab panels */
-div[data-testid="stTabsContent"] div[data-testid="stExpander"] details summary p,
-div[data-testid="stTabsContent"] div[data-testid="stExpander"] details summary span {
+div[data-testid="stExpander"] details summary p,
+div[data-testid="stExpander"] details summary span {
     color: #2563eb !important;
     font-weight: 500 !important;
 }
@@ -4262,6 +4261,12 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                     st.info("Reference projection not available.")
 
 # ── Settings expander ────────────────────────────────────────────
+st.markdown("""<style>
+#grey-exp-marker ~ div div[data-testid="stExpander"] details summary p,
+#grey-exp-marker ~ div div[data-testid="stExpander"] details summary span {
+    color: #374151 !important;
+}
+</style><div id="grey-exp-marker"></div>""", unsafe_allow_html=True)
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
