@@ -79,7 +79,7 @@ _TRANSLATIONS = {
         'grn_top_n': 'Network size',
         # Data upload
         'upload_note': 'Processed in memory only · not stored anywhere. Max ~50k cells.',
-        'enrich_title': 'Pathway Enrichment',
+        'enrich_title': 'Program Pathway Enrichment',
         'enrich_col_info': (
             "**Pathway** — biological process or pathway name\n\n"
             "**Source** — database:\n"
@@ -242,7 +242,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         'grn_top_n': 'Taille du réseau',
         # Data upload
         'upload_note': 'Traité en mémoire uniquement · aucune donnée stockée. Max ~50k cellules.',
-        'enrich_title': 'Enrichissement de voies',
+        'enrich_title': 'Enrichissement du programme',
         'enrich_col_info': (
             "**Pathway** — nom du processus biologique ou de la voie\n\n"
             "**Source** — base de données :\n"
