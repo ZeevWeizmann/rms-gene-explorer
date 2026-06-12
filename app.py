@@ -659,6 +659,11 @@ div[data-testid="stExpander"] details summary {
     padding-top: 4px !important;
     padding-bottom: 4px !important;
 }
+div[data-testid="stExpander"] details summary p,
+div[data-testid="stExpander"] details summary span {
+    color: #2563eb !important;
+    font-weight: 500 !important;
+}
 /* Move expander chevron to the left */
 div[data-testid="stExpander"] details summary {
     display: flex !important;
