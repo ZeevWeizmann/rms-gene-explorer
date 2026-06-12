@@ -2349,14 +2349,19 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
 
     fig = go.Figure()
 
+    _all_weights = [abs(d["weight"]) for _, _, d in G.edges(data=True)]
+    _max_w = max(_all_weights) if _all_weights else 1.0
     for u, v, d in G.edges(data=True):
         x0, y0 = pos[u]; x1, y1 = pos[v]
+        w = abs(d["weight"])
         color = "#2CA02C" if d["weight"] > 0 else "#D62728"
+        width = 0.8 + 3.5 * (w / _max_w)
         fig.add_annotation(
             x=x1, y=y1, ax=x0, ay=y0,
             xref="x", yref="y", axref="x", ayref="y",
-            showarrow=True, arrowhead=3, arrowsize=1.5,
-            arrowwidth=1.5, arrowcolor=color
+            showarrow=True, arrowhead=3, arrowsize=1.2,
+            arrowwidth=width, arrowcolor=color,
+            hovertext=f"{u}→{v}: {d['weight']:.3f}",
         )
 
     # Non-query nodes
