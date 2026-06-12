@@ -2487,7 +2487,7 @@ _lang_param = st.query_params.get("lang", "en")
 if st.session_state.get("authenticated"):
     _auth_chip = '<span style="font-size:0.72rem;font-weight:600;color:#7c3aed;white-space:nowrap;border:1px solid #ddd6fe;border-radius:14px;padding:3px 10px;background:#f5f3ff;">Pro</span>'
 else:
-    _auth_chip = f'<a href="?lang={_lang_param}&login=1" style="text-decoration:none;font-size:0.78rem;color:#444;white-space:nowrap;border:1px solid #ccc;border-radius:14px;padding:3px 12px;background:white;">Login</a>'
+    _auth_chip = f'<a href="?lang={_lang_param}&login=1" style="text-decoration:none;font-size:0.78rem;color:#0d6efd;white-space:nowrap;border:1px solid #0d6efd;border-radius:14px;padding:3px 12px;background:white;font-weight:600;">Login</a>'
 
 st.markdown(f"""
 <div style="position:fixed; top:62px; right:20px; z-index:9999; display:flex; gap:8px; align-items:center;">
