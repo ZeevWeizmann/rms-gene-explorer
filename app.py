@@ -2269,13 +2269,16 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     else:
         import numpy as _np_grn
         _grn_arr = _np_grn.array(grn_mat)
-        # BFS: discover all nodes within N hops, record best weight + parent
+        # Greedy BFS: fill top_n starting from closest, expand only if budget remains
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
-        _node_weight  = {}
         _node_parent  = {}
+        nodes_to_keep = {query_gene}
+        _remaining = top_n
         for _hop in range(hops):
-            _new_frontier = set()
+            if _remaining <= 0:
+                break
+            _candidates = {}
             for _src in _bfs_frontier:
                 if _src not in grn_genes:
                     continue
@@ -2283,26 +2286,24 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 for _j, _w in enumerate(_grn_arr[_si]):
                     _nb = grn_genes[_j]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _new_frontier.add(_nb)
-                        if abs(float(_w)) > _node_weight.get(_nb, 0):
-                            _node_weight[_nb] = abs(float(_w))
+                        if abs(float(_w)) > _candidates.get(_nb, 0):
+                            _candidates[_nb] = abs(float(_w))
                             _node_parent[_nb] = _src
                 for _i, _w in enumerate(_grn_arr[:, _si]):
                     _nb = grn_genes[_i]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _new_frontier.add(_nb)
-                        if abs(float(_w)) > _node_weight.get(_nb, 0):
-                            _node_weight[_nb] = abs(float(_w))
+                        if abs(float(_w)) > _candidates.get(_nb, 0):
+                            _candidates[_nb] = abs(float(_w))
                             _node_parent[_nb] = _src
-            _bfs_visited |= _new_frontier
-            _bfs_frontier = _new_frontier
-            if not _new_frontier:
+            # Take all candidates at this level if they fit, else top by weight
+            _sorted = sorted(_candidates.items(), key=lambda x: x[1], reverse=True)
+            _chosen = {n for n, _ in _sorted[:_remaining]}
+            nodes_to_keep |= _chosen
+            _bfs_visited  |= _chosen
+            _bfs_frontier  = _chosen
+            _remaining    -= len(_chosen)
+            if not _chosen:
                 break
-        # Pick top_n by weight, then add their parents to ensure edges exist
-        _ranked = sorted(_node_weight.items(), key=lambda x: x[1], reverse=True)[:top_n]
-        _selected = {n for n, _ in _ranked}
-        _parents  = {_node_parent[n] for n in _selected if n in _node_parent}
-        nodes_to_keep = {query_gene} | _selected | _parents
 
     G = G_full.subgraph(nodes_to_keep).copy()
 
