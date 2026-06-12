@@ -4261,6 +4261,22 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                     st.info("Reference projection not available.")
 
 # ── Settings expander ────────────────────────────────────────────
+_grey_titles = [T['settings'], T['about'], T.get('featured_targets', 'Featured')]
+_grey_js = ";".join([f'"{t}"' for t in _grey_titles])
+st.components.v1.html(f"""<script>
+(function() {{
+  var grey = [{_grey_js}];
+  function applyGrey() {{
+    document.querySelectorAll('[data-testid="stExpander"] details summary p').forEach(function(el) {{
+      if (grey.some(function(t) {{ return el.textContent.trim().startsWith(t.substring(0,10)); }})) {{
+        el.style.setProperty('color', '#374151', 'important');
+      }}
+    }});
+  }}
+  setTimeout(applyGrey, 600);
+  setTimeout(applyGrey, 1500);
+}})();
+</script>""", height=0)
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
@@ -4948,12 +4964,6 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div {
 div[data-testid="stColumn"] div[data-testid="stSelectbox"] > div > div:hover,
 div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
     background: #f5f5f5 !important;
-}
-/* Settings / About / Featured targets — last 3 expanders: dark grey */
-div[data-testid="stVerticalBlock"] > div:nth-last-child(-n+3) div[data-testid="stExpander"] details summary p,
-div[data-testid="stVerticalBlock"] > div:nth-last-child(-n+3) div[data-testid="stExpander"] details summary span {
-    color: #374151 !important;
-    font-weight: 500 !important;
 }
 </style>
 """, unsafe_allow_html=True)
