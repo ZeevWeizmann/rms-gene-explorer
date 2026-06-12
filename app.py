@@ -160,7 +160,7 @@ _TRANSLATIONS = {
 | Database | Embeddings | Cells | Expression genes | Notes |
 |---|---|---|---|---|
 | **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings |
-| **RMS 2** | 8,836 | 4,706 | 8,836 | Second RMS cohort · GCN embeddings |
+| **RMS 2** | 8,836 | 4,706 | 8,836 | Fusion-negative RMS 3D organoids · GCN embeddings ([Caruso et al., Cell Reports Medicine 2023](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6)) |
 | **Trajectory (beta)** | 3,887 | 13,968 | 8,442 | Temporal trajectory GNN embeddings · cells & expression from RMS original |
 
 **Therapeutic target logic (network perturbation approach):**
@@ -302,7 +302,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 | Base de données | Embeddings | Cellules | Gènes d'expression | Notes |
 |---|---|---|---|---|
 | **RMS original** | 8 442 | 13 968 | 8 442 | scRNA-seq RMS primaire · embeddings GCN |
-| **RMS 2** | 8 836 | 4 706 | 8 836 | Deuxième cohorte RMS · embeddings GCN |
+| **RMS 2** | 8 836 | 4 706 | 8 836 | Organoïdes RMS fusion-négative 3D · embeddings GCN ([Caruso et al., Cell Reports Medicine 2023](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6)) |
 | **Trajectoire (bêta)** | 3 887 | 13 968 | 8 442 | Embeddings GNN de trajectoire temporelle |
 
 **Logique de cible thérapeutique (approche par perturbation de réseau) :**
