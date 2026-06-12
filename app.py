@@ -3025,6 +3025,7 @@ def _render_msg_figures(msg, msg_id):
                     if _ref_scores is not None or _pat_scores is not None:
                         st.divider()
                         st.markdown("**Program score**")
+                        st.caption("<span style='color:#aaa'>Scanpy `score_genes`: mean expression of program genes minus mean of random control genes, per cell.</span>", unsafe_allow_html=True)
                         _cols_score = st.columns(2 if _pat_scores is not None else 1)
 
                         def _umap_score_fig(_umap_df, _scores, _title, _n_found, _n_total, _colorscale):
