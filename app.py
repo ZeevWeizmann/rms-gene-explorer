@@ -155,11 +155,11 @@ _TRANSLATIONS = {
 
 > **For two key programs (HSPA1B · MKI67 and TUBB) this has already been done** — the GRN and perturbation results are precomputed and available directly in this app. You can explore the candidate therapeutic targets without running CardamomOT yourself.
 
-**Vector databases:**
+**Public Vector databases:**
 
 | Database | Embeddings | Cells | Expression genes | Notes |
 |---|---|---|---|---|
-| **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings · publicly available · [Caruso et al., Cell Reports Medicine 2023](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6) |
+| **RMS original** | 8,442 | 13,968 | 8,442 | Primary RMS scRNA-seq · GCN embeddings · [Caruso et al., Cell Reports Medicine 2023](https://www.cell.com/cell-reports-medicine/fulltext/S2666-3791(23)00556-6) |
 | **Trajectory (beta)** | 3,887 | 13,968 | 8,442 | Temporal trajectory GNN embeddings · cells & expression from RMS original |
 
 **Therapeutic target logic (network perturbation approach):**
@@ -306,7 +306,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 
 > **Pour deux programmes clés (HSPA1B · MKI67 et TUBB) cela a déjà été réalisé** — les résultats GRN et perturbation sont précalculés et directement disponibles dans cette application. Vous pouvez explorer les cibles thérapeutiques candidates sans exécuter CardamomOT vous-même.
 
-**Bases de données vectorielles :**
+**Bases de données vectorielles publiques :**
 
 | Base de données | Embeddings | Cellules | Gènes d'expression | Notes |
 |---|---|---|---|---|
