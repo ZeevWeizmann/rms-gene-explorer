@@ -13,3 +13,4 @@ joblib
 pot
 seaborn
 umap-learn==0.5.12
+gprofiler-official
