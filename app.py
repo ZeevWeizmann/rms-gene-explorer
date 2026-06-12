@@ -4123,15 +4123,6 @@ with st.expander(T['settings'], expanded=False):
     if st.session_state.get("authenticated"):
         st.caption("🔓 Logged in — all databases available")
         st.button("Sign out", on_click=_do_logout, key="_logout_btn")
-    else:
-        st.markdown("**Login for additional databases**")
-        _lc1, _lc2 = st.columns([3, 1])
-        _lc1.text_input("Password", type="password", key="_login_pw",
-                        on_change=_do_login, placeholder="Password…",
-                        label_visibility="collapsed")
-        _lc2.button("Sign in", on_click=_do_login, key="_login_btn")
-        if st.session_state.get("_login_error"):
-            st.error("Incorrect password")
     st.divider()
     _c1, _c2 = st.columns([3, 3])
     dataset_choice = _c1.selectbox(
