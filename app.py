@@ -2473,8 +2473,11 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-if not st.session_state.get("authenticated") and st.query_params.get("login") == "1":
+if st.query_params.get("login") == "1" and not st.session_state.get("authenticated"):
+    st.session_state["_show_login"] = True
     st.query_params.pop("login", None)
+
+if st.session_state.pop("_show_login", False) and not st.session_state.get("authenticated"):
     _show_login_dialog()
 
 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
