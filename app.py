@@ -4261,12 +4261,6 @@ with _personalise_container.expander(T['genes_from_data'], expanded=False):
                     st.info("Reference projection not available.")
 
 # ── Settings expander ────────────────────────────────────────────
-st.markdown("""<style>
-div:has(> #grey-exp-marker) ~ div div[data-testid="stExpander"] details summary p,
-div:has(> #grey-exp-marker) ~ div div[data-testid="stExpander"] details summary span {
-    color: #374151 !important;
-}
-</style><div id="grey-exp-marker"></div>""", unsafe_allow_html=True)
 with st.expander(T['settings'], expanded=False):
     # Login / logout
     if st.session_state.get("authenticated"):
@@ -4959,4 +4953,24 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
 """, unsafe_allow_html=True)
 
 st.markdown(f"<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:right;'>{T['made_by']}</div>", unsafe_allow_html=True)
+
+_grey_exp_titles = [T['settings'], T['about'], T.get('featured_targets', '')]
+st.components.v1.html(f"""<script>
+(function() {{
+  var titles = {str(_grey_exp_titles)};
+  function applyGrey() {{
+    var doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stExpander"] details summary p').forEach(function(el) {{
+      var txt = el.textContent.trim();
+      if (titles.some(function(t) {{ return t && txt === t; }})) {{
+        el.style.setProperty('color', '#374151', 'important');
+        el.style.setProperty('font-weight', '500', 'important');
+      }}
+    }});
+  }}
+  setTimeout(applyGrey, 400);
+  setTimeout(applyGrey, 1200);
+  setTimeout(applyGrey, 3000);
+}})();
+</script>""", height=0)
 
