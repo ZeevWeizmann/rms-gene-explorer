@@ -2268,12 +2268,15 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
         nodes_to_keep = {query_gene} | direct_neighbors
     else:
         import numpy as _np_grn
-        _grn_arr = _np_grn.array(grn_mat)
+        _grn_arr = _np_grn.array(grn_mat, dtype=float)
         # Precompute degree for each gene (total number of edges above threshold)
         _degree = {}
         for _gi, _g in enumerate(grn_genes):
-            _deg = int(_np_grn.sum(_np_grn.abs(_grn_arr[_gi]) > edge_threshold) +
-                       _np_grn.sum(_np_grn.abs(_grn_arr[:, _gi]) > edge_threshold))
+            try:
+                _deg = int((_np_grn.abs(_grn_arr[_gi]) > edge_threshold).sum() +
+                           (_np_grn.abs(_grn_arr[:, _gi]) > edge_threshold).sum())
+            except Exception:
+                _deg = 1
             _degree[_g] = max(_deg, 1)
         # Greedy BFS: fill top_n starting from closest, expand only if budget remains
         # Score = weight / degree (penalize hubs)
