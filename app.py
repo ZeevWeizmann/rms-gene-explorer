@@ -3058,6 +3058,7 @@ def _render_msg_figures(msg, msg_id):
                     "Gene programs are retrieved as the nearest neighbours of the query gene "
                     "in this embedding space, capturing both transcriptional similarity and "
                     "regulatory co-variation across cell states.\n\n"
+                    "The program size can be adjusted in **Settings → Program size**.\n\n"
                     "Contact us for access to newer versions."
                 )
 
