@@ -2401,7 +2401,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             x=mx, y=my, xref="x", yref="y",
             text=f"{d['weight']:.2f}",
             showarrow=False,
-            font=dict(size=10, color=color),
+            font=dict(size=12, color=color),
             bgcolor="rgba(255,255,255,0.7)",
             borderpad=1,
         )
