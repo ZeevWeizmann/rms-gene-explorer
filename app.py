@@ -2269,16 +2269,15 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     else:
         import numpy as _np_grn
         _grn_arr = _np_grn.array(grn_mat, dtype=float)
-        # BFS: per-hop budget so deeper levels are always reached
-        # Score = abs(weight), strongest edges win
+        # Greedy BFS: fill top_n slots starting from closest, expand if budget remains
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
         _node_parent  = {}
         nodes_to_keep = {query_gene}
-        _per_hop = max(1, top_n // hops)
-        _leftover = 0
+        _remaining = top_n
         for _hop in range(hops):
-            _budget = _per_hop + _leftover
+            if _remaining <= 0:
+                break
             _candidates = {}
             for _src in _bfs_frontier:
                 if _src not in grn_genes:
@@ -2299,11 +2298,11 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                             _candidates[_nb] = _score
                             _node_parent[_nb] = _src
             _sorted = sorted(_candidates.items(), key=lambda x: x[1], reverse=True)
-            _chosen = {n for n, _ in _sorted[:_budget]}
-            _leftover = max(0, _budget - len(_chosen))
+            _chosen = {n for n, _ in _sorted[:_remaining]}
             nodes_to_keep |= _chosen
             _bfs_visited  |= _chosen
             _bfs_frontier  = _chosen
+            _remaining -= len(_chosen)
             if not _chosen:
                 break
 
