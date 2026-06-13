@@ -110,6 +110,11 @@ _TRANSLATIONS = {
         # Result tabs
         'gene_program': 'Program',
         'assigned_cluster': 'Assigned cluster',
+        'cluster_annot_info': (
+            'Clusters were obtained by unsupervised clustering of gene co-expression embeddings '
+            'and automatically annotated using **Llama 3.1** (Meta AI) based on the marker genes '
+            'and transcriptional signatures of each cluster.'
+        ),
         'ko_targets': 'Drug Targets',
         'drugs': 'Drugs',
         # Network tabs
@@ -289,6 +294,11 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
         # Result tabs
         'gene_program': 'Programme',
         'assigned_cluster': 'Cluster assigné',
+        'cluster_annot_info': (
+            'Les clusters ont été obtenus par clustering non supervisé des embeddings de co-expression génique '
+            'et annotés automatiquement à l\'aide de **Llama 3.1** (Meta AI) à partir des gènes marqueurs '
+            'et des signatures transcriptionnelles de chaque cluster.'
+        ),
         'ko_targets': 'Cibles thérapeutiques',
         'drugs': 'Médicaments',
         # Network tabs
@@ -3083,8 +3093,12 @@ def _render_msg_figures(msg, msg_id):
                     st.plotly_chart(_live_gene_map, width="stretch",
                                     key=f"{msg_id}_gene_map_{program_size}")
                     if _cluster_summary:
-                        with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
-                            st.markdown(_cluster_summary)
+                        _cl_c1, _cl_c2 = st.columns([11, 1])
+                        with _cl_c2.popover("ℹ", help=None):
+                            st.markdown(T['cluster_annot_info'])
+                        with _cl_c1:
+                            with st.expander(f"{T['assigned_cluster']}: {_annot_label}", expanded=False):
+                                st.markdown(_cluster_summary)
                 with _tc:
                     _df_show = pd.concat([
                         pd.DataFrame([{"Gene": _q, "Similarity": 1.00}]),
