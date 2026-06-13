@@ -4351,7 +4351,7 @@ with st.expander(T['settings'], expanded=False):
     )
     _cg2.slider(
         "Edge weight threshold",
-        min_value=0.0, max_value=0.5, value=0.0, step=0.05,
+        min_value=0.0, max_value=1.5, value=0.0, step=0.05,
         key=f"grn_threshold_{dataset_key}",
         help="Edges with |weight| below this value are hidden"
     )
