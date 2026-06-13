@@ -2195,15 +2195,6 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
     ))
 
     bar_fig.update_layout(
-        title=dict(
-            text=(
-                f"Drug target candidates after {ko_gene} KO"
-                f"<br><span style='font-size:12px;color:#888;font-weight:normal'>"
-                f"Gene expression change (simulated KO vs WT) log₂FC"
-                f"</span>"
-            ),
-            font=dict(size=16),
-        ),
         xaxis=dict(
             title=dict(text="log₂FC (KO / WT)", font=dict(size=13)),
             tickfont=dict(size=12),
@@ -2212,7 +2203,7 @@ def build_perturbation_figures(pert_df, query_gene, ko_gene="BIRC5", real_expr_m
         yaxis=dict(
             tickfont=dict(size=13),
         ),
-        height=580, margin=dict(l=100, r=100, t=130, b=40),
+        height=580, margin=dict(l=100, r=100, t=20, b=40),
         plot_bgcolor="white", paper_bgcolor="white",
         annotations=annotations
     )
@@ -3350,7 +3341,13 @@ def _render_msg_figures(msg, msg_id):
                                 opacity=0.92,
                             )
                     _bar_fig.update_layout(margin=dict(r=55))
+                _ko_label_display = _pert_data.get("ko_label", "")
                 _dt_hdr_c1, _dt_hdr_c2 = st.columns([11, 1])
+                _dt_hdr_c1.markdown(
+                    f"**Drug target candidates after {_ko_label_display} KO**\n\n"
+                    f"<span style='font-size:0.8rem;color:#888;'>Gene expression change (simulated KO vs WT) log₂FC</span>",
+                    unsafe_allow_html=True
+                )
                 with _dt_hdr_c2.popover("ℹ", help=None):
                     st.markdown(T['drug_target_chart_info'], unsafe_allow_html=True)
                 st.plotly_chart(_bar_fig, width="stretch", key=f"{msg_id}_pert_bar")
