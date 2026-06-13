@@ -157,6 +157,13 @@ _TRANSLATIONS = {
             ':warning: Not all escape mechanisms or collateral vulnerabilities may be visible '
             'if the list is small.'
         ),
+        'grn_info': (
+            'To compute a GRN for a program of interest on a reference dataset, '
+            'contact the **CardamomOT team**.\n\n'
+            'For a patient tumour, you can run it independently using '
+            '**CardamomOT** — a PDE-based optimal transport model: '
+            '[github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)'
+        ),
         'loading_data': 'Loading data...',
         'loading_grn': 'Loading GRN...',
         # Misc UI
@@ -328,6 +335,13 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
             'Le nombre de cibles médicamenteuses affichées peut être modifié dans **Paramètres → Cibles médicamenteuses affichées**.\n\n'
             ':warning: Tous les mécanismes d\'échappement ou vulnérabilités collatérales peuvent ne pas être visibles '
             'si la liste est trop courte.'
+        ),
+        'grn_info': (
+            'Pour calculer un GRN pour un programme d\'intérêt sur un jeu de données de référence, '
+            'contactez l\'équipe **CardamomOT**.\n\n'
+            'Pour une tumeur patient, vous pouvez le calculer de façon autonome avec '
+            '**CardamomOT** — un modèle de transport optimal basé sur les EDP : '
+            '[github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)'
         ),
         'loading_data': 'Chargement des données...',
         'loading_grn': 'Chargement du GRN...',
@@ -3411,12 +3425,15 @@ def _render_msg_figures(msg, msg_id):
                 }
                 _p_hdr_name, _p_hdr_size = _PERT_ADJ_SHORT.get(_effective_grn_model, ("GRN", ""))
                 _p_pop_genes = sorted(_PERT_GENE_SETS.get(_effective_grn_model, set()))
-                st.markdown(
+                _grn_hdr_c1, _grn_hdr_c2 = st.columns([11, 1])
+                _grn_hdr_c1.markdown(
                     '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 2px 0;">'
                     'Precalculated Gene Regulation Network applied'
                     '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                     unsafe_allow_html=True,
                 )
+                with _grn_hdr_c2.popover("ℹ", help=None):
+                    st.markdown(T['grn_info'])
                 _p_pop_col, _p_spacer = st.columns([1.5, 5])
                 with _p_pop_col:
                     with st.popover(_p_hdr_name or "GRN", use_container_width=True):
@@ -3640,13 +3657,16 @@ def _render_msg_figures(msg, msg_id):
             _ADJ_GENE_SETS = {"full": _full_gene_set, "tubb": _tubb_gene_set}
             _popover_genes = sorted(_ADJ_GENE_SETS.get(_selected_adj_key, set()))
 
-            # Row 1: header label
-            st.markdown(
+            # Row 1: header label + info popover
+            _grn_hdr_c1, _grn_hdr_c2 = st.columns([11, 1])
+            _grn_hdr_c1.markdown(
                 '<p style="font-size:17px;font-weight:600;color:#374151;margin:8px 0 2px 0;">'
                 'Precalculated Gene Regulation Network applied'
                 '<sup style="color:#9ca3af;font-size:11px;font-weight:400;">*</sup>:</p>',
                 unsafe_allow_html=True,
             )
+            with _grn_hdr_c2.popover("ℹ", help=None):
+                st.markdown(T['grn_info'])
             # Row 2: popover button
             _pop_col, _spacer = st.columns([1.5, 5])
             with _pop_col:
