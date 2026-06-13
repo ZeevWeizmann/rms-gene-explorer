@@ -845,7 +845,7 @@ st.components.v1.html("""
 
 // Hide ::before placeholder when a real gene is selected
 (function() {
-    var PLACEHOLDER = '— Select a gene —';
+    var PLACEHOLDERS = ['— Select a gene —', '— Sélectionner un gène —'];
     function updatePlaceholder() {
         var doc = window.parent ? window.parent.document : document;
         doc.querySelectorAll('[data-testid="stSelectbox"]').forEach(function(box) {
@@ -853,7 +853,7 @@ st.components.v1.html("""
             if (!lbl || lbl.textContent.trim() !== '🔍 Search gene') return;
             var span = box.querySelector('[data-baseweb="select"] [data-testid="stMarkdownContainer"] p, [data-baseweb="select"] span');
             var val = span ? span.textContent.trim() : '';
-            if (val && val !== PLACEHOLDER) {
+            if (val && PLACEHOLDERS.indexOf(val) === -1) {
                 box.classList.add('gene-selected');
             } else {
                 box.classList.remove('gene-selected');
