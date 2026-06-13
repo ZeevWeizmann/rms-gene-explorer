@@ -2269,23 +2269,14 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     else:
         import numpy as _np_grn
         _grn_arr = _np_grn.array(grn_mat, dtype=float)
-        # Precompute degree for each gene (total number of edges above threshold)
-        _degree = {}
-        for _gi, _g in enumerate(grn_genes):
-            try:
-                _deg = int((_np_grn.abs(_grn_arr[_gi]) > edge_threshold).sum() +
-                           (_np_grn.abs(_grn_arr[:, _gi]) > edge_threshold).sum())
-            except Exception:
-                _deg = 1
-            _degree[_g] = max(_deg, 1)
-        # BFS: allocate budget evenly across hops so deeper levels are always reached
-        # Score = weight / degree (penalize hubs)
+        # BFS: per-hop budget so deeper levels are always reached
+        # Score = abs(weight), strongest edges win
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
         _node_parent  = {}
         nodes_to_keep = {query_gene}
         _per_hop = max(1, top_n // hops)
-        _leftover = 0  # unused slots from earlier hops carry forward
+        _leftover = 0
         for _hop in range(hops):
             _budget = _per_hop + _leftover
             _candidates = {}
@@ -2296,14 +2287,14 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 for _j, _w in enumerate(_grn_arr[_si]):
                     _nb = grn_genes[_j]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _score = abs(float(_w)) / _degree[_nb]
+                        _score = abs(float(_w))
                         if _score > _candidates.get(_nb, 0):
                             _candidates[_nb] = _score
                             _node_parent[_nb] = _src
                 for _i, _w in enumerate(_grn_arr[:, _si]):
                     _nb = grn_genes[_i]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        _score = abs(float(_w)) / _degree[_nb]
+                        _score = abs(float(_w))
                         if _score > _candidates.get(_nb, 0):
                             _candidates[_nb] = _score
                             _node_parent[_nb] = _src
