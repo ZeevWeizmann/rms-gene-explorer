@@ -468,7 +468,8 @@ div[data-testid="stSelectbox"] > div::before {
     white-space: nowrap;
     z-index: 5;
 }
-div[data-testid="stSelectbox"]:focus-within > div::before {
+div[data-testid="stSelectbox"]:focus-within > div::before,
+div[data-testid="stSelectbox"].gene-selected > div::before {
     display: none !important;
 }
 /* Hide ::before inside expanders (Settings etc) */
@@ -774,6 +775,26 @@ st.components.v1.html("""
     }
     setTimeout(setup, 800);
     setTimeout(setup, 2000);
+})();
+
+// Hide ::before placeholder when a real gene is selected
+(function() {
+    var PLACEHOLDER = '— Select a gene —';
+    function updatePlaceholder() {
+        var doc = window.parent ? window.parent.document : document;
+        doc.querySelectorAll('[data-testid="stSelectbox"]').forEach(function(box) {
+            var lbl = box.querySelector('label');
+            if (!lbl || lbl.textContent.trim() !== '🔍 Search gene') return;
+            var span = box.querySelector('[data-baseweb="select"] [data-testid="stMarkdownContainer"] p, [data-baseweb="select"] span');
+            var val = span ? span.textContent.trim() : '';
+            if (val && val !== PLACEHOLDER) {
+                box.classList.add('gene-selected');
+            } else {
+                box.classList.remove('gene-selected');
+            }
+        });
+    }
+    setInterval(updatePlaceholder, 500);
 })();
 </script>
 """, height=0)
