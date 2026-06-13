@@ -3048,8 +3048,15 @@ def _render_msg_figures(msg, msg_id):
             _pr_c1.markdown(f'<span style="font-size:0.78rem;color:#6b7280;">Program Retriever · <b>{_pr_version}</b></span>', unsafe_allow_html=True)
             with _pr_c2.popover("ℹ", help=None):
                 st.markdown(
-                    "**Program Retriever** encodes each gene into a GNN co-expression embedding "
-                    "and retrieves the most similar genes as a program.\n\n"
+                    "**Program Retriever** builds a joint embedding space for each gene by combining:\n\n"
+                    "- **Co-expression structure** — learned via a Graph Neural Network (GNN) "
+                    "on the single-cell gene co-expression graph\n"
+                    "- **Trajectory dynamics** — gene activity patterns along developmental "
+                    "or tumour trajectories, modelled with CARDAMOM (OT-based PDE)\n"
+                    "- **Prior biological knowledge** — integrated as additional node features\n\n"
+                    "Gene programs are retrieved as the nearest neighbours of the query gene "
+                    "in this embedding space, capturing both transcriptional similarity and "
+                    "regulatory co-variation across cell states.\n\n"
                     "Contact us for access to newer versions."
                 )
 
