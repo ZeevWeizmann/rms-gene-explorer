@@ -2738,7 +2738,7 @@ _gene_in_any_grn = bool(_check_gene) and any(
 _grn_state_key = f"grn_choice_{dataset_key}"
 grn_hops  = st.session_state.get(f"grn_hops_{dataset_key}", 1)
 grn_top_n = st.session_state.get(f"grn_topn_{dataset_key}", 10)
-grn_edge_threshold = st.session_state.get(f"grn_threshold_{dataset_key}", 0.0)
+grn_edge_threshold = st.session_state.get(f"grn_threshold_{dataset_key}", 0.02)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
     grn_options = []
@@ -4454,7 +4454,7 @@ with st.expander(T['settings'], expanded=False):
     )
     _cg2.slider(
         "Edge weight threshold",
-        min_value=0.0, max_value=1.5, value=0.0, step=0.05,
+        min_value=0.0, max_value=1.5, value=0.02, step=0.01,
         key=f"grn_threshold_{dataset_key}",
         help="Edges with |weight| below this value are hidden"
     )
