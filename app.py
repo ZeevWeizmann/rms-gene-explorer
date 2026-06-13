@@ -135,7 +135,7 @@ _TRANSLATIONS = {
         'time_sim': 'Time (simulation WT)',
         'knocked_out': 'knocked out',
         # About section (short)
-        'about_intro': 'Each RMS (Rhabdomyosarcoma) tumour expresses a unique combination of gene programmes. Gene Program Explorer maps your patient\'s tumour onto these programmes, infers the regulatory network driving each programme, simulates gene knockouts, and translates the results into drug targets and matched clinical compounds.\n\nGene Program Explorer uses a RAG-inspired architecture: GNN-based programme retrieval augmented by mechanistic ODE modelling (CardamomOT) to generate patient-specific drug targets from scRNA-seq data.',
+        'about_intro': 'Each RMS (Rhabdomyosarcoma) tumour expresses a unique combination of gene programmes. Gene Program Explorer maps your patient\'s tumour onto these programmes, infers the regulatory network driving each programme, simulates gene knockouts, and translates the results into drug targets and matched clinical compounds.\n\nGene Program Explorer uses a RAG-inspired architecture: GNN-based programme retrieval augmented by mechanistic PDE modelling (CardamomOT) to generate patient-specific drug targets from scRNA-seq data.',
         'how_it_works': '**How it works**',
         'show_results': '📊 Show results for',
         'gene_program_for': 'Gene program for',
@@ -193,7 +193,7 @@ _TRANSLATIONS = {
 **How it works:**
 1. A query gene is embedded in a GNN co-expression space (trained on WGCNA graphs from scRNA-seq)
 2. Nearest neighbors in embedding space define a **transcriptional program**
-3. The retrieved gene list is exported and run through **CardamomOT** (ODE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
+3. The retrieved gene list is exported and run through **CardamomOT** (PDE mechanistic model + optimal transport) on the scRNA-seq time-course data to infer a **gene regulatory network (GRN)** for that program
 4. The same CardamomOT model is then used for in silico **perturbation simulations** (e.g. BIRC5 knockout) — revealing which genes change and enabling **network-based target identification**
 5. **Personalisation** — upload your own `.h5ad` patient data to project it onto the RMS reference UMAP and score which genes from your sample overlap with the retrieved program
 6. **Drug matching** — candidate targets are automatically cross-referenced against **DGIdb** to surface known drug–gene interactions, FDA approval status, and interaction scores
@@ -389,7 +389,7 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
 **Comment ça fonctionne :**
 1. Un gène requête est représenté dans un espace GNN de co-expression (entraîné sur des graphes WGCNA issus de scRNA-seq)
 2. Les voisins les plus proches dans cet espace définissent un **programme transcriptionnel**
-3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle ODE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
+3. La liste de gènes récupérée est analysée par **CardamomOT** (modèle PDE mécaniste + transport optimal) sur des données scRNA-seq temporelles pour inférer un **réseau de régulation génique (GRN)**
 4. Le même modèle CardamomOT est utilisé pour des **simulations de perturbation in silico** (ex : knockout de BIRC5), révélant quels gènes changent et permettant l'**identification de cibles par le réseau**
 5. **Personnalisation** — importez votre propre fichier `.h5ad` pour projeter vos données patient sur l'UMAP de référence RMS et identifier quels gènes de votre échantillon chevauchent le programme récupéré
 6. **Correspondance médicamenteuse** — les cibles candidates sont automatiquement croisées avec **DGIdb** pour révéler les interactions médicament-gène connues, le statut d'approbation FDA et les scores d'interaction
@@ -4533,7 +4533,7 @@ with _about_expander:
         "(context-driven)":                   "(guidé par contexte)",
         "Gene Program":                       "Programme génique",
         "GRN Inference &amp; Perturbation Simulation": "Inférence GRN &amp; Simulation de perturbation",
-        "ODE mechanistic model":              "modèle mécaniste ODE",
+        "PDE mechanistic model":              "modèle mécaniste PDE",
         "+ optimal transport":               "+ transport optimal",
         "activation / repression":            "activation / répression",
         "Perturbation":                       "Perturbation",
@@ -5001,7 +5001,7 @@ with _about_expander:
 <circle cx="237" cy="550" r="6" fill="#9B59B6"/>
 <circle cx="297" cy="550" r="6" fill="#9B59B6"/>
 <circle cx="267" cy="580" r="6" fill="#9B59B6"/>
-<text x="267" y="601" text-anchor="middle" font-size="11" fill="#777">ODE mechanistic model</text>
+<text x="267" y="601" text-anchor="middle" font-size="11" fill="#777">PDE mechanistic model</text>
 <text x="267" y="616" text-anchor="middle" font-size="10" font-style="italic" fill="#777">+ optimal transport</text>
 
 <!-- Box 8: Inferred GRN -->
