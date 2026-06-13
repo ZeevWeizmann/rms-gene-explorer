@@ -2215,7 +2215,7 @@ def build_grn_from_program(grn_mat, grn_genes, gene_set):
     return G
 
 
-def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10, edge_threshold=0.05):
+def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_n=10, edge_threshold=0.0):
     if grn_mat is None or query_gene not in grn_genes:
         return None, None
 
@@ -2401,7 +2401,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             x=mx, y=my, xref="x", yref="y",
             text=f"{d['weight']:.2f}",
             showarrow=False,
-            font=dict(size=7, color=color),
+            font=dict(size=10, color=color),
             bgcolor="rgba(255,255,255,0.7)",
             borderpad=1,
         )
@@ -2470,7 +2470,7 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     return fig, topo_df
 
 
-def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20, edge_threshold=0.05):
+def build_grn_adjacency(grn_mat, grn_genes, gene_set, query_gene=None, hops=1, top_n=20, edge_threshold=0.0):
     if grn_mat is None or query_gene is None:
         return None
     grn_set   = set(grn_genes)
@@ -2659,7 +2659,7 @@ _gene_in_any_grn = bool(_check_gene) and any(
 _grn_state_key = f"grn_choice_{dataset_key}"
 grn_hops  = st.session_state.get(f"grn_hops_{dataset_key}", 1)
 grn_top_n = st.session_state.get(f"grn_topn_{dataset_key}", 10)
-grn_edge_threshold = st.session_state.get(f"grn_threshold_{dataset_key}", 0.05)
+grn_edge_threshold = st.session_state.get(f"grn_threshold_{dataset_key}", 0.0)
 if not _gene_in_any_grn:
     grn_mat, grn_genes = None, []
     grn_options = []
@@ -4351,7 +4351,7 @@ with st.expander(T['settings'], expanded=False):
     )
     _cg2.slider(
         "Edge weight threshold",
-        min_value=0.0, max_value=0.5, value=0.05, step=0.05,
+        min_value=0.0, max_value=0.5, value=0.0, step=0.05,
         key=f"grn_threshold_{dataset_key}",
         help="Edges with |weight| below this value are hidden"
     )
