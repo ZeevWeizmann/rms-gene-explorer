@@ -3343,12 +3343,9 @@ def _render_msg_figures(msg, msg_id):
                     _bar_fig.update_layout(margin=dict(r=55))
                 _ko_label_display = _pert_data.get("ko_label", "")
                 _dt_hdr_c1, _dt_hdr_c2 = st.columns([11, 1])
-                _dt_hdr_c1.markdown(
-                    f"**Drug target candidates after {_ko_label_display} KO**\n\n"
-                    f"<span style='font-size:0.8rem;color:#888;'>Gene expression change (simulated KO vs WT) log₂FC</span>",
-                    unsafe_allow_html=True
-                )
+                _dt_hdr_c1.markdown(f"**Drug target candidates after {_ko_label_display} KO**")
                 with _dt_hdr_c2.popover("ℹ", help=None):
+                    st.caption("Gene expression change (simulated KO vs WT) log₂FC")
                     st.markdown(T['drug_target_chart_info'], unsafe_allow_html=True)
                 st.plotly_chart(_bar_fig, width="stretch", key=f"{msg_id}_pert_bar")
 
