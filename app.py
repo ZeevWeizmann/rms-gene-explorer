@@ -5121,7 +5121,14 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown(f"<div style='color:#bbb; font-size:0.75rem; margin-top:2rem; text-align:right;'>{T['made_by']}</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='color:#bbb; font-size:0.72rem; margin-top:2rem; text-align:center;'>"
+    "⚠ This resource is intended for purely research purposes. "
+    "It should not be used for emergencies or medical or professional advice."
+    "</div>",
+    unsafe_allow_html=True
+)
+st.markdown(f"<div style='color:#bbb; font-size:0.75rem; margin-top:0.5rem; text-align:right;'>{T['made_by']}</div>", unsafe_allow_html=True)
 
 _grey_exp_titles = [T['settings'], T['about'], T.get('featured_targets', '')]
 st.components.v1.html(f"""<script>
