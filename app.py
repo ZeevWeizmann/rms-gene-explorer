@@ -148,6 +148,15 @@ _TRANSLATIONS = {
                              'promiscuity penalty — drugs or genes involved in many interactions receive lower scores. '
                              'Higher score = better-supported, more specific interaction.'),
         'no_drugs_found': 'No drug interactions found in DGIdb for these genes.',
+        'drug_target_chart_info': (
+            '<span style="display:inline-block;background:#2563eb;color:white;'
+            'border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;'
+            'border:1px solid #1d4ed8"> drug </span>'
+            ' — known drug interactions in [DGIdb](https://dgidb.org)\n\n'
+            'The number of drug targets shown can be changed in **Settings → Drug targets shown**.\n\n'
+            ':warning: Not all escape mechanisms or collateral vulnerabilities may be visible '
+            'if the list is small.'
+        ),
         'loading_data': 'Loading data...',
         'loading_grn': 'Loading GRN...',
         # Misc UI
@@ -311,6 +320,15 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
                              'pénalité de promiscuité — les médicaments ou gènes impliqués dans de nombreuses interactions reçoivent un score plus faible. '
                              'Score élevé = interaction mieux étayée et plus spécifique.'),
         'no_drugs_found': 'Aucune interaction médicamenteuse trouvée dans DGIdb pour ces gènes.',
+        'drug_target_chart_info': (
+            '<span style="display:inline-block;background:#2563eb;color:white;'
+            'border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;'
+            'border:1px solid #1d4ed8"> drug </span>'
+            ' — interactions médicamenteuses connues dans [DGIdb](https://dgidb.org)\n\n'
+            'Le nombre de cibles médicamenteuses affichées peut être modifié dans **Paramètres → Cibles médicamenteuses affichées**.\n\n'
+            ':warning: Tous les mécanismes d\'échappement ou vulnérabilités collatérales peuvent ne pas être visibles '
+            'si la liste est trop courte.'
+        ),
         'loading_data': 'Chargement des données...',
         'loading_grn': 'Chargement du GRN...',
         # Misc UI
@@ -3332,16 +3350,10 @@ def _render_msg_figures(msg, msg_id):
                                 opacity=0.92,
                             )
                     _bar_fig.update_layout(margin=dict(r=55))
+                _dt_hdr_c1, _dt_hdr_c2 = st.columns([11, 1])
+                with _dt_hdr_c2.popover("ℹ", help=None):
+                    st.markdown(T['drug_target_chart_info'], unsafe_allow_html=True)
                 st.plotly_chart(_bar_fig, width="stretch", key=f"{msg_id}_pert_bar")
-                if _bar_drug_set:
-                    st.markdown(
-                        '<span style="display:inline-block;background:#2563eb;color:white;'
-                        'border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;'
-                        'border:1px solid #1d4ed8"> drug </span>'
-                        ' — known drug interactions in '
-                        '[DGIdb](https://dgidb.org)',
-                        unsafe_allow_html=True,
-                    )
 
     # ── Tab: Drugs (DGIdb drug–gene interactions) ─────────────────────────────
     if "drugs" in _tab_map:
