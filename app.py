@@ -2278,16 +2278,16 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
             except Exception:
                 _deg = 1
             _degree[_g] = max(_deg, 1)
-        # Greedy BFS: fill top_n starting from closest, expand only if budget remains
+        # BFS: allocate budget evenly across hops so deeper levels are always reached
         # Score = weight / degree (penalize hubs)
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
         _node_parent  = {}
         nodes_to_keep = {query_gene}
-        _remaining = top_n
+        _per_hop = max(1, top_n // hops)
+        _leftover = 0  # unused slots from earlier hops carry forward
         for _hop in range(hops):
-            if _remaining <= 0:
-                break
+            _budget = _per_hop + _leftover
             _candidates = {}
             for _src in _bfs_frontier:
                 if _src not in grn_genes:
@@ -2307,13 +2307,12 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                         if _score > _candidates.get(_nb, 0):
                             _candidates[_nb] = _score
                             _node_parent[_nb] = _src
-            # Take all candidates at this level if they fit, else top by score
             _sorted = sorted(_candidates.items(), key=lambda x: x[1], reverse=True)
-            _chosen = {n for n, _ in _sorted[:_remaining]}
+            _chosen = {n for n, _ in _sorted[:_budget]}
+            _leftover = max(0, _budget - len(_chosen))
             nodes_to_keep |= _chosen
             _bfs_visited  |= _chosen
             _bfs_frontier  = _chosen
-            _remaining    -= len(_chosen)
             if not _chosen:
                 break
 
