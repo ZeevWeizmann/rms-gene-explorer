@@ -2269,7 +2269,14 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
     else:
         import numpy as _np_grn
         _grn_arr = _np_grn.array(grn_mat)
+        # Precompute degree for each gene (total number of edges above threshold)
+        _degree = {}
+        for _gi, _g in enumerate(grn_genes):
+            _deg = int(_np_grn.sum(_np_grn.abs(_grn_arr[_gi]) > edge_threshold) +
+                       _np_grn.sum(_np_grn.abs(_grn_arr[:, _gi]) > edge_threshold))
+            _degree[_g] = max(_deg, 1)
         # Greedy BFS: fill top_n starting from closest, expand only if budget remains
+        # Score = weight / degree (penalize hubs)
         _bfs_frontier = {query_gene}
         _bfs_visited  = {query_gene}
         _node_parent  = {}
@@ -2286,16 +2293,18 @@ def build_grn_figure(grn_mat, grn_genes, query_gene, gene_set=None, hops=1, top_
                 for _j, _w in enumerate(_grn_arr[_si]):
                     _nb = grn_genes[_j]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        if abs(float(_w)) > _candidates.get(_nb, 0):
-                            _candidates[_nb] = abs(float(_w))
+                        _score = abs(float(_w)) / _degree[_nb]
+                        if _score > _candidates.get(_nb, 0):
+                            _candidates[_nb] = _score
                             _node_parent[_nb] = _src
                 for _i, _w in enumerate(_grn_arr[:, _si]):
                     _nb = grn_genes[_i]
                     if abs(_w) > edge_threshold and _nb not in _bfs_visited:
-                        if abs(float(_w)) > _candidates.get(_nb, 0):
-                            _candidates[_nb] = abs(float(_w))
+                        _score = abs(float(_w)) / _degree[_nb]
+                        if _score > _candidates.get(_nb, 0):
+                            _candidates[_nb] = _score
                             _node_parent[_nb] = _src
-            # Take all candidates at this level if they fit, else top by weight
+            # Take all candidates at this level if they fit, else top by score
             _sorted = sorted(_candidates.items(), key=lambda x: x[1], reverse=True)
             _chosen = {n for n, _ in _sorted[:_remaining]}
             nodes_to_keep |= _chosen
