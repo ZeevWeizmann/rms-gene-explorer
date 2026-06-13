@@ -169,6 +169,18 @@ _TRANSLATIONS = {
             '**CardamomOT** — a PDE-based optimal transport model: '
             '[github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)'
         ),
+        'grn_ego_info': (
+            'This graph is a **GRN ego-network** — a local subgraph of the Gene Regulatory Network '
+            'centred on the query gene, built using a **greedy BFS** (breadth-first search).\n\n'
+            '**How greedy BFS works:** starting from the query gene, the algorithm expands '
+            'layer by layer, at each step selecting the strongest edges (by absolute weight) '
+            'to unvisited genes, until the node budget is filled. '
+            'Earlier hops (closer neighbours) are prioritised over distant ones.\n\n'
+            '**Adjustable in Settings:**\n'
+            '- **GRN hops** — depth of expansion (1 = direct neighbours only, 2–3 = multi-hop)\n'
+            '- **Network size** — total number of nodes shown\n'
+            '- **Edge weight threshold** — minimum edge weight to include a connection'
+        ),
         'loading_data': 'Loading data...',
         'loading_grn': 'Loading GRN...',
         # Misc UI
@@ -352,6 +364,18 @@ Each gene receives a vector that encodes **how its co-expression neighbourhood c
             'Pour une tumeur patient, vous pouvez le calculer de façon autonome avec '
             '**CardamomOT** — un modèle de transport optimal basé sur les EDP : '
             '[github.com/eliasventre/CardamomOT](https://github.com/eliasventre/CardamomOT)'
+        ),
+        'grn_ego_info': (
+            'Ce graphe est un **réseau ego GRN** — un sous-graphe local du Réseau de Régulation Génique '
+            'centré sur le gène requête, construit par **BFS glouton** (recherche en largeur).\n\n'
+            '**Fonctionnement du BFS glouton :** depuis le gène requête, l\'algorithme s\'étend '
+            'couche par couche, en sélectionnant à chaque étape les arêtes les plus fortes (en valeur absolue) '
+            'vers des gènes non encore visités, jusqu\'à atteindre le budget de nœuds. '
+            'Les hops proches sont prioritaires sur les distants.\n\n'
+            '**Paramètres ajustables dans Paramètres :**\n'
+            '- **GRN hops** — profondeur d\'expansion (1 = voisins directs, 2–3 = multi-hop)\n'
+            '- **Taille du réseau** — nombre total de nœuds affichés\n'
+            '- **Seuil de poids d\'arête** — poids minimal pour inclure une connexion'
         ),
         'loading_data': 'Chargement des données...',
         'loading_grn': 'Chargement du GRN...',
@@ -3735,6 +3759,10 @@ def _render_msg_figures(msg, msg_id):
                 _live_grn_fig = msg.get("grn_fig")
 
             if _live_adj is not None:
+                _pri_c1, _pri_c2 = st.columns([11, 1])
+                _pri_c1.markdown("**Program Regulatory Interactions**")
+                with _pri_c2.popover("ℹ", help=None):
+                    st.markdown(T['grn_ego_info'])
                 with st.expander("Program Regulatory Interactions", expanded=True):
                     adj_df, genes_list = _live_adj
                     import numpy as _np2
@@ -3759,6 +3787,10 @@ def _render_msg_figures(msg, msg_id):
                     )
                     st.plotly_chart(adj_fig, width="stretch", key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
             if _live_grn_fig is not None:
+                _gri_c1, _gri_c2 = st.columns([11, 1])
+                _gri_c1.markdown("**Gene Regulatory Interactions**")
+                with _gri_c2.popover("ℹ", help=None):
+                    st.markdown(T['grn_ego_info'])
                 with st.expander("Gene Regulatory Interactions", expanded=True):
                     st.plotly_chart(_live_grn_fig, width="stretch", key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
 
