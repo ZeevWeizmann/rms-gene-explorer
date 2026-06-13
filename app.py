@@ -3760,6 +3760,13 @@ def _render_msg_figures(msg, msg_id):
             if _live_grn_fig is None:
                 _live_grn_fig = msg.get("grn_fig")
 
+            if _live_grn_fig is not None:
+                _gri_c1, _gri_c2 = st.columns([11, 1])
+                _gri_c1.markdown("**Gene Regulatory Interactions**")
+                with _gri_c2.popover("ℹ", help=None):
+                    st.markdown(T['grn_ego_info'])
+                with st.expander("Gene Regulatory Interactions", expanded=True):
+                    st.plotly_chart(_live_grn_fig, width="stretch", key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
             if _live_adj is not None:
                 _pri_c1, _pri_c2 = st.columns([11, 1])
                 _pri_c1.markdown("**Program Regulatory Interactions**")
@@ -3788,13 +3795,6 @@ def _render_msg_figures(msg, msg_id):
                         coloraxis_colorbar=dict(title="signed<br>log1p"),
                     )
                     st.plotly_chart(adj_fig, width="stretch", key=f"{msg_id}_adj_{grn_top_n}_{grn_hops}_{program_size}")
-            if _live_grn_fig is not None:
-                _gri_c1, _gri_c2 = st.columns([11, 1])
-                _gri_c1.markdown("**Gene Regulatory Interactions**")
-                with _gri_c2.popover("ℹ", help=None):
-                    st.markdown(T['grn_ego_info'])
-                with st.expander("Gene Regulatory Interactions", expanded=True):
-                    st.plotly_chart(_live_grn_fig, width="stretch", key=f"{msg_id}_grn_{grn_top_n}_{grn_hops}_{program_size}")
 
 # ── Message rendering loop ───────────────────────────────────────
 # Only the LAST assistant message is fully expanded.
