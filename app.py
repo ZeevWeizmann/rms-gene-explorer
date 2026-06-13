@@ -5123,7 +5123,7 @@ div[data-testid="column"]   div[data-testid="stSelectbox"] > div > div:hover {
 
 st.markdown(
     "<div style='color:#bbb; font-size:0.72rem; margin-top:2rem; text-align:center;'>"
-    "⚠ This resource is intended for purely research purposes. "
+    "This resource is intended for purely research purposes. "
     "It should not be used for emergencies or medical or professional advice."
     "</div>",
     unsafe_allow_html=True
