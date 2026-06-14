@@ -4424,6 +4424,8 @@ with st.expander(T['settings'], expanded=False):
     if st.session_state.get("authenticated"):
         st.caption("🔓 Logged in · all datasets available")
         st.button("Sign out", on_click=_do_logout, key="_logout_btn")
+    else:
+        st.caption("Login · Restricted access")
     st.divider()
     _c1, _c2, _c3, _c4 = st.columns(4)
     dataset_choice = _c1.selectbox(
